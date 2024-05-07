@@ -27,6 +27,7 @@ fn main() {
     let _ = indicator::macd(&stats.close, 12, 26);
     let _ = indicator::adx(&stats.high, &stats.low, &stats.close, 14, 14);
     let _ = indicator::cmo(&stats.close, 10);
+    let _ = indicator::cog(&stats.close, 10);
 
     let _ = smooth::vma(&stats.close, 10);
     let _ = smooth::vidya(&stats.close, 10);

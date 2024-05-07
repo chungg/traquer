@@ -222,3 +222,19 @@ pub fn cmo(data: &Vec<f64>, window: u8) -> Vec<f64> {
         .map(|x| x * 100.0)
         .collect::<Vec<f64>>()
 }
+
+// centre of gravity
+// https://www.stockmaniacs.net/center-of-gravity-indicator/
+pub fn cog(data: &Vec<f64>, window: u8) -> Vec<f64> {
+    data.windows(window.into())
+        .map(|w| {
+            let series_sum: f64 = w.iter().sum();
+            -w.iter()
+                .rev()
+                .enumerate()
+                .map(|(i, e)| (e * (i + 1) as f64))
+                .sum::<f64>()
+                / w.iter().sum::<f64>()
+        })
+        .collect::<Vec<f64>>()
+}
