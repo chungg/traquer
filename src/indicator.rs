@@ -287,3 +287,31 @@ pub fn elder_ray(h: &Vec<f64>, l: &Vec<f64>, c: &Vec<f64>, window: u8) -> (Vec<f
     .map(|(high, low, close)| (high - close, low - close))
     .unzip()
 }
+
+/// williams alligator
+/// https://www.investopedia.com/articles/trading/072115/exploring-williams-alligator-indicator.asp
+pub fn alligator(data: &Vec<f64>) {}
+
+/// money flow index
+/// https://www.investopedia.com/terms/m/mfi.asp
+pub fn mfi(h: &Vec<f64>, l: &Vec<f64>, c: &Vec<f64>, v: &Vec<f64>, window: u8) -> Vec<f64> {
+    let (pos_mf, neg_mf): (Vec<f64>, Vec<f64>) = izip!(&h[1..], &l[1..], &c[1..], &v[1..])
+        .scan(
+            (h[0] + l[0] + c[0]) / 3.0,
+            |state, (high, low, close, vol)| {
+                let hlc = (high + low + close) / 3.0;
+                let pos_mf = if hlc > *state { hlc * vol } else { 0.0 };
+                let neg_mf = if hlc < *state { hlc * vol } else { 0.0 };
+                *state = hlc;
+                Some((pos_mf, neg_mf))
+            },
+        )
+        .unzip();
+    pos_mf
+        .windows(window.into())
+        .zip(neg_mf.windows(window.into()))
+        .map(|(pos, neg)| {
+            100.0 - (100.0 / (1.0 + pos.iter().sum::<f64>() / neg.iter().sum::<f64>()))
+        })
+        .collect::<Vec<f64>>()
+}
