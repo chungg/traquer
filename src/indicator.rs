@@ -40,9 +40,11 @@ pub fn klinger(
     long: u8,
 ) -> Vec<f64> {
     let vf = vforce(h, l, c, v);
-    smooth::ewma(&vf, short)
+    let short_ma = smooth::ewma(&vf, short);
+    let long_ma = smooth::ewma(&vf, long);
+    short_ma[short_ma.len() - long_ma.len()..]
         .iter()
-        .zip(smooth::ewma(&vf, long).iter())
+        .zip(long_ma)
         .map(|(x, y)| x - y)
         .collect::<Vec<f64>>()
 }
@@ -74,9 +76,11 @@ pub fn klinger_vol(
     long: u8,
 ) -> Vec<f64> {
     let vf = vforce_simple(h, l, c, v);
-    smooth::ewma(&vf, short)
+    let short_ma = smooth::ewma(&vf, short);
+    let long_ma = smooth::ewma(&vf, long);
+    short_ma[short_ma.len() - long_ma.len()..]
         .iter()
-        .zip(smooth::ewma(&vf, long).iter())
+        .zip(long_ma)
         .map(|(x, y)| x - y)
         .collect::<Vec<f64>>()
 }
@@ -97,7 +101,7 @@ pub fn qstick(o: &Vec<f64>, c: &Vec<f64>, window: u8) -> Vec<f64> {
 /// https://www.incrediblecharts.com/indicators/twiggs_money_flow.php
 pub fn twiggs(h: &Vec<f64>, l: &Vec<f64>, c: &Vec<f64>, v: &Vec<f64>, window: u8) -> Vec<f64> {
     let data = izip!(h, l, c, v);
-    let ewma_range = smooth::wilder(
+    let ma_range = smooth::wilder(
         &data
             .scan(f64::NAN, |state, (high, low, close, vol)| {
                 let range_vol = vol
@@ -111,7 +115,7 @@ pub fn twiggs(h: &Vec<f64>, l: &Vec<f64>, c: &Vec<f64>, v: &Vec<f64>, window: u8
             .collect::<Vec<f64>>(),
         window,
     );
-    ewma_range
+    ma_range
         .iter()
         .zip(smooth::wilder(v, window).iter())
         .map(|(range, vol)| range / vol)
@@ -206,9 +210,11 @@ pub fn rsi(values: &Vec<f64>, window: u8) -> Vec<f64> {
 /// moving average convergence/divergence
 /// https://www.investopedia.com/terms/m/macd.asp
 pub fn macd(close: &Vec<f64>, fast: u8, slow: u8) -> Vec<f64> {
-    smooth::ewma(close, fast)
+    let fast_ma = smooth::ewma(close, fast);
+    let slow_ma = smooth::ewma(close, slow);
+    fast_ma[fast_ma.len() - slow_ma.len()..]
         .iter()
-        .zip(smooth::ewma(close, slow))
+        .zip(slow_ma)
         .map(|(x, y)| x - y)
         .collect::<Vec<f64>>()
 }
@@ -222,12 +228,11 @@ pub fn cmo(data: &Vec<f64>, window: u8) -> Vec<f64> {
         .collect::<Vec<f64>>()
 }
 
-// centre of gravity
-// https://www.stockmaniacs.net/center-of-gravity-indicator/
+/// centre of gravity
+/// https://www.stockmaniacs.net/center-of-gravity-indicator/
 pub fn cog(data: &Vec<f64>, window: u8) -> Vec<f64> {
     data.windows(window.into())
         .map(|w| {
-            let series_sum: f64 = w.iter().sum();
             -w.iter()
                 .rev()
                 .enumerate()
@@ -236,4 +241,49 @@ pub fn cog(data: &Vec<f64>, window: u8) -> Vec<f64> {
                 / w.iter().sum::<f64>()
         })
         .collect::<Vec<f64>>()
+}
+
+/// accumulation/distribution
+/// https://www.investopedia.com/terms/a/accumulationdistribution.asp
+pub fn acc_dist(h: &Vec<f64>, l: &Vec<f64>, c: &Vec<f64>, v: &Vec<f64>) -> Vec<f64> {
+    izip!(h, l, c, v)
+        .scan(0.0, |state, (high, low, close, vol)| {
+            let mfm = ((close - low) - (high - close)) / (high - low);
+            let mfv = mfm * vol;
+            let adl = *state + mfv;
+            *state = adl;
+            Some(adl)
+        })
+        .collect::<Vec<f64>>()
+}
+
+/// accumulation/distribution
+/// like yahoo
+pub fn acc_dist_yahoo(h: &Vec<f64>, l: &Vec<f64>, c: &Vec<f64>, v: &Vec<f64>) -> Vec<f64> {
+    izip!(&h[1..], &l[1..], &c[1..], &v[1..])
+        .scan((c[0], 0.0), |state, (high, low, close, vol)| {
+            let mfm = if *close > state.0 {
+                close - f64::min(*low, state.0)
+            } else {
+                close - f64::max(*high, state.0)
+            };
+            let mfv = mfm * vol;
+            let adl = state.1 + mfv;
+            *state = (*close, adl);
+            Some(adl)
+        })
+        .collect::<Vec<f64>>()
+}
+
+/// elder ray
+/// https://www.investopedia.com/articles/trading/03/022603.asp
+pub fn elder_ray(h: &Vec<f64>, l: &Vec<f64>, c: &Vec<f64>, window: u8) -> (Vec<f64>, Vec<f64>) {
+    let close_ma = smooth::ewma(c, window);
+    izip!(
+        &h[h.len() - close_ma.len()..],
+        &l[l.len() - close_ma.len()..],
+        close_ma
+    )
+    .map(|(high, low, close)| (high - close, low - close))
+    .unzip()
 }

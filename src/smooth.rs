@@ -2,13 +2,17 @@ use itertools::izip;
 
 /// exponentially weighted moving average
 pub fn ewma(data: &[f64], window: u8) -> Vec<f64> {
+    let initial = data[..window as usize].iter().sum::<f64>() / window as f64;
     let alpha = 2.0 / (window + 1) as f64;
-    data.iter()
-        .scan(data[0], |state, &x| {
+    let mut result = data[window as usize..]
+        .iter()
+        .scan(initial, |state, &x| {
             *state = x * alpha + *state * (1.0 - alpha);
             Some(*state)
         })
-        .collect::<Vec<f64>>()
+        .collect::<Vec<f64>>();
+    result.insert(0, initial);
+    result
 }
 
 /// simple moving average
@@ -22,7 +26,8 @@ pub fn sma(data: &[f64], window: u8) -> Vec<f64> {
 pub fn dema(data: &[f64], window: u8) -> Vec<f64> {
     let ma = ewma(data, window);
     let mama = ewma(&ma, window);
-    ma.iter()
+    ma[ma.len() - mama.len()..]
+        .iter()
         .zip(mama.iter())
         .map(|(ma1, ma2)| 2.0 * ma1 - ma2)
         .collect::<Vec<f64>>()

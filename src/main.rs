@@ -28,6 +28,9 @@ fn main() {
     let _ = indicator::adx(&stats.high, &stats.low, &stats.close, 14, 14);
     let _ = indicator::cmo(&stats.close, 10);
     let _ = indicator::cog(&stats.close, 10);
+    let _ = indicator::acc_dist(&stats.high, &stats.low, &stats.close, &stats.volume);
+    let _ = indicator::acc_dist_yahoo(&stats.high, &stats.low, &stats.close, &stats.volume);
+    let _ = indicator::elder_ray(&stats.high, &stats.low, &stats.close, 13);
 
     let _ = smooth::vma(&stats.close, 10);
     let _ = smooth::vidya(&stats.close, 10);
