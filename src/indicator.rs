@@ -23,7 +23,6 @@ fn vforce(h: &Vec<f64>, l: &Vec<f64>, c: &Vec<f64>, v: &Vec<f64>) -> Vec<f64> {
                     }
                 };
                 *state = (*h, *l, *c, trend, cm, dm);
-                // Some(v * trend as f64) yahoo just tracks volume
                 Some(v * 2.0 * ((dm / cm) - 1.0) * trend as f64 * 100.0)
             },
         )
