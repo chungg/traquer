@@ -288,6 +288,17 @@ pub fn elder_ray(h: &Vec<f64>, l: &Vec<f64>, c: &Vec<f64>, window: u8) -> (Vec<f
     .unzip()
 }
 
+/// elder force index
+/// https://www.investopedia.com/articles/trading/03/031203.asp
+pub fn elder_force(c: &Vec<f64>, v: &Vec<f64>, window: u8) -> Vec<f64> {
+    smooth::ewma(
+        &izip!(&c[..c.len() - 1], &c[1..], &v[1..])
+            .map(|(prev, curr, vol)| (curr - prev) * vol)
+            .collect::<Vec<f64>>(),
+        window,
+    )
+}
+
 /// williams alligator
 /// https://www.investopedia.com/articles/trading/072115/exploring-williams-alligator-indicator.asp
 pub fn alligator(data: &Vec<f64>) {}
