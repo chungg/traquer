@@ -2,7 +2,7 @@ use itertools::{izip, multiunzip};
 
 use crate::smooth;
 
-fn vforce(h: &Vec<f64>, l: &Vec<f64>, c: &Vec<f64>, v: &Vec<f64>) -> Vec<f64> {
+fn vforce(h: &[f64], l: &[f64], c: &[f64], v: &[f64]) -> Vec<f64> {
     izip!(&h[1..], &l[1..], &c[1..], &v[1..])
         .scan(
             (h[0], l[0], c[0], 99, 0.0, h[0] - l[0]),
@@ -31,14 +31,7 @@ fn vforce(h: &Vec<f64>, l: &Vec<f64>, c: &Vec<f64>, v: &Vec<f64>) -> Vec<f64> {
 
 ///  klinger oscillator
 ///  https://www.investopedia.com/terms/k/klingeroscillator.asp
-pub fn klinger(
-    h: &Vec<f64>,
-    l: &Vec<f64>,
-    c: &Vec<f64>,
-    v: &Vec<f64>,
-    short: u8,
-    long: u8,
-) -> Vec<f64> {
+pub fn klinger(h: &[f64], l: &[f64], c: &[f64], v: &[f64], short: u8, long: u8) -> Vec<f64> {
     let vf = vforce(h, l, c, v);
     let short_ma = smooth::ewma(&vf, short);
     let long_ma = smooth::ewma(&vf, long);
@@ -49,7 +42,7 @@ pub fn klinger(
         .collect::<Vec<f64>>()
 }
 
-fn vforce_simple(h: &Vec<f64>, l: &Vec<f64>, c: &Vec<f64>, v: &Vec<f64>) -> Vec<f64> {
+fn vforce_simple(h: &[f64], l: &[f64], c: &[f64], v: &[f64]) -> Vec<f64> {
     izip!(&h[1..], &l[1..], &c[1..], &v[1..])
         .scan((h[0], l[0], c[0], 99), |state, (h, l, c, v)| {
             let trend: i8 = {
@@ -67,14 +60,7 @@ fn vforce_simple(h: &Vec<f64>, l: &Vec<f64>, c: &Vec<f64>, v: &Vec<f64>) -> Vec<
 
 /// klinger volume oscillator
 /// designed to match yahoo
-pub fn klinger_vol(
-    h: &Vec<f64>,
-    l: &Vec<f64>,
-    c: &Vec<f64>,
-    v: &Vec<f64>,
-    short: u8,
-    long: u8,
-) -> Vec<f64> {
+pub fn klinger_vol(h: &[f64], l: &[f64], c: &[f64], v: &[f64], short: u8, long: u8) -> Vec<f64> {
     let vf = vforce_simple(h, l, c, v);
     let short_ma = smooth::ewma(&vf, short);
     let long_ma = smooth::ewma(&vf, long);
@@ -87,7 +73,7 @@ pub fn klinger_vol(
 
 /// quick stick
 /// https://www.investopedia.com/terms/q/qstick.asp
-pub fn qstick(o: &Vec<f64>, c: &Vec<f64>, window: u8) -> Vec<f64> {
+pub fn qstick(o: &[f64], c: &[f64], window: u8) -> Vec<f64> {
     let q = c
         .iter()
         .zip(o.iter())
@@ -99,7 +85,7 @@ pub fn qstick(o: &Vec<f64>, c: &Vec<f64>, window: u8) -> Vec<f64> {
 /// twiggs money flow
 /// https://www.marketvolume.com/technicalanalysis/twiggsmoneyflow.asp
 /// https://www.incrediblecharts.com/indicators/twiggs_money_flow.php
-pub fn twiggs(h: &Vec<f64>, l: &Vec<f64>, c: &Vec<f64>, v: &Vec<f64>, window: u8) -> Vec<f64> {
+pub fn twiggs(h: &[f64], l: &[f64], c: &[f64], v: &[f64], window: u8) -> Vec<f64> {
     let data = izip!(h, l, c, v);
     let ma_range = smooth::wilder(
         &data
@@ -124,7 +110,7 @@ pub fn twiggs(h: &Vec<f64>, l: &Vec<f64>, c: &Vec<f64>, v: &Vec<f64>, window: u8
 
 /// shinohara intensity ratio
 /// https://www.sevendata.co.jp/shihyou/technical/shinohara.html
-pub fn shinohara(h: &Vec<f64>, l: &Vec<f64>, c: &Vec<f64>, period: u8) -> (Vec<f64>, Vec<f64>) {
+pub fn shinohara(h: &[f64], l: &[f64], c: &[f64], period: u8) -> (Vec<f64>, Vec<f64>) {
     // yahoo uses close rather than open for weak ratio described above
     let high = h
         .windows(period.into())
@@ -150,9 +136,9 @@ pub fn shinohara(h: &Vec<f64>, l: &Vec<f64>, c: &Vec<f64>, period: u8) -> (Vec<f
 /// average directional index
 /// https://www.investopedia.com/terms/a/adx.asp
 pub fn adx(
-    h: &Vec<f64>,
-    l: &Vec<f64>,
-    c: &Vec<f64>,
+    h: &[f64],
+    l: &[f64],
+    c: &[f64],
     period: u8,
     smoothing: u8,
 ) -> (Vec<f64>, Vec<f64>, Vec<f64>) {
@@ -194,7 +180,7 @@ pub fn adx(
 
 /// relative strength index
 /// https://www.investopedia.com/terms/r/rsi.asp
-pub fn rsi(values: &Vec<f64>, window: u8) -> Vec<f64> {
+pub fn rsi(values: &[f64], window: u8) -> Vec<f64> {
     let (gain, loss): (Vec<f64>, Vec<f64>) = values[1..]
         .iter()
         .zip(values[..values.len() - 1].iter())
@@ -209,7 +195,7 @@ pub fn rsi(values: &Vec<f64>, window: u8) -> Vec<f64> {
 
 /// moving average convergence/divergence
 /// https://www.investopedia.com/terms/m/macd.asp
-pub fn macd(close: &Vec<f64>, fast: u8, slow: u8) -> Vec<f64> {
+pub fn macd(close: &[f64], fast: u8, slow: u8) -> Vec<f64> {
     let fast_ma = smooth::ewma(close, fast);
     let slow_ma = smooth::ewma(close, slow);
     fast_ma[fast_ma.len() - slow_ma.len()..]
@@ -221,7 +207,7 @@ pub fn macd(close: &Vec<f64>, fast: u8, slow: u8) -> Vec<f64> {
 
 /// chande momentum oscillator
 /// https://www.investopedia.com/terms/c/chandemomentumoscillator.asp
-pub fn cmo(data: &Vec<f64>, window: u8) -> Vec<f64> {
+pub fn cmo(data: &[f64], window: u8) -> Vec<f64> {
     smooth::_cmo(data, window)
         .iter()
         .map(|x| x * 100.0)
@@ -230,7 +216,7 @@ pub fn cmo(data: &Vec<f64>, window: u8) -> Vec<f64> {
 
 /// centre of gravity
 /// https://www.stockmaniacs.net/center-of-gravity-indicator/
-pub fn cog(data: &Vec<f64>, window: u8) -> Vec<f64> {
+pub fn cog(data: &[f64], window: u8) -> Vec<f64> {
     data.windows(window.into())
         .map(|w| {
             -w.iter()
@@ -245,7 +231,7 @@ pub fn cog(data: &Vec<f64>, window: u8) -> Vec<f64> {
 
 /// accumulation/distribution
 /// https://www.investopedia.com/terms/a/accumulationdistribution.asp
-pub fn acc_dist(h: &Vec<f64>, l: &Vec<f64>, c: &Vec<f64>, v: &Vec<f64>) -> Vec<f64> {
+pub fn acc_dist(h: &[f64], l: &[f64], c: &[f64], v: &[f64]) -> Vec<f64> {
     izip!(h, l, c, v)
         .scan(0.0, |state, (high, low, close, vol)| {
             let mfm = ((close - low) - (high - close)) / (high - low);
@@ -259,7 +245,7 @@ pub fn acc_dist(h: &Vec<f64>, l: &Vec<f64>, c: &Vec<f64>, v: &Vec<f64>) -> Vec<f
 
 /// accumulation/distribution
 /// like yahoo
-pub fn acc_dist_yahoo(h: &Vec<f64>, l: &Vec<f64>, c: &Vec<f64>, v: &Vec<f64>) -> Vec<f64> {
+pub fn acc_dist_yahoo(h: &[f64], l: &[f64], c: &[f64], v: &[f64]) -> Vec<f64> {
     izip!(&h[1..], &l[1..], &c[1..], &v[1..])
         .scan((c[0], 0.0), |state, (high, low, close, vol)| {
             let mfm = if *close > state.0 {
@@ -277,7 +263,7 @@ pub fn acc_dist_yahoo(h: &Vec<f64>, l: &Vec<f64>, c: &Vec<f64>, v: &Vec<f64>) ->
 
 /// elder ray
 /// https://www.investopedia.com/articles/trading/03/022603.asp
-pub fn elder_ray(h: &Vec<f64>, l: &Vec<f64>, c: &Vec<f64>, window: u8) -> (Vec<f64>, Vec<f64>) {
+pub fn elder_ray(h: &[f64], l: &[f64], c: &[f64], window: u8) -> (Vec<f64>, Vec<f64>) {
     let close_ma = smooth::ewma(c, window);
     izip!(
         &h[h.len() - close_ma.len()..],
@@ -290,7 +276,7 @@ pub fn elder_ray(h: &Vec<f64>, l: &Vec<f64>, c: &Vec<f64>, window: u8) -> (Vec<f
 
 /// elder force index
 /// https://www.investopedia.com/articles/trading/03/031203.asp
-pub fn elder_force(c: &Vec<f64>, v: &Vec<f64>, window: u8) -> Vec<f64> {
+pub fn elder_force(c: &[f64], v: &[f64], window: u8) -> Vec<f64> {
     smooth::ewma(
         &izip!(&c[..c.len() - 1], &c[1..], &v[1..])
             .map(|(prev, curr, vol)| (curr - prev) * vol)
@@ -301,11 +287,11 @@ pub fn elder_force(c: &Vec<f64>, v: &Vec<f64>, window: u8) -> Vec<f64> {
 
 /// williams alligator
 /// https://www.investopedia.com/articles/trading/072115/exploring-williams-alligator-indicator.asp
-pub fn alligator(data: &Vec<f64>) {}
+pub fn alligator(_data: &[f64]) {}
 
 /// money flow index
 /// https://www.investopedia.com/terms/m/mfi.asp
-pub fn mfi(h: &Vec<f64>, l: &Vec<f64>, c: &Vec<f64>, v: &Vec<f64>, window: u8) -> Vec<f64> {
+pub fn mfi(h: &[f64], l: &[f64], c: &[f64], v: &[f64], window: u8) -> Vec<f64> {
     let (pos_mf, neg_mf): (Vec<f64>, Vec<f64>) = izip!(&h[1..], &l[1..], &c[1..], &v[1..])
         .scan(
             (h[0] + l[0] + c[0]) / 3.0,
