@@ -31,6 +31,7 @@ fn main() {
     let _ = indicator::acc_dist(&stats.high, &stats.low, &stats.close, &stats.volume);
     let _ = indicator::acc_dist_yahoo(&stats.high, &stats.low, &stats.close, &stats.volume);
     let _ = indicator::elder_ray(&stats.high, &stats.low, &stats.close, 13);
+    let _ = indicator::elder_force(&stats.close, &stats.volume, 13);
     let _ = indicator::mfi(&stats.high, &stats.low, &stats.close, &stats.volume, 13);
 
     let _ = smooth::vma(&stats.close, 10);
