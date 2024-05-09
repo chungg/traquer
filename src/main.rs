@@ -13,19 +13,16 @@ struct SecStats {
 }
 
 fn main() {
-    let data = fs::read_to_string("./aapl.input").expect("Unable to read file");
+    let data = fs::read_to_string("./rddt.input").expect("Unable to read file");
 
     let stats: SecStats = serde_json::from_str(&data).expect("JSON does not have correct format.");
 
-    let _ = indicator::klinger(&stats.high, &stats.low, &stats.close, &stats.volume, 34, 55);
-    let _ = indicator::klinger_vol(&stats.high, &stats.low, &stats.close, &stats.volume, 34, 55);
-    let _ = indicator::qstick(&stats.open, &stats.close, 13);
+    let _ = indicator::klinger(&stats.high, &stats.low, &stats.close, &stats.volume, 13, 21);
+    let _ = indicator::klinger_vol(&stats.high, &stats.low, &stats.close, &stats.volume, 13, 21);
     let _ = indicator::twiggs(&stats.high, &stats.low, &stats.close, &stats.volume, 21);
     let _ = indicator::shinohara(&stats.high, &stats.low, &stats.close, 26);
-    let _ = indicator::adx(&stats.high, &stats.low, &stats.close, 14, 14);
     let _ = indicator::rsi(&stats.close, 14);
     let _ = indicator::macd(&stats.close, 12, 26);
-    let _ = indicator::adx(&stats.high, &stats.low, &stats.close, 14, 14);
     let _ = indicator::cmo(&stats.close, 10);
     let _ = indicator::cog(&stats.close, 10);
     let _ = indicator::acc_dist(&stats.high, &stats.low, &stats.close, &stats.volume);
