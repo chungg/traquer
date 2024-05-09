@@ -47,7 +47,7 @@ pub fn wma(data: &[f64], window: u8) -> Vec<f64> {
 }
 
 /// welles wilder's moving average
-pub fn wilder(data: &Vec<f64>, window: u8) -> Vec<f64> {
+pub fn wilder(data: &[f64], window: u8) -> Vec<f64> {
     data[window as usize..]
         .iter()
         .scan(
@@ -62,9 +62,9 @@ pub fn wilder(data: &Vec<f64>, window: u8) -> Vec<f64> {
 }
 
 /// hull's moving average
-pub fn hull(data: &Vec<f64>, window: u8) -> Vec<f64> {
-    let ma = wma(&data, window);
-    let ma2 = wma(&data, u8::div_ceil(window, 2));
+pub fn hull(data: &[f64], window: u8) -> Vec<f64> {
+    let ma = wma(data, window);
+    let ma2 = wma(data, u8::div_ceil(window, 2));
     wma(
         &ma2[(ma2.len() - ma.len())..]
             .iter()
@@ -76,7 +76,7 @@ pub fn hull(data: &Vec<f64>, window: u8) -> Vec<f64> {
 }
 
 /// standard deviation
-fn std_dev(data: &Vec<f64>, window: u8) -> Vec<f64> {
+fn std_dev(data: &[f64], window: u8) -> Vec<f64> {
     data.windows(window.into())
         .map(|w| {
             let mean = w.iter().sum::<f64>() / window as f64;
@@ -86,7 +86,7 @@ fn std_dev(data: &Vec<f64>, window: u8) -> Vec<f64> {
 }
 
 /// volatility index dynamic average (vidya)
-pub fn vidya(data: &Vec<f64>, window: u8) -> Vec<f64> {
+pub fn vidya(data: &[f64], window: u8) -> Vec<f64> {
     let alpha = 2.0 / (window + 1) as f64;
     let std5 = std_dev(data, 5);
     let std20 = sma(&std5, 20);
@@ -103,7 +103,7 @@ pub fn vidya(data: &Vec<f64>, window: u8) -> Vec<f64> {
 }
 
 /// chande momentum oscillator
-pub(crate) fn _cmo(data: &Vec<f64>, window: u8) -> Vec<f64> {
+pub(crate) fn _cmo(data: &[f64], window: u8) -> Vec<f64> {
     let (gain, loss): (Vec<f64>, Vec<f64>) = data[..data.len() - 1]
         .iter()
         .zip(data[1..].iter())
@@ -120,7 +120,7 @@ pub(crate) fn _cmo(data: &Vec<f64>, window: u8) -> Vec<f64> {
 }
 
 /// variable moving average (vma)
-pub fn vma(data: &Vec<f64>, window: u8) -> Vec<f64> {
+pub fn vma(data: &[f64], window: u8) -> Vec<f64> {
     let alpha = 2.0 / (window + 1) as f64;
     let vi = _cmo(data, 9); // maybe make this configurable?
     izip!(&vi, &data[data.len() - vi.len()..])
