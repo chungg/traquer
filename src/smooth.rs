@@ -1,18 +1,16 @@
 use itertools::izip;
+use std::iter;
 
 /// exponentially weighted moving average
 pub fn ewma(data: &[f64], window: u8) -> Vec<f64> {
     let initial = data[..window as usize].iter().sum::<f64>() / window as f64;
     let alpha = 2.0 / (window + 1) as f64;
-    let mut result = data[window as usize..]
-        .iter()
-        .scan(initial, |state, &x| {
+    iter::once(initial)
+        .chain(data[window as usize..].iter().scan(initial, |state, &x| {
             *state = x * alpha + *state * (1.0 - alpha);
             Some(*state)
-        })
-        .collect::<Vec<f64>>();
-    result.insert(0, initial);
-    result
+        }))
+        .collect::<Vec<f64>>()
 }
 
 /// simple moving average
@@ -48,16 +46,13 @@ pub fn wma(data: &[f64], window: u8) -> Vec<f64> {
 
 /// welles wilder's moving average
 pub fn wilder(data: &[f64], window: u8) -> Vec<f64> {
-    data[window as usize..]
-        .iter()
-        .scan(
-            data[..window as usize].iter().sum::<f64>() / window as f64,
-            |state, x| {
-                let ma = (*state * (window - 1) as f64 + x) / window as f64;
-                *state = ma;
-                Some(ma)
-            },
-        )
+    let initial = data[..window as usize].iter().sum::<f64>() / window as f64;
+    iter::once(initial)
+        .chain(data[window as usize..].iter().scan(initial, |state, x| {
+            let ma = (*state * (window - 1) as f64 + x) / window as f64;
+            *state = ma;
+            Some(ma)
+        }))
         .collect::<Vec<f64>>()
 }
 
