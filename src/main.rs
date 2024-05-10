@@ -31,8 +31,5 @@ fn main() {
     let _ = indicator::elder_force(&stats.close, &stats.volume, 13);
     let _ = indicator::mfi(&stats.high, &stats.low, &stats.close, &stats.volume, 13);
 
-    let _ = smooth::vma(&stats.close, 10);
-    let _ = smooth::vidya(&stats.close, 10);
-    let _ = smooth::hull(&stats.close, 10);
-    let _ = smooth::dema(&stats.close, 10);
+    let _ = smooth::wilder(&stats.close, 15);
 }
