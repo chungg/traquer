@@ -33,7 +33,7 @@ pub fn dema(data: &[f64], window: u8) -> Vec<f64> {
 
 /// weighted moving average
 pub fn wma(data: &[f64], window: u8) -> Vec<f64> {
-    let denom = (u8::pow(window, 2) + window) as f64 / 2.0;
+    let denom = (u64::pow(window as u64, 2) + window as u64) as f64 / 2.0;
     data.windows(window.into())
         .map(|w| {
             w.iter()
@@ -123,5 +123,6 @@ pub fn vma(data: &[f64], window: u8) -> Vec<f64> {
             *state = alpha * vi.abs() * (d - *state) + *state;
             Some(*state)
         })
+        .skip((u8::max(9, window) - 9).into())
         .collect::<Vec<f64>>()
 }
