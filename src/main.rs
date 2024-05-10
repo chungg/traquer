@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::fs;
 
-use signals::{indicator, smooth};
+use traquer::{indicator, smooth};
 
 #[derive(Deserialize, Serialize, Debug)]
 struct SecStats {

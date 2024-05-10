@@ -1,4 +1,4 @@
-use signals::indicator;
+use traquer::indicator;
 
 mod common;
 

@@ -1,6 +1,6 @@
 //use criterion::{black_box, criterion_group, criterion_main, Criterion};
 //
-//use signals::*;
+//use traquer::*;
 //
 //pub fn criterion_benchmark(c: &mut Criterion) {
 //    c.bench_function("fib 20", |b| b.iter(|| black_box(main())));
@@ -11,7 +11,7 @@
 
 #[divan::bench]
 fn run() {
-    divan::black_box(signals::main());
+    divan::black_box(traquer::main());
 }
 
 fn main() {
