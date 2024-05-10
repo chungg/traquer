@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::fs;
 
-use traquer::{indicator, smooth};
+use traquer::indicator;
 
 #[derive(Deserialize, Serialize, Debug)]
 struct SecStats {
@@ -13,23 +13,13 @@ struct SecStats {
 }
 
 fn main() {
-    let data = fs::read_to_string("./rddt.input").expect("Unable to read file");
-
+    let data = fs::read_to_string("./tests/rddt.input").expect("Unable to read file");
     let stats: SecStats = serde_json::from_str(&data).expect("JSON does not have correct format.");
 
-    let _ = indicator::klinger(&stats.high, &stats.low, &stats.close, &stats.volume, 13, 21);
-    let _ = indicator::klinger_vol(&stats.high, &stats.low, &stats.close, &stats.volume, 13, 21);
-    let _ = indicator::twiggs(&stats.high, &stats.low, &stats.close, &stats.volume, 21);
-    let _ = indicator::shinohara(&stats.high, &stats.low, &stats.close, 26);
-    let _ = indicator::rsi(&stats.close, 14);
-    let _ = indicator::macd(&stats.close, 12, 26);
-    let _ = indicator::cmo(&stats.close, 10);
-    let _ = indicator::cog(&stats.close, 10);
-    let _ = indicator::acc_dist(&stats.high, &stats.low, &stats.close, &stats.volume);
-    let _ = indicator::acc_dist_yahoo(&stats.high, &stats.low, &stats.close, &stats.volume);
-    let _ = indicator::elder_ray(&stats.high, &stats.low, &stats.close, 13);
-    let _ = indicator::elder_force(&stats.close, &stats.volume, 13);
-    let _ = indicator::mfi(&stats.high, &stats.low, &stats.close, &stats.volume, 13);
-
-    let _ = smooth::wilder(&stats.close, 15);
+    dbg!(indicator::ad_yahoo(
+        &stats.high,
+        &stats.low,
+        &stats.close,
+        &stats.volume
+    ));
 }

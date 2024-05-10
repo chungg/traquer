@@ -102,7 +102,7 @@ pub(crate) fn _cmo(data: &[f64], window: u8) -> Vec<f64> {
     let (gain, loss): (Vec<f64>, Vec<f64>) = data[..data.len() - 1]
         .iter()
         .zip(data[1..].iter())
-        .map(|(x, y)| (f64::max(0.0, x - y), f64::max(0.0, y - x)))
+        .map(|(x, y)| (f64::max(0.0, y - x), f64::max(0.0, x - y)))
         .unzip();
     gain.windows(window.into())
         .zip(loss.windows(window.into()))
