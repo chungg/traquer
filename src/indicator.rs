@@ -4,46 +4,6 @@ use crate::smooth;
 
 fn vforce(h: &[f64], l: &[f64], c: &[f64], v: &[f64]) -> Vec<f64> {
     izip!(&h[1..], &l[1..], &c[1..], &v[1..])
-        .scan(
-            (h[0], l[0], c[0], 99, 0.0, h[0] - l[0]),
-            |state, (h, l, c, v)| {
-                let trend: i8 = {
-                    if h + l + c > state.0 + state.1 + state.2 {
-                        1
-                    } else {
-                        -1
-                    }
-                };
-                let dm: f64 = h - l;
-                let cm: f64 = {
-                    if trend == state.3 {
-                        state.4 + dm
-                    } else {
-                        state.5 + dm
-                    }
-                };
-                *state = (*h, *l, *c, trend, cm, dm);
-                Some(v * 2.0 * ((dm / cm) - 1.0) * trend as f64 * 100.0)
-            },
-        )
-        .collect::<Vec<f64>>()
-}
-
-///  klinger oscillator
-///  https://www.investopedia.com/terms/k/klingeroscillator.asp
-pub fn klinger(h: &[f64], l: &[f64], c: &[f64], v: &[f64], short: u8, long: u8) -> Vec<f64> {
-    let vf = vforce(h, l, c, v);
-    let short_ma = smooth::ewma(&vf, short);
-    let long_ma = smooth::ewma(&vf, long);
-    short_ma[short_ma.len() - long_ma.len()..]
-        .iter()
-        .zip(long_ma)
-        .map(|(x, y)| x - y)
-        .collect::<Vec<f64>>()
-}
-
-fn vforce_simple(h: &[f64], l: &[f64], c: &[f64], v: &[f64]) -> Vec<f64> {
-    izip!(&h[1..], &l[1..], &c[1..], &v[1..])
         .scan((h[0], l[0], c[0], 99), |state, (h, l, c, v)| {
             let trend: i8 = {
                 if h + l + c > state.0 + state.1 + state.2 {
@@ -59,9 +19,9 @@ fn vforce_simple(h: &[f64], l: &[f64], c: &[f64], v: &[f64]) -> Vec<f64> {
 }
 
 /// klinger volume oscillator
-/// designed to match yahoo
-pub fn klinger_vol(h: &[f64], l: &[f64], c: &[f64], v: &[f64], short: u8, long: u8) -> Vec<f64> {
-    let vf = vforce_simple(h, l, c, v);
+/// different from formula defined by https://www.investopedia.com/terms/k/klingeroscillator.asp
+pub fn kvo(h: &[f64], l: &[f64], c: &[f64], v: &[f64], short: u8, long: u8) -> Vec<f64> {
+    let vf = vforce(h, l, c, v);
     let short_ma = smooth::ewma(&vf, short);
     let long_ma = smooth::ewma(&vf, long);
     short_ma[short_ma.len() - long_ma.len()..]
@@ -82,28 +42,38 @@ pub fn qstick(o: &[f64], c: &[f64], window: u8) -> Vec<f64> {
     smooth::ewma(&q, window)
 }
 
+fn wilder_sum(data: &[f64], window: u8) -> Vec<f64> {
+    let initial = data[..(window - 1) as usize].iter().sum::<f64>();
+    data[(window - 1) as usize..]
+        .iter()
+        .scan(initial, |state, x| {
+            let ma = *state * (window - 1) as f64 / window as f64 + x;
+            *state = ma;
+            Some(ma)
+        })
+        .collect::<Vec<f64>>()
+}
+
 /// twiggs money flow
 /// https://www.marketvolume.com/technicalanalysis/twiggsmoneyflow.asp
 /// https://www.incrediblecharts.com/indicators/twiggs_money_flow.php
 pub fn twiggs(h: &[f64], l: &[f64], c: &[f64], v: &[f64], window: u8) -> Vec<f64> {
-    let data = izip!(h, l, c, v);
-    let ma_range = smooth::wilder(
+    let data = izip!(&h[1..], &l[1..], &c[1..], &v[1..]);
+    // not using wilder moving average to minimise drift caused by floating point math
+    let ad = wilder_sum(
         &data
-            .scan(f64::NAN, |state, (high, low, close, vol)| {
+            .scan(c[0], |state, (high, low, close, vol)| {
                 let range_vol = vol
-                    * ((close - f64::min(*low, *state))
-                        / (f64::max(*high, *state) - f64::min(*low, *state))
-                        * 2.0
-                        - 1.0);
+                    * ((2.0 * close - f64::min(*low, *state) - f64::max(*high, *state))
+                        / (f64::max(*high, *state) - f64::min(*low, *state)));
                 *state = *close;
                 Some(range_vol)
             })
             .collect::<Vec<f64>>(),
         window,
     );
-    ma_range
-        .iter()
-        .zip(smooth::wilder(v, window).iter())
+    ad.iter()
+        .zip(wilder_sum(&v[1..], window).iter())
         .map(|(range, vol)| range / vol)
         .collect()
 }
@@ -111,7 +81,6 @@ pub fn twiggs(h: &[f64], l: &[f64], c: &[f64], v: &[f64], window: u8) -> Vec<f64
 /// shinohara intensity ratio
 /// https://www.sevendata.co.jp/shihyou/technical/shinohara.html
 pub fn shinohara(h: &[f64], l: &[f64], c: &[f64], period: u8) -> (Vec<f64>, Vec<f64>) {
-    // yahoo uses close rather than open for weak ratio described above
     let high = h
         .windows(period.into())
         .map(|w| w.iter().sum())
@@ -124,6 +93,7 @@ pub fn shinohara(h: &[f64], l: &[f64], c: &[f64], period: u8) -> (Vec<f64>, Vec<
         .windows(period.into())
         .map(|w| w.iter().sum())
         .collect::<Vec<f64>>();
+    // yahoo uses close rather than open for weak ratio described above
     let weak_ratio = izip!(&high, &low, &close)
         .map(|(h, l, c)| 100.0 * (h - c) / (c - l))
         .collect::<Vec<f64>>();
@@ -231,7 +201,7 @@ pub fn cog(data: &[f64], window: u8) -> Vec<f64> {
 
 /// accumulation/distribution
 /// https://www.investopedia.com/terms/a/accumulationdistribution.asp
-pub fn acc_dist(h: &[f64], l: &[f64], c: &[f64], v: &[f64]) -> Vec<f64> {
+pub fn ad(h: &[f64], l: &[f64], c: &[f64], v: &[f64]) -> Vec<f64> {
     izip!(h, l, c, v)
         .scan(0.0, |state, (high, low, close, vol)| {
             let mfm = ((close - low) - (high - close)) / (high - low);
@@ -245,7 +215,7 @@ pub fn acc_dist(h: &[f64], l: &[f64], c: &[f64], v: &[f64]) -> Vec<f64> {
 
 /// accumulation/distribution
 /// like yahoo
-pub fn acc_dist_yahoo(h: &[f64], l: &[f64], c: &[f64], v: &[f64]) -> Vec<f64> {
+pub fn ad_yahoo(h: &[f64], l: &[f64], c: &[f64], v: &[f64]) -> Vec<f64> {
     izip!(&h[1..], &l[1..], &c[1..], &v[1..])
         .scan((c[0], 0.0), |state, (high, low, close, vol)| {
             let mfm = if *close > state.0 {
@@ -263,6 +233,7 @@ pub fn acc_dist_yahoo(h: &[f64], l: &[f64], c: &[f64], v: &[f64]) -> Vec<f64> {
 
 /// elder ray
 /// https://www.investopedia.com/articles/trading/03/022603.asp
+/// returns tuple of bull power vec and bear power vec
 pub fn elder_ray(h: &[f64], l: &[f64], c: &[f64], window: u8) -> (Vec<f64>, Vec<f64>) {
     let close_ma = smooth::ewma(c, window);
     izip!(
