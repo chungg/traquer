@@ -283,3 +283,31 @@ pub fn mfi(h: &[f64], l: &[f64], c: &[f64], v: &[f64], window: u8) -> Vec<f64> {
         })
         .collect::<Vec<f64>>()
 }
+
+/// chaikin money flow
+/// https://corporatefinanceinstitute.com/resources/equities/chaikin-money-flow-cmf/
+pub fn cmf(h: &[f64], l: &[f64], c: &[f64], v: &[f64], window: u8) -> Vec<f64> {
+    izip!(h, l, c, v)
+        .map(|(high, low, close, vol)| vol * ((close - low) - (high - close)) / (high - low))
+        .collect::<Vec<f64>>()
+        .windows(window.into())
+        .zip(v.windows(window.into()))
+        .map(|(mfv_win, v_win)| mfv_win.iter().sum::<f64>() / v_win.iter().sum::<f64>())
+        .collect::<Vec<f64>>()
+}
+
+/// chaikin volatility
+/// https://www.tradingview.com/chart/AUDUSD/gjfxqWqW-What-Is-a-Chaikin-Volatility-Indicator-in-Trading/
+/// https://theforexgeek.com/chaikins-volatility-indicator/
+pub fn cvi(h: &[f64], l: &[f64], window: u8, rate_of_change: u8) -> Vec<f64> {
+    smooth::ewma(
+        &h.iter()
+            .zip(l)
+            .map(|(high, low)| high - low)
+            .collect::<Vec<f64>>(),
+        window,
+    )
+    .windows((rate_of_change + 1).into())
+    .map(|w| 100.0 * (w.last().unwrap() / w.first().unwrap() - 1.0))
+    .collect::<Vec<f64>>()
+}
