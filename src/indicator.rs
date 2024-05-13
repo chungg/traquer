@@ -370,3 +370,55 @@ pub fn po(data: &[f64], short: u8, long: u8) -> Vec<f64> {
         .map(|(x, y)| 100.0 * (x / y - 1.0))
         .collect::<Vec<f64>>()
 }
+
+/// vertical horizontal filter
+/// https://www.upcomingtrader.com/blog/the-vertical-horizontal-filter-a-traders-guide-to-market-phases/
+pub fn vhf(h: &[f64], l: &[f64], c: &[f64], window: u8) -> Vec<f64> {
+    let diffs = &c[1..]
+        .iter()
+        .zip(&c[..c.len() - 1])
+        .map(|(curr, prev)| (curr - prev).abs())
+        .collect::<Vec<f64>>();
+    izip!(
+        diffs.windows(window.into()),
+        h.windows(window.into()).skip(1),
+        l.windows(window.into()).skip(1)
+    )
+    .map(|(diff, highs, lows)| {
+        (highs.iter().fold(f64::NAN, |state, &x| state.max(x))
+            - lows.iter().fold(f64::NAN, |state, &x| state.min(x)))
+            / diff.iter().sum::<f64>()
+    })
+    .collect::<Vec<f64>>()
+}
+
+/// ultimate oscillator
+/// https://www.investopedia.com/terms/u/ultimateoscillator.asp
+pub fn ultimate(h: &[f64], l: &[f64], c: &[f64], win1: u8, win2: u8, win3: u8) -> Vec<f64> {
+    let bp_tr_vals = izip!(&h[1..], &l[1..], &c[..c.len() - 1], &c[1..],)
+        .map(|(h, l, prevc, c)| {
+            (
+                c - f64::min(*l, *prevc),
+                f64::max(*h, *prevc) - f64::min(*l, *prevc),
+            )
+        })
+        .collect::<Vec<(f64, f64)>>();
+    bp_tr_vals
+        .windows(win3.into())
+        .map(|w| {
+            let (bp_sum1, tr_sum1) = w
+                .iter()
+                .skip((win3 - win1).into())
+                .fold((0.0, 0.0), |acc, (bp, tr)| (acc.0 + bp, acc.1 + tr));
+            let (bp_sum2, tr_sum2) = w
+                .iter()
+                .skip((win3 - win2).into())
+                .fold((0.0, 0.0), |acc, (bp, tr)| (acc.0 + bp, acc.1 + tr));
+            let (bp_sum3, tr_sum3) = w
+                .iter()
+                .fold((0.0, 0.0), |acc, (bp, tr)| (acc.0 + bp, acc.1 + tr));
+            100.0 * (bp_sum1 / tr_sum1 * 4.0 + bp_sum2 / tr_sum2 * 2.0 + bp_sum3 / tr_sum3)
+                / (4 + 2 + 1) as f64
+        })
+        .collect::<Vec<f64>>()
+}
