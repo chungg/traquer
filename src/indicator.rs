@@ -311,3 +311,62 @@ pub fn cvi(h: &[f64], l: &[f64], window: u8, rate_of_change: u8) -> Vec<f64> {
     .map(|w| 100.0 * (w.last().unwrap() / w.first().unwrap() - 1.0))
     .collect::<Vec<f64>>()
 }
+
+/// Williams Percent Range
+/// https://www.investopedia.com/terms/w/williamsr.asp
+pub fn wpr(h: &[f64], l: &[f64], c: &[f64], window: u8) -> Vec<f64> {
+    izip!(
+        h.windows(window.into()),
+        l.windows(window.into()),
+        &c[(window - 1).into()..]
+    )
+    .map(|(high, low, close)| {
+        let hh = high.iter().fold(f64::NAN, |state, &x| state.max(x));
+        let ll = low.iter().fold(f64::NAN, |state, &x| state.min(x));
+        -100.0 * ((hh - close) / (hh - ll))
+    })
+    .collect::<Vec<f64>>()
+}
+
+/// vortex
+/// https://www.investopedia.com/terms/v/vortex-indicator-vi.asp
+pub fn vortex(h: &[f64], l: &[f64], c: &[f64], window: u8) -> (Vec<f64>, Vec<f64>) {
+    izip!(
+        &h[..h.len() - 1],
+        &h[1..],
+        &l[..l.len() - 1],
+        &l[1..],
+        &c[..c.len() - 1],
+    )
+    .map(|(prevh, h, prevl, l, prevc)| {
+        let vm_pos = (h - prevl).abs();
+        let vm_neg = (l - prevh).abs();
+        let tr = (h - l).max(f64::abs(h - prevc)).max(f64::abs(l - prevc));
+        (vm_pos, vm_neg, tr)
+    })
+    .collect::<Vec<(f64, f64, f64)>>()
+    .windows(window.into())
+    .map(|w| {
+        let (vm_pos, vm_neg, tr) = w
+            .iter()
+            .copied()
+            .reduce(|(acc_pos, acc_neg, acc_tr), (pos, neg, tr)| {
+                (acc_pos + pos, acc_neg + neg, acc_tr + tr)
+            })
+            .unwrap();
+        (vm_pos / tr, vm_neg / tr)
+    })
+    .unzip()
+}
+
+/// percent oscillator
+/// pass in any data (close, high, low, etc...), and two window ranges
+pub fn po(data: &[f64], short: u8, long: u8) -> Vec<f64> {
+    let short_ma = smooth::ewma(data, short);
+    let long_ma = smooth::ewma(data, long);
+    short_ma[short_ma.len() - long_ma.len()..]
+        .iter()
+        .zip(long_ma)
+        .map(|(x, y)| 100.0 * (x / y - 1.0))
+        .collect::<Vec<f64>>()
+}
