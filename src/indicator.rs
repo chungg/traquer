@@ -466,3 +466,56 @@ pub fn pgo(high: &[f64], low: &[f64], close: &[f64], window: u8) -> Vec<f64> {
     .map(|(c, c_ma, tr_ma)| (c - c_ma) / tr_ma)
     .collect::<Vec<f64>>()
 }
+
+fn _swing<'a>(
+    open: &'a [f64],
+    high: &'a [f64],
+    low: &'a [f64],
+    close: &'a [f64],
+    limit: f64,
+) -> impl Iterator<Item = f64> + 'a {
+    izip!(
+        &open[..open.len() - 1],
+        &open[1..],
+        &high[1..],
+        &low[1..],
+        &close[..close.len() - 1],
+        &close[1..],
+    )
+    .map(move |(prevo, o, h, l, prevc, c)| {
+        let r1 = (h - prevc).abs();
+        let r2 = (l - prevc).abs();
+        let r3 = h - l;
+        let r4 = (prevc - prevo).abs() / 4.0;
+        let max_r = r1.max(r2).max(r3);
+        let r = if r1 == max_r {
+            r1 - r2 / 2.0 + r4
+        } else if r2 == max_r {
+            r2 - r1 / 2.0 + r4
+        } else {
+            r3 + r4
+        };
+        // does not use formula described in investopedia as it appears to be wrong?
+        // it seems to overweight previous period's values
+        ((c - prevc + (c - o) / 2.0 + (prevc - prevo) / 4.0) / r) * 50.0 * r1.max(r2) / limit
+    })
+}
+
+/// Swing Index
+/// https://www.investopedia.com/terms/a/asi.asp
+/// https://quantstrategy.io/blog/accumulative-swing-index-how-to-trade/
+pub fn si(open: &[f64], high: &[f64], low: &[f64], close: &[f64], limit: f64) -> Vec<f64> {
+    _swing(open, high, low, close, limit).collect::<Vec<f64>>()
+}
+
+/// Accumulative Swing Index
+/// https://www.investopedia.com/terms/a/asi.asp
+/// https://quantstrategy.io/blog/accumulative-swing-index-how-to-trade/
+pub fn asi(open: &[f64], high: &[f64], low: &[f64], close: &[f64], limit: f64) -> Vec<f64> {
+    _swing(open, high, low, close, limit)
+        .scan(0.0, |acc, x| {
+            *acc += x;
+            Some(*acc)
+        })
+        .collect::<Vec<f64>>()
+}
