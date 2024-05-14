@@ -161,10 +161,10 @@ pub fn adx(
 
 /// relative strength index
 /// https://www.investopedia.com/terms/r/rsi.asp
-pub fn rsi(values: &[f64], window: u8) -> Vec<f64> {
-    let (gain, loss): (Vec<f64>, Vec<f64>) = values[1..]
+pub fn rsi(data: &[f64], window: u8) -> Vec<f64> {
+    let (gain, loss): (Vec<f64>, Vec<f64>) = data[1..]
         .iter()
-        .zip(values[..values.len() - 1].iter())
+        .zip(data[..data.len() - 1].iter())
         .map(|(curr, prev)| (f64::max(0.0, curr - prev), f64::min(0.0, curr - prev).abs()))
         .unzip();
     smooth::wilder(&gain, window)
@@ -518,4 +518,24 @@ pub fn asi(open: &[f64], high: &[f64], low: &[f64], close: &[f64], limit: f64) -
             Some(*acc)
         })
         .collect::<Vec<f64>>()
+}
+
+/// Ulcer Index
+/// https://en.wikipedia.org/wiki/Ulcer_index
+pub fn ulcer(data: &[f64], window: u8) -> Vec<f64> {
+    let highest = data
+        .windows(window.into())
+        .map(|w| w.iter().fold(f64::NAN, |state, &x| state.max(x)))
+        .collect::<Vec<f64>>();
+    smooth::sma(
+        &highest
+            .iter()
+            .zip(&data[data.len() - highest.len()..])
+            .map(|(high, c)| (100.0 * (c - high) / high).powi(2))
+            .collect::<Vec<f64>>(),
+        window,
+    )
+    .iter()
+    .map(|x| x.sqrt())
+    .collect::<Vec<f64>>()
 }
