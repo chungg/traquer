@@ -422,3 +422,22 @@ pub fn ultimate(h: &[f64], l: &[f64], c: &[f64], win1: u8, win2: u8, win3: u8) -
         })
         .collect::<Vec<f64>>()
 }
+
+/// pretty good oscillator
+/// https://library.tradingtechnologies.com/trade/chrt-ti-pretty-good-oscillator.html
+pub fn pgo(h: &[f64], l: &[f64], c: &[f64], window: u8) -> Vec<f64> {
+    let atr = smooth::ewma(
+        &izip!(&h[1..], &l[1..], &c[..c.len() - 1])
+            .map(|(h, l, prevc)| (h - l).max(f64::abs(h - prevc)).max(f64::abs(l - prevc)))
+            .collect::<Vec<f64>>(),
+        window,
+    );
+    let sma_close = smooth::sma(c, window);
+    izip!(
+        &c[c.len() - atr.len()..],
+        &sma_close[sma_close.len() - atr.len()..],
+        atr
+    )
+    .map(|(c, c_ma, tr_ma)| (c - c_ma) / tr_ma)
+    .collect::<Vec<f64>>()
+}
