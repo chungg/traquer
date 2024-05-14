@@ -2,9 +2,9 @@ use itertools::{izip, multiunzip};
 
 use crate::smooth;
 
-fn vforce(h: &[f64], l: &[f64], c: &[f64], v: &[f64]) -> Vec<f64> {
-    izip!(&h[1..], &l[1..], &c[1..], &v[1..])
-        .scan((h[0], l[0], c[0], 99), |state, (h, l, c, v)| {
+fn vforce(high: &[f64], low: &[f64], close: &[f64], volume: &[f64]) -> Vec<f64> {
+    izip!(&high[1..], &low[1..], &close[1..], &volume[1..])
+        .scan((high[0], low[0], close[0], 99), |state, (h, l, c, v)| {
             let trend: i8 = {
                 if h + l + c > state.0 + state.1 + state.2 {
                     1
@@ -20,8 +20,15 @@ fn vforce(h: &[f64], l: &[f64], c: &[f64], v: &[f64]) -> Vec<f64> {
 
 /// klinger volume oscillator
 /// different from formula defined by https://www.investopedia.com/terms/k/klingeroscillator.asp
-pub fn kvo(h: &[f64], l: &[f64], c: &[f64], v: &[f64], short: u8, long: u8) -> Vec<f64> {
-    let vf = vforce(h, l, c, v);
+pub fn kvo(
+    high: &[f64],
+    low: &[f64],
+    close: &[f64],
+    volume: &[f64],
+    short: u8,
+    long: u8,
+) -> Vec<f64> {
+    let vf = vforce(high, low, close, volume);
     let short_ma = smooth::ewma(&vf, short);
     let long_ma = smooth::ewma(&vf, long);
     short_ma[short_ma.len() - long_ma.len()..]
@@ -33,11 +40,11 @@ pub fn kvo(h: &[f64], l: &[f64], c: &[f64], v: &[f64], short: u8, long: u8) -> V
 
 /// quick stick
 /// https://www.investopedia.com/terms/q/qstick.asp
-pub fn qstick(o: &[f64], c: &[f64], window: u8) -> Vec<f64> {
-    let q = c
+pub fn qstick(open: &[f64], close: &[f64], window: u8) -> Vec<f64> {
+    let q = close
         .iter()
-        .zip(o.iter())
-        .map(|(close, open)| close - open)
+        .zip(open.iter())
+        .map(|(c, o)| c - o)
         .collect::<Vec<f64>>();
     smooth::ewma(&q, window)
 }
@@ -57,68 +64,72 @@ fn wilder_sum(data: &[f64], window: u8) -> Vec<f64> {
 /// twiggs money flow
 /// https://www.marketvolume.com/technicalanalysis/twiggsmoneyflow.asp
 /// https://www.incrediblecharts.com/indicators/twiggs_money_flow.php
-pub fn twiggs(h: &[f64], l: &[f64], c: &[f64], v: &[f64], window: u8) -> Vec<f64> {
-    let data = izip!(&h[1..], &l[1..], &c[1..], &v[1..]);
+pub fn twiggs(high: &[f64], low: &[f64], close: &[f64], volume: &[f64], window: u8) -> Vec<f64> {
+    let data = izip!(&high[1..], &low[1..], &close[1..], &volume[1..]);
     // not using wilder moving average to minimise drift caused by floating point math
     let ad = wilder_sum(
         &data
-            .scan(c[0], |state, (high, low, close, vol)| {
+            .scan(close[0], |state, (h, l, c, vol)| {
                 let range_vol = vol
-                    * ((2.0 * close - f64::min(*low, *state) - f64::max(*high, *state))
-                        / (f64::max(*high, *state) - f64::min(*low, *state)));
-                *state = *close;
+                    * ((2.0 * c - f64::min(*l, *state) - f64::max(*h, *state))
+                        / (f64::max(*h, *state) - f64::min(*l, *state)));
+                *state = *c;
                 Some(range_vol)
             })
             .collect::<Vec<f64>>(),
         window,
     );
     ad.iter()
-        .zip(wilder_sum(&v[1..], window).iter())
+        .zip(wilder_sum(&volume[1..], window).iter())
         .map(|(range, vol)| range / vol)
         .collect()
 }
 
 /// shinohara intensity ratio
 /// https://www.sevendata.co.jp/shihyou/technical/shinohara.html
-pub fn shinohara(h: &[f64], l: &[f64], c: &[f64], period: u8) -> (Vec<f64>, Vec<f64>) {
-    let high = h
+pub fn shinohara(high: &[f64], low: &[f64], close: &[f64], period: u8) -> (Vec<f64>, Vec<f64>) {
+    let high_win = high
         .windows(period.into())
         .map(|w| w.iter().sum())
         .collect::<Vec<f64>>();
-    let low = l
+    let low_win = low
         .windows(period.into())
         .map(|w| w.iter().sum())
         .collect::<Vec<f64>>();
-    let close = c
+    let close_win = close
         .windows(period.into())
         .map(|w| w.iter().sum())
         .collect::<Vec<f64>>();
     // yahoo uses close rather than open for weak ratio described above
-    let weak_ratio = izip!(&high, &low, &close)
+    let weak_ratio = izip!(&high_win, &low_win, &close_win)
         .map(|(h, l, c)| 100.0 * (h - c) / (c - l))
         .collect::<Vec<f64>>();
-    let strong_ratio = izip!(&high[1..], &low[1..], &close[..close.len() - 1])
-        .map(|(h, l, c)| 100.0 * (h - c) / (c - l))
-        .collect::<Vec<f64>>();
+    let strong_ratio = izip!(
+        &high_win[1..],
+        &low_win[1..],
+        &close_win[..close_win.len() - 1]
+    )
+    .map(|(h, l, c)| 100.0 * (h - c) / (c - l))
+    .collect::<Vec<f64>>();
     (strong_ratio, weak_ratio)
 }
 
 /// average directional index
 /// https://www.investopedia.com/terms/a/adx.asp
 pub fn adx(
-    h: &[f64],
-    l: &[f64],
-    c: &[f64],
+    high: &[f64],
+    low: &[f64],
+    close: &[f64],
     period: u8,
     smoothing: u8,
 ) -> (Vec<f64>, Vec<f64>, Vec<f64>) {
     let (dm_pos, dm_neg, tr): (Vec<_>, Vec<_>, Vec<_>) = multiunzip(
         izip!(
-            &h[..h.len() - 1],
-            &h[1..],
-            &l[..l.len() - 1],
-            &l[1..],
-            &c[..c.len() - 1],
+            &high[..high.len() - 1],
+            &high[1..],
+            &low[..low.len() - 1],
+            &low[1..],
+            &close[..close.len() - 1],
         )
         .map(|(prevh, h, prevl, l, prevc)| {
             let dm_pos = if h - prevh > prevl - l {
@@ -201,10 +212,10 @@ pub fn cog(data: &[f64], window: u8) -> Vec<f64> {
 
 /// accumulation/distribution
 /// https://www.investopedia.com/terms/a/accumulationdistribution.asp
-pub fn ad(h: &[f64], l: &[f64], c: &[f64], v: &[f64]) -> Vec<f64> {
-    izip!(h, l, c, v)
-        .scan(0.0, |state, (high, low, close, vol)| {
-            let mfm = ((close - low) - (high - close)) / (high - low);
+pub fn ad(high: &[f64], low: &[f64], close: &[f64], volume: &[f64]) -> Vec<f64> {
+    izip!(high, low, close, volume)
+        .scan(0.0, |state, (h, l, c, vol)| {
+            let mfm = ((c - l) - (h - c)) / (h - l);
             let mfv = mfm * vol;
             let adl = *state + mfv;
             *state = adl;
@@ -215,17 +226,17 @@ pub fn ad(h: &[f64], l: &[f64], c: &[f64], v: &[f64]) -> Vec<f64> {
 
 /// accumulation/distribution
 /// like yahoo
-pub fn ad_yahoo(h: &[f64], l: &[f64], c: &[f64], v: &[f64]) -> Vec<f64> {
-    izip!(&h[1..], &l[1..], &c[1..], &v[1..])
-        .scan((c[0], 0.0), |state, (high, low, close, vol)| {
-            let mfm = if *close > state.0 {
-                close - f64::min(*low, state.0)
+pub fn ad_yahoo(high: &[f64], low: &[f64], close: &[f64], volume: &[f64]) -> Vec<f64> {
+    izip!(&high[1..], &low[1..], &close[1..], &volume[1..])
+        .scan((close[0], 0.0), |state, (h, l, c, vol)| {
+            let mfm = if *c > state.0 {
+                c - f64::min(*l, state.0)
             } else {
-                close - f64::max(*high, state.0)
+                c - f64::max(*h, state.0)
             };
             let mfv = mfm * vol;
             let adl = state.1 + mfv;
-            *state = (*close, adl);
+            *state = (*c, adl);
             Some(adl)
         })
         .collect::<Vec<f64>>()
@@ -234,22 +245,22 @@ pub fn ad_yahoo(h: &[f64], l: &[f64], c: &[f64], v: &[f64]) -> Vec<f64> {
 /// elder ray
 /// https://www.investopedia.com/articles/trading/03/022603.asp
 /// returns tuple of bull power vec and bear power vec
-pub fn elder_ray(h: &[f64], l: &[f64], c: &[f64], window: u8) -> (Vec<f64>, Vec<f64>) {
-    let close_ma = smooth::ewma(c, window);
+pub fn elder_ray(high: &[f64], low: &[f64], close: &[f64], window: u8) -> (Vec<f64>, Vec<f64>) {
+    let close_ma = smooth::ewma(close, window);
     izip!(
-        &h[h.len() - close_ma.len()..],
-        &l[l.len() - close_ma.len()..],
+        &high[high.len() - close_ma.len()..],
+        &low[low.len() - close_ma.len()..],
         close_ma
     )
-    .map(|(high, low, close)| (high - close, low - close))
+    .map(|(h, l, c)| (h - c, l - c))
     .unzip()
 }
 
 /// elder force index
 /// https://www.investopedia.com/articles/trading/03/031203.asp
-pub fn elder_force(c: &[f64], v: &[f64], window: u8) -> Vec<f64> {
+pub fn elder_force(close: &[f64], volume: &[f64], window: u8) -> Vec<f64> {
     smooth::ewma(
-        &izip!(&c[..c.len() - 1], &c[1..], &v[1..])
+        &izip!(&close[..close.len() - 1], &close[1..], &volume[1..])
             .map(|(prev, curr, vol)| (curr - prev) * vol)
             .collect::<Vec<f64>>(),
         window,
@@ -262,19 +273,20 @@ pub fn alligator(_data: &[f64]) {}
 
 /// money flow index
 /// https://www.investopedia.com/terms/m/mfi.asp
-pub fn mfi(h: &[f64], l: &[f64], c: &[f64], v: &[f64], window: u8) -> Vec<f64> {
-    let (pos_mf, neg_mf): (Vec<f64>, Vec<f64>) = izip!(&h[1..], &l[1..], &c[1..], &v[1..])
-        .scan(
-            (h[0] + l[0] + c[0]) / 3.0,
-            |state, (high, low, close, vol)| {
-                let hlc = (high + low + close) / 3.0;
-                let pos_mf = if hlc > *state { hlc * vol } else { 0.0 };
-                let neg_mf = if hlc < *state { hlc * vol } else { 0.0 };
-                *state = hlc;
-                Some((pos_mf, neg_mf))
-            },
-        )
-        .unzip();
+pub fn mfi(high: &[f64], low: &[f64], close: &[f64], volume: &[f64], window: u8) -> Vec<f64> {
+    let (pos_mf, neg_mf): (Vec<f64>, Vec<f64>) =
+        izip!(&high[1..], &low[1..], &close[1..], &volume[1..])
+            .scan(
+                (high[0] + low[0] + close[0]) / 3.0,
+                |state, (h, l, c, vol)| {
+                    let hlc = (h + l + c) / 3.0;
+                    let pos_mf = if hlc > *state { hlc * vol } else { 0.0 };
+                    let neg_mf = if hlc < *state { hlc * vol } else { 0.0 };
+                    *state = hlc;
+                    Some((pos_mf, neg_mf))
+                },
+            )
+            .unzip();
     pos_mf
         .windows(window.into())
         .zip(neg_mf.windows(window.into()))
@@ -286,12 +298,12 @@ pub fn mfi(h: &[f64], l: &[f64], c: &[f64], v: &[f64], window: u8) -> Vec<f64> {
 
 /// chaikin money flow
 /// https://corporatefinanceinstitute.com/resources/equities/chaikin-money-flow-cmf/
-pub fn cmf(h: &[f64], l: &[f64], c: &[f64], v: &[f64], window: u8) -> Vec<f64> {
-    izip!(h, l, c, v)
-        .map(|(high, low, close, vol)| vol * ((close - low) - (high - close)) / (high - low))
+pub fn cmf(high: &[f64], low: &[f64], close: &[f64], volume: &[f64], window: u8) -> Vec<f64> {
+    izip!(high, low, close, volume)
+        .map(|(h, l, c, vol)| vol * ((c - l) - (h - c)) / (h - l))
         .collect::<Vec<f64>>()
         .windows(window.into())
-        .zip(v.windows(window.into()))
+        .zip(volume.windows(window.into()))
         .map(|(mfv_win, v_win)| mfv_win.iter().sum::<f64>() / v_win.iter().sum::<f64>())
         .collect::<Vec<f64>>()
 }
@@ -299,11 +311,12 @@ pub fn cmf(h: &[f64], l: &[f64], c: &[f64], v: &[f64], window: u8) -> Vec<f64> {
 /// chaikin volatility
 /// https://www.tradingview.com/chart/AUDUSD/gjfxqWqW-What-Is-a-Chaikin-Volatility-Indicator-in-Trading/
 /// https://theforexgeek.com/chaikins-volatility-indicator/
-pub fn cvi(h: &[f64], l: &[f64], window: u8, rate_of_change: u8) -> Vec<f64> {
+pub fn cvi(high: &[f64], low: &[f64], window: u8, rate_of_change: u8) -> Vec<f64> {
     smooth::ewma(
-        &h.iter()
-            .zip(l)
-            .map(|(high, low)| high - low)
+        &high
+            .iter()
+            .zip(low)
+            .map(|(h, l)| h - l)
             .collect::<Vec<f64>>(),
         window,
     )
@@ -314,29 +327,29 @@ pub fn cvi(h: &[f64], l: &[f64], window: u8, rate_of_change: u8) -> Vec<f64> {
 
 /// Williams Percent Range
 /// https://www.investopedia.com/terms/w/williamsr.asp
-pub fn wpr(h: &[f64], l: &[f64], c: &[f64], window: u8) -> Vec<f64> {
+pub fn wpr(high: &[f64], low: &[f64], close: &[f64], window: u8) -> Vec<f64> {
     izip!(
-        h.windows(window.into()),
-        l.windows(window.into()),
-        &c[(window - 1).into()..]
+        high.windows(window.into()),
+        low.windows(window.into()),
+        &close[(window - 1).into()..]
     )
-    .map(|(high, low, close)| {
-        let hh = high.iter().fold(f64::NAN, |state, &x| state.max(x));
-        let ll = low.iter().fold(f64::NAN, |state, &x| state.min(x));
-        -100.0 * ((hh - close) / (hh - ll))
+    .map(|(h, l, c)| {
+        let hh = h.iter().fold(f64::NAN, |state, &x| state.max(x));
+        let ll = l.iter().fold(f64::NAN, |state, &x| state.min(x));
+        -100.0 * ((hh - c) / (hh - ll))
     })
     .collect::<Vec<f64>>()
 }
 
 /// vortex
 /// https://www.investopedia.com/terms/v/vortex-indicator-vi.asp
-pub fn vortex(h: &[f64], l: &[f64], c: &[f64], window: u8) -> (Vec<f64>, Vec<f64>) {
+pub fn vortex(high: &[f64], low: &[f64], close: &[f64], window: u8) -> (Vec<f64>, Vec<f64>) {
     izip!(
-        &h[..h.len() - 1],
-        &h[1..],
-        &l[..l.len() - 1],
-        &l[1..],
-        &c[..c.len() - 1],
+        &high[..high.len() - 1],
+        &high[1..],
+        &low[..low.len() - 1],
+        &low[1..],
+        &close[..close.len() - 1],
     )
     .map(|(prevh, h, prevl, l, prevc)| {
         let vm_pos = (h - prevl).abs();
@@ -373,20 +386,20 @@ pub fn po(data: &[f64], short: u8, long: u8) -> Vec<f64> {
 
 /// vertical horizontal filter
 /// https://www.upcomingtrader.com/blog/the-vertical-horizontal-filter-a-traders-guide-to-market-phases/
-pub fn vhf(h: &[f64], l: &[f64], c: &[f64], window: u8) -> Vec<f64> {
-    let diffs = &c[1..]
+pub fn vhf(high: &[f64], low: &[f64], close: &[f64], window: u8) -> Vec<f64> {
+    let diffs = &close[1..]
         .iter()
-        .zip(&c[..c.len() - 1])
+        .zip(&close[..close.len() - 1])
         .map(|(curr, prev)| (curr - prev).abs())
         .collect::<Vec<f64>>();
     izip!(
         diffs.windows(window.into()),
-        h.windows(window.into()).skip(1),
-        l.windows(window.into()).skip(1)
+        high.windows(window.into()).skip(1),
+        low.windows(window.into()).skip(1)
     )
-    .map(|(diff, highs, lows)| {
-        (highs.iter().fold(f64::NAN, |state, &x| state.max(x))
-            - lows.iter().fold(f64::NAN, |state, &x| state.min(x)))
+    .map(|(diff, h, l)| {
+        (h.iter().fold(f64::NAN, |state, &x| state.max(x))
+            - l.iter().fold(f64::NAN, |state, &x| state.min(x)))
             / diff.iter().sum::<f64>()
     })
     .collect::<Vec<f64>>()
@@ -394,15 +407,27 @@ pub fn vhf(h: &[f64], l: &[f64], c: &[f64], window: u8) -> Vec<f64> {
 
 /// ultimate oscillator
 /// https://www.investopedia.com/terms/u/ultimateoscillator.asp
-pub fn ultimate(h: &[f64], l: &[f64], c: &[f64], win1: u8, win2: u8, win3: u8) -> Vec<f64> {
-    let bp_tr_vals = izip!(&h[1..], &l[1..], &c[..c.len() - 1], &c[1..],)
-        .map(|(h, l, prevc, c)| {
-            (
-                c - f64::min(*l, *prevc),
-                f64::max(*h, *prevc) - f64::min(*l, *prevc),
-            )
-        })
-        .collect::<Vec<(f64, f64)>>();
+pub fn ultimate(
+    high: &[f64],
+    low: &[f64],
+    close: &[f64],
+    win1: u8,
+    win2: u8,
+    win3: u8,
+) -> Vec<f64> {
+    let bp_tr_vals = izip!(
+        &high[1..],
+        &low[1..],
+        &close[..close.len() - 1],
+        &close[1..],
+    )
+    .map(|(h, l, prevc, c)| {
+        (
+            c - f64::min(*l, *prevc),
+            f64::max(*h, *prevc) - f64::min(*l, *prevc),
+        )
+    })
+    .collect::<Vec<(f64, f64)>>();
     bp_tr_vals
         .windows(win3.into())
         .map(|w| {
@@ -425,16 +450,16 @@ pub fn ultimate(h: &[f64], l: &[f64], c: &[f64], win1: u8, win2: u8, win3: u8) -
 
 /// pretty good oscillator
 /// https://library.tradingtechnologies.com/trade/chrt-ti-pretty-good-oscillator.html
-pub fn pgo(h: &[f64], l: &[f64], c: &[f64], window: u8) -> Vec<f64> {
+pub fn pgo(high: &[f64], low: &[f64], close: &[f64], window: u8) -> Vec<f64> {
     let atr = smooth::ewma(
-        &izip!(&h[1..], &l[1..], &c[..c.len() - 1])
+        &izip!(&high[1..], &low[1..], &close[..close.len() - 1])
             .map(|(h, l, prevc)| (h - l).max(f64::abs(h - prevc)).max(f64::abs(l - prevc)))
             .collect::<Vec<f64>>(),
         window,
     );
-    let sma_close = smooth::sma(c, window);
+    let sma_close = smooth::sma(close, window);
     izip!(
-        &c[c.len() - atr.len()..],
+        &close[close.len() - atr.len()..],
         &sma_close[sma_close.len() - atr.len()..],
         atr
     )
