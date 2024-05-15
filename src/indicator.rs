@@ -451,12 +451,7 @@ pub fn ultimate(
 /// pretty good oscillator
 /// https://library.tradingtechnologies.com/trade/chrt-ti-pretty-good-oscillator.html
 pub fn pgo(high: &[f64], low: &[f64], close: &[f64], window: u8) -> Vec<f64> {
-    let atr = smooth::ewma(
-        &izip!(&high[1..], &low[1..], &close[..close.len() - 1])
-            .map(|(h, l, prevc)| (h - l).max(f64::abs(h - prevc)).max(f64::abs(l - prevc)))
-            .collect::<Vec<f64>>(),
-        window,
-    );
+    let atr = smooth::ewma(&_true_range(high, low, close).collect::<Vec<f64>>(), window);
     let sma_close = smooth::sma(close, window);
     izip!(
         &close[close.len() - atr.len()..],
@@ -537,5 +532,134 @@ pub fn ulcer(data: &[f64], window: u8) -> Vec<f64> {
     )
     .iter()
     .map(|x| x.sqrt())
+    .collect::<Vec<f64>>()
+}
+
+fn _true_range<'a>(
+    high: &'a [f64],
+    low: &'a [f64],
+    close: &'a [f64],
+) -> impl Iterator<Item = f64> + 'a {
+    izip!(&high[1..], &low[1..], &close[..close.len() - 1])
+        .map(|(h, l, prevc)| (h - l).max(f64::abs(h - prevc)).max(f64::abs(l - prevc)))
+}
+
+/// true range
+/// https://www.investopedia.com/terms/a/atr.asp
+pub fn tr(high: &[f64], low: &[f64], close: &[f64]) -> Vec<f64> {
+    _true_range(high, low, close).collect::<Vec<f64>>()
+}
+
+/// typical price
+/// https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/typical-price
+pub fn hlc3(high: &[f64], low: &[f64], close: &[f64], window: u8) -> Vec<f64> {
+    smooth::sma(
+        &izip!(high, low, close)
+            .map(|(h, l, c)| (h + l + c) / 3.0)
+            .collect::<Vec<f64>>(),
+        window,
+    )
+}
+
+/// Triple Exponential Average
+/// https://www.investopedia.com/terms/t/trix.asp
+pub fn trix(close: &[f64], window: u8) -> Vec<f64> {
+    let ema3 = smooth::ewma(&smooth::ewma(&smooth::ewma(close, window), window), window);
+    ema3[..ema3.len() - 1]
+        .iter()
+        .zip(&ema3[1..])
+        .map(|(prev, curr)| 100.0 * (curr - prev) / prev)
+        .collect::<Vec<f64>>()
+}
+
+/// trend intensity index
+/// https://www.marketvolume.com/technicalanalysis/trendintensityindex.asp
+pub fn tii(data: &[f64], window: u8) -> Vec<f64> {
+    smooth::sma(data, window)
+        .iter()
+        .zip(&data[(window - 1) as usize..])
+        .map(|(avg, actual)| {
+            let dev: f64 = actual - avg;
+            let pos_dev = if dev > 0.0 { dev } else { 0.0 };
+            let neg_dev = if dev < 0.0 { dev.abs() } else { 0.0 };
+            (pos_dev, neg_dev)
+        })
+        .collect::<Vec<(f64, f64)>>()
+        .windows(u8::div_ceil(window, 2).into())
+        .map(|w| {
+            let mut sd_pos = 0.0;
+            let mut sd_neg = 0.0;
+            for (pos_dev, neg_dev) in w {
+                sd_pos += pos_dev;
+                sd_neg += neg_dev;
+            }
+            100.0 * sd_pos / (sd_pos + sd_neg)
+        })
+        .collect::<Vec<f64>>()
+}
+
+/// trade volume index
+/// https://www.investopedia.com/terms/t/tradevolumeindex.asp
+pub fn tvi(close: &[f64], volume: &[f64], min_tick: f64) -> Vec<f64> {
+    izip!(&close[..close.len() - 1], &close[1..], &volume[1..],)
+        .scan((1, 0.0), |state, (prev, curr, vol)| {
+            let direction = if curr - prev > min_tick {
+                1
+            } else if prev - curr > min_tick {
+                -1
+            } else {
+                state.0
+            };
+            let tvi = state.1 + direction as f64 * vol;
+            *state = (direction, tvi);
+            Some(tvi)
+        })
+        .collect::<Vec<f64>>()
+}
+
+/// supertrend
+/// https://www.tradingview.com/support/solutions/43000634738-supertrend/
+/// https://www.investopedia.com/supertrend-indicator-7976167
+pub fn supertrend(
+    high: &[f64],
+    low: &[f64],
+    close: &[f64],
+    window: u8,
+    multiplier: f64,
+) -> Vec<f64> {
+    let atr = smooth::wilder(&_true_range(high, low, close).collect::<Vec<f64>>(), window);
+    izip!(
+        &high[window.into()..],
+        &low[window.into()..],
+        &close[window.into()..],
+        &atr
+    )
+    .scan(
+        (f64::NAN, f64::NAN, f64::MIN_POSITIVE, 1),
+        |state, (h, l, c, tr)| {
+            let (prevlower, prevupper, prevc, prevdir) = state;
+            let mut lower = (h + l) / 2.0 - multiplier * tr;
+            let mut upper = (h + l) / 2.0 + multiplier * tr;
+            if prevc > prevlower && *prevlower > lower {
+                lower = *prevlower;
+            }
+            if prevc < prevupper && *prevupper < upper {
+                upper = *prevupper;
+            }
+            let dir = if c > prevupper {
+                1
+            } else if c < prevlower {
+                -1
+            } else {
+                *prevdir
+            };
+            *state = (lower, upper, *c, dir);
+            if dir > 0 {
+                Some(lower)
+            } else {
+                Some(upper)
+            }
+        },
+    )
     .collect::<Vec<f64>>()
 }
