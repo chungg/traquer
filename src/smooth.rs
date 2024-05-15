@@ -126,3 +126,26 @@ pub fn vma(data: &[f64], window: u8) -> Vec<f64> {
         .skip((u8::max(9, window) - 9).into())
         .collect::<Vec<f64>>()
 }
+
+/// Linear Regression Forecast
+/// aka Time series forecast
+/// https://quantstrategy.io/blog/what-is-tsf-understanding-time-series-forecast-indicator/
+pub fn lrf(data: &[f64], window: u16) -> Vec<f64> {
+    let x_sum = (window * (window + 1)) as f64 / 2.0;
+    let x2_sum: f64 = x_sum * (2 * window + 1) as f64 / 3.0;
+    let divisor = window as f64 * x2_sum - x_sum.powi(2);
+
+    data.windows(window.into())
+        .map(|w| {
+            let mut y_sum = 0.0;
+            let mut xy_sum = 0.0;
+            for (count, val) in w.iter().enumerate() {
+                y_sum += val;
+                xy_sum += (count + 1) as f64 * val;
+            }
+            let m = (window as f64 * xy_sum - x_sum * y_sum) / divisor;
+            let b = (y_sum * x2_sum - x_sum * xy_sum) / divisor;
+            m * window as f64 + b
+        })
+        .collect::<Vec<f64>>()
+}
