@@ -170,7 +170,7 @@ pub fn rsi(data: &[f64], window: u8) -> Vec<f64> {
     smooth::wilder(&gain, window)
         .iter()
         .zip(smooth::wilder(&loss, window).iter())
-        .map(|(g, l)| 100.0 - (100.0 / (1.0 + (g / l))))
+        .map(|(g, l)| 100.0 * g / (g + l))
         .collect::<Vec<f64>>()
 }
 
@@ -710,4 +710,65 @@ fn _stc(series: &[f64], window: u8) -> Vec<f64> {
 pub fn stc(close: &[f64], window: u8, short: u8, long: u8) -> Vec<f64> {
     let series = macd(close, short, long);
     _stc(&_stc(&series, window), window)
+}
+
+/// Relative Volatility
+/// https://www.tradingview.com/support/solutions/43000594684-relative-volatility-index/
+pub fn relative_vol(close: &[f64], window: u8, smoothing: u8) -> Vec<f64> {
+    let stdev = smooth::std_dev(close, window);
+    let (gain, loss): (Vec<f64>, Vec<f64>) = izip!(
+        &stdev,
+        &close[close.len() - stdev.len()..],
+        &close[close.len() - stdev.len() - 1..close.len() - 1]
+    )
+    .map(|(std, curr, prev)| {
+        (
+            f64::max(0.0, f64::max(0.0, curr - prev) * std / (curr - prev).abs()),
+            f64::max(
+                0.0,
+                f64::min(0.0, curr - prev).abs() * std / (curr - prev).abs(),
+            ),
+        )
+    })
+    .unzip();
+    smooth::wilder(&gain, smoothing)
+        .iter()
+        .zip(smooth::wilder(&loss, smoothing).iter())
+        .map(|(g, l)| 100.0 * g / (g + l))
+        .collect::<Vec<f64>>()
+}
+
+/// Relative Vigor
+/// https://www.investopedia.com/terms/r/relative_vigor_index.asp
+pub fn relative_vigor(
+    open: &[f64],
+    high: &[f64],
+    low: &[f64],
+    close: &[f64],
+    window: u8,
+) -> Vec<f64> {
+    let close_open = open
+        .iter()
+        .zip(close)
+        .map(|(o, c)| c - o)
+        .collect::<Vec<f64>>();
+    let high_low = high
+        .iter()
+        .zip(low)
+        .map(|(h, l)| h - l)
+        .collect::<Vec<f64>>();
+
+    let numerator = close_open
+        .windows(4)
+        .map(|w| (w[3] + 2.0 * w[2] + 2.0 * w[1] + w[0]) / 6.0)
+        .collect::<Vec<f64>>();
+    let denominator = high_low
+        .windows(4)
+        .map(|w| (w[3] + 2.0 * w[2] + 2.0 * w[1] + w[0]) / 6.0)
+        .collect::<Vec<f64>>();
+    smooth::sma(&numerator, window)
+        .iter()
+        .zip(smooth::sma(&denominator, window))
+        .map(|(n, d)| n / d)
+        .collect::<Vec<f64>>()
 }
