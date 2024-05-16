@@ -176,12 +176,12 @@ pub fn rsi(data: &[f64], window: u8) -> Vec<f64> {
 
 /// moving average convergence/divergence
 /// https://www.investopedia.com/terms/m/macd.asp
-pub fn macd(close: &[f64], fast: u8, slow: u8) -> Vec<f64> {
-    let fast_ma = smooth::ewma(close, fast);
-    let slow_ma = smooth::ewma(close, slow);
-    fast_ma[fast_ma.len() - slow_ma.len()..]
+pub fn macd(close: &[f64], short: u8, long: u8) -> Vec<f64> {
+    let short_ma = smooth::ewma(close, short);
+    let long_ma = smooth::ewma(close, long);
+    short_ma[short_ma.len() - long_ma.len()..]
         .iter()
-        .zip(slow_ma)
+        .zip(long_ma)
         .map(|(x, y)| x - y)
         .collect::<Vec<f64>>()
 }
@@ -627,6 +627,7 @@ pub fn supertrend(
     window: u8,
     multiplier: f64,
 ) -> Vec<f64> {
+    // TODO: needs a test for when it actually flips to use upper band line
     let atr = smooth::wilder(&_true_range(high, low, close).collect::<Vec<f64>>(), window);
     izip!(
         &high[window.into()..],
@@ -662,4 +663,51 @@ pub fn supertrend(
         },
     )
     .collect::<Vec<f64>>()
+}
+
+/// Stochastic Oscillator
+/// https://www.investopedia.com/articles/technical/073001.asp
+pub fn stochastic(high: &[f64], low: &[f64], close: &[f64], window: u8) -> (Vec<f64>, Vec<f64>) {
+    let fast_k = smooth::sma(
+        &izip!(
+            high.windows(window.into()),
+            low.windows(window.into()),
+            &close[(window - 1).into()..]
+        )
+        .map(|(h, l, c)| {
+            let hh = h.iter().fold(f64::NAN, |state, &x| state.max(x));
+            let ll = l.iter().fold(f64::NAN, |state, &x| state.min(x));
+            100.0 * (c - ll) / (hh - ll)
+        })
+        .collect::<Vec<f64>>(),
+        3,
+    );
+    let k = smooth::sma(&fast_k, 3);
+    (fast_k, k)
+}
+
+fn _stc(series: &[f64], window: u8) -> Vec<f64> {
+    smooth::wilder(
+        &series
+            .windows(window.into())
+            .map(|w| {
+                let mut hh = f64::NAN;
+                let mut ll = f64::NAN;
+                for x in w {
+                    hh = hh.max(*x);
+                    ll = ll.min(*x);
+                }
+                100.0 * (w.last().unwrap() - ll) / (hh - ll)
+            })
+            .collect::<Vec<f64>>(),
+        2,
+    )
+}
+
+/// Shaff Trend Cycle
+/// https://www.investopedia.com/articles/forex/10/schaff-trend-cycle-indicator.asp
+/// https://www.stockmaniacs.net/schaff-trend-cycle-indicator/
+pub fn stc(close: &[f64], window: u8, short: u8, long: u8) -> Vec<f64> {
+    let series = macd(close, short, long);
+    _stc(&_stc(&series, window), window)
 }
