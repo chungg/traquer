@@ -25,8 +25,8 @@ pub fn kvo(
     low: &[f64],
     close: &[f64],
     volume: &[f64],
-    short: u8,
-    long: u8,
+    short: usize,
+    long: usize,
 ) -> Vec<f64> {
     let vf = vforce(high, low, close, volume);
     let short_ma = smooth::ewma(&vf, short);
@@ -40,7 +40,7 @@ pub fn kvo(
 
 /// quick stick
 /// https://www.investopedia.com/terms/q/qstick.asp
-pub fn qstick(open: &[f64], close: &[f64], window: u8) -> Vec<f64> {
+pub fn qstick(open: &[f64], close: &[f64], window: usize) -> Vec<f64> {
     let q = close
         .iter()
         .zip(open.iter())
@@ -49,9 +49,9 @@ pub fn qstick(open: &[f64], close: &[f64], window: u8) -> Vec<f64> {
     smooth::ewma(&q, window)
 }
 
-fn wilder_sum(data: &[f64], window: u8) -> Vec<f64> {
-    let initial = data[..(window - 1) as usize].iter().sum::<f64>();
-    data[(window - 1) as usize..]
+fn wilder_sum(data: &[f64], window: usize) -> Vec<f64> {
+    let initial = data[..(window - 1)].iter().sum::<f64>();
+    data[(window - 1)..]
         .iter()
         .scan(initial, |state, x| {
             let ma = *state * (window - 1) as f64 / window as f64 + x;
@@ -64,7 +64,7 @@ fn wilder_sum(data: &[f64], window: u8) -> Vec<f64> {
 /// twiggs money flow
 /// https://www.marketvolume.com/technicalanalysis/twiggsmoneyflow.asp
 /// https://www.incrediblecharts.com/indicators/twiggs_money_flow.php
-pub fn twiggs(high: &[f64], low: &[f64], close: &[f64], volume: &[f64], window: u8) -> Vec<f64> {
+pub fn twiggs(high: &[f64], low: &[f64], close: &[f64], volume: &[f64], window: usize) -> Vec<f64> {
     let data = izip!(&high[1..], &low[1..], &close[1..], &volume[1..]);
     // not using wilder moving average to minimise drift caused by floating point math
     let ad = wilder_sum(
@@ -87,17 +87,17 @@ pub fn twiggs(high: &[f64], low: &[f64], close: &[f64], volume: &[f64], window: 
 
 /// shinohara intensity ratio
 /// https://www.sevendata.co.jp/shihyou/technical/shinohara.html
-pub fn shinohara(high: &[f64], low: &[f64], close: &[f64], period: u8) -> (Vec<f64>, Vec<f64>) {
+pub fn shinohara(high: &[f64], low: &[f64], close: &[f64], period: usize) -> (Vec<f64>, Vec<f64>) {
     let high_win = high
-        .windows(period.into())
+        .windows(period)
         .map(|w| w.iter().sum())
         .collect::<Vec<f64>>();
     let low_win = low
-        .windows(period.into())
+        .windows(period)
         .map(|w| w.iter().sum())
         .collect::<Vec<f64>>();
     let close_win = close
-        .windows(period.into())
+        .windows(period)
         .map(|w| w.iter().sum())
         .collect::<Vec<f64>>();
     // yahoo uses close rather than open for weak ratio described above
@@ -120,8 +120,8 @@ pub fn adx(
     high: &[f64],
     low: &[f64],
     close: &[f64],
-    period: u8,
-    smoothing: u8,
+    period: usize,
+    smoothing: usize,
 ) -> (Vec<f64>, Vec<f64>, Vec<f64>) {
     let (dm_pos, dm_neg, tr): (Vec<_>, Vec<_>, Vec<_>) = multiunzip(
         izip!(
@@ -161,7 +161,7 @@ pub fn adx(
 
 /// relative strength index
 /// https://www.investopedia.com/terms/r/rsi.asp
-pub fn rsi(data: &[f64], window: u8) -> Vec<f64> {
+pub fn rsi(data: &[f64], window: usize) -> Vec<f64> {
     let (gain, loss): (Vec<f64>, Vec<f64>) = data[1..]
         .iter()
         .zip(data[..data.len() - 1].iter())
@@ -176,7 +176,7 @@ pub fn rsi(data: &[f64], window: u8) -> Vec<f64> {
 
 /// moving average convergence/divergence
 /// https://www.investopedia.com/terms/m/macd.asp
-pub fn macd(close: &[f64], short: u8, long: u8) -> Vec<f64> {
+pub fn macd(close: &[f64], short: usize, long: usize) -> Vec<f64> {
     let short_ma = smooth::ewma(close, short);
     let long_ma = smooth::ewma(close, long);
     short_ma[short_ma.len() - long_ma.len()..]
@@ -188,7 +188,7 @@ pub fn macd(close: &[f64], short: u8, long: u8) -> Vec<f64> {
 
 /// chande momentum oscillator
 /// https://www.investopedia.com/terms/c/chandemomentumoscillator.asp
-pub fn cmo(data: &[f64], window: u8) -> Vec<f64> {
+pub fn cmo(data: &[f64], window: usize) -> Vec<f64> {
     smooth::_cmo(data, window)
         .iter()
         .map(|x| x * 100.0)
@@ -197,8 +197,8 @@ pub fn cmo(data: &[f64], window: u8) -> Vec<f64> {
 
 /// centre of gravity
 /// https://www.stockmaniacs.net/center-of-gravity-indicator/
-pub fn cog(data: &[f64], window: u8) -> Vec<f64> {
-    data.windows(window.into())
+pub fn cog(data: &[f64], window: usize) -> Vec<f64> {
+    data.windows(window)
         .map(|w| {
             -w.iter()
                 .rev()
@@ -245,7 +245,7 @@ pub fn ad_yahoo(high: &[f64], low: &[f64], close: &[f64], volume: &[f64]) -> Vec
 /// elder ray
 /// https://www.investopedia.com/articles/trading/03/022603.asp
 /// returns tuple of bull power vec and bear power vec
-pub fn elder_ray(high: &[f64], low: &[f64], close: &[f64], window: u8) -> (Vec<f64>, Vec<f64>) {
+pub fn elder_ray(high: &[f64], low: &[f64], close: &[f64], window: usize) -> (Vec<f64>, Vec<f64>) {
     let close_ma = smooth::ewma(close, window);
     izip!(
         &high[high.len() - close_ma.len()..],
@@ -258,7 +258,7 @@ pub fn elder_ray(high: &[f64], low: &[f64], close: &[f64], window: u8) -> (Vec<f
 
 /// elder force index
 /// https://www.investopedia.com/articles/trading/03/031203.asp
-pub fn elder_force(close: &[f64], volume: &[f64], window: u8) -> Vec<f64> {
+pub fn elder_force(close: &[f64], volume: &[f64], window: usize) -> Vec<f64> {
     smooth::ewma(
         &izip!(&close[..close.len() - 1], &close[1..], &volume[1..])
             .map(|(prev, curr, vol)| (curr - prev) * vol)
@@ -273,7 +273,7 @@ pub fn alligator(_data: &[f64]) {}
 
 /// money flow index
 /// https://www.investopedia.com/terms/m/mfi.asp
-pub fn mfi(high: &[f64], low: &[f64], close: &[f64], volume: &[f64], window: u8) -> Vec<f64> {
+pub fn mfi(high: &[f64], low: &[f64], close: &[f64], volume: &[f64], window: usize) -> Vec<f64> {
     let (pos_mf, neg_mf): (Vec<f64>, Vec<f64>) =
         izip!(&high[1..], &low[1..], &close[1..], &volume[1..])
             .scan(
@@ -288,8 +288,8 @@ pub fn mfi(high: &[f64], low: &[f64], close: &[f64], volume: &[f64], window: u8)
             )
             .unzip();
     pos_mf
-        .windows(window.into())
-        .zip(neg_mf.windows(window.into()))
+        .windows(window)
+        .zip(neg_mf.windows(window))
         .map(|(pos, neg)| {
             100.0 - (100.0 / (1.0 + pos.iter().sum::<f64>() / neg.iter().sum::<f64>()))
         })
@@ -298,12 +298,12 @@ pub fn mfi(high: &[f64], low: &[f64], close: &[f64], volume: &[f64], window: u8)
 
 /// chaikin money flow
 /// https://corporatefinanceinstitute.com/resources/equities/chaikin-money-flow-cmf/
-pub fn cmf(high: &[f64], low: &[f64], close: &[f64], volume: &[f64], window: u8) -> Vec<f64> {
+pub fn cmf(high: &[f64], low: &[f64], close: &[f64], volume: &[f64], window: usize) -> Vec<f64> {
     izip!(high, low, close, volume)
         .map(|(h, l, c, vol)| vol * ((c - l) - (h - c)) / (h - l))
         .collect::<Vec<f64>>()
-        .windows(window.into())
-        .zip(volume.windows(window.into()))
+        .windows(window)
+        .zip(volume.windows(window))
         .map(|(mfv_win, v_win)| mfv_win.iter().sum::<f64>() / v_win.iter().sum::<f64>())
         .collect::<Vec<f64>>()
 }
@@ -311,7 +311,7 @@ pub fn cmf(high: &[f64], low: &[f64], close: &[f64], volume: &[f64], window: u8)
 /// chaikin volatility
 /// https://www.tradingview.com/chart/AUDUSD/gjfxqWqW-What-Is-a-Chaikin-Volatility-Indicator-in-Trading/
 /// https://theforexgeek.com/chaikins-volatility-indicator/
-pub fn cvi(high: &[f64], low: &[f64], window: u8, rate_of_change: u8) -> Vec<f64> {
+pub fn cvi(high: &[f64], low: &[f64], window: usize, rate_of_change: usize) -> Vec<f64> {
     smooth::ewma(
         &high
             .iter()
@@ -320,18 +320,18 @@ pub fn cvi(high: &[f64], low: &[f64], window: u8, rate_of_change: u8) -> Vec<f64
             .collect::<Vec<f64>>(),
         window,
     )
-    .windows((rate_of_change + 1).into())
+    .windows(rate_of_change + 1)
     .map(|w| 100.0 * (w.last().unwrap() / w.first().unwrap() - 1.0))
     .collect::<Vec<f64>>()
 }
 
 /// Williams Percent Range
 /// https://www.investopedia.com/terms/w/williamsr.asp
-pub fn wpr(high: &[f64], low: &[f64], close: &[f64], window: u8) -> Vec<f64> {
+pub fn wpr(high: &[f64], low: &[f64], close: &[f64], window: usize) -> Vec<f64> {
     izip!(
-        high.windows(window.into()),
-        low.windows(window.into()),
-        &close[(window - 1).into()..]
+        high.windows(window),
+        low.windows(window),
+        &close[(window - 1)..]
     )
     .map(|(h, l, c)| {
         let hh = h.iter().fold(f64::NAN, |state, &x| state.max(x));
@@ -343,7 +343,7 @@ pub fn wpr(high: &[f64], low: &[f64], close: &[f64], window: u8) -> Vec<f64> {
 
 /// vortex
 /// https://www.investopedia.com/terms/v/vortex-indicator-vi.asp
-pub fn vortex(high: &[f64], low: &[f64], close: &[f64], window: u8) -> (Vec<f64>, Vec<f64>) {
+pub fn vortex(high: &[f64], low: &[f64], close: &[f64], window: usize) -> (Vec<f64>, Vec<f64>) {
     izip!(
         &high[..high.len() - 1],
         &high[1..],
@@ -358,7 +358,7 @@ pub fn vortex(high: &[f64], low: &[f64], close: &[f64], window: u8) -> (Vec<f64>
         (vm_pos, vm_neg, tr)
     })
     .collect::<Vec<(f64, f64, f64)>>()
-    .windows(window.into())
+    .windows(window)
     .map(|w| {
         let (vm_pos, vm_neg, tr) = w
             .iter()
@@ -374,7 +374,7 @@ pub fn vortex(high: &[f64], low: &[f64], close: &[f64], window: u8) -> (Vec<f64>
 
 /// percent oscillator
 /// pass in any data (close, high, low, etc...), and two window ranges
-pub fn po(data: &[f64], short: u8, long: u8) -> Vec<f64> {
+pub fn po(data: &[f64], short: usize, long: usize) -> Vec<f64> {
     let short_ma = smooth::ewma(data, short);
     let long_ma = smooth::ewma(data, long);
     short_ma[short_ma.len() - long_ma.len()..]
@@ -386,16 +386,16 @@ pub fn po(data: &[f64], short: u8, long: u8) -> Vec<f64> {
 
 /// vertical horizontal filter
 /// https://www.upcomingtrader.com/blog/the-vertical-horizontal-filter-a-traders-guide-to-market-phases/
-pub fn vhf(high: &[f64], low: &[f64], close: &[f64], window: u8) -> Vec<f64> {
+pub fn vhf(high: &[f64], low: &[f64], close: &[f64], window: usize) -> Vec<f64> {
     let diffs = &close[1..]
         .iter()
         .zip(&close[..close.len() - 1])
         .map(|(curr, prev)| (curr - prev).abs())
         .collect::<Vec<f64>>();
     izip!(
-        diffs.windows(window.into()),
-        high.windows(window.into()).skip(1),
-        low.windows(window.into()).skip(1)
+        diffs.windows(window),
+        high.windows(window).skip(1),
+        low.windows(window).skip(1)
     )
     .map(|(diff, h, l)| {
         (h.iter().fold(f64::NAN, |state, &x| state.max(x))
@@ -411,9 +411,9 @@ pub fn ultimate(
     high: &[f64],
     low: &[f64],
     close: &[f64],
-    win1: u8,
-    win2: u8,
-    win3: u8,
+    win1: usize,
+    win2: usize,
+    win3: usize,
 ) -> Vec<f64> {
     let bp_tr_vals = izip!(
         &high[1..],
@@ -429,28 +429,28 @@ pub fn ultimate(
     })
     .collect::<Vec<(f64, f64)>>();
     bp_tr_vals
-        .windows(win3.into())
+        .windows(win3)
         .map(|w| {
             let (bp_sum1, tr_sum1) = w
                 .iter()
-                .skip((win3 - win1).into())
+                .skip(win3 - win1)
                 .fold((0.0, 0.0), |acc, (bp, tr)| (acc.0 + bp, acc.1 + tr));
             let (bp_sum2, tr_sum2) = w
                 .iter()
-                .skip((win3 - win2).into())
+                .skip(win3 - win2)
                 .fold((0.0, 0.0), |acc, (bp, tr)| (acc.0 + bp, acc.1 + tr));
             let (bp_sum3, tr_sum3) = w
                 .iter()
                 .fold((0.0, 0.0), |acc, (bp, tr)| (acc.0 + bp, acc.1 + tr));
             100.0 * (bp_sum1 / tr_sum1 * 4.0 + bp_sum2 / tr_sum2 * 2.0 + bp_sum3 / tr_sum3)
-                / (4 + 2 + 1) as f64
+                / (4.0 + 2.0 + 1.0)
         })
         .collect::<Vec<f64>>()
 }
 
 /// pretty good oscillator
 /// https://library.tradingtechnologies.com/trade/chrt-ti-pretty-good-oscillator.html
-pub fn pgo(high: &[f64], low: &[f64], close: &[f64], window: u8) -> Vec<f64> {
+pub fn pgo(high: &[f64], low: &[f64], close: &[f64], window: usize) -> Vec<f64> {
     let atr = smooth::ewma(&_true_range(high, low, close).collect::<Vec<f64>>(), window);
     let sma_close = smooth::sma(close, window);
     izip!(
@@ -517,9 +517,9 @@ pub fn asi(open: &[f64], high: &[f64], low: &[f64], close: &[f64], limit: f64) -
 
 /// Ulcer Index
 /// https://en.wikipedia.org/wiki/Ulcer_index
-pub fn ulcer(data: &[f64], window: u8) -> Vec<f64> {
+pub fn ulcer(data: &[f64], window: usize) -> Vec<f64> {
     let highest = data
-        .windows(window.into())
+        .windows(window)
         .map(|w| w.iter().fold(f64::NAN, |state, &x| state.max(x)))
         .collect::<Vec<f64>>();
     smooth::sma(
@@ -552,7 +552,7 @@ pub fn tr(high: &[f64], low: &[f64], close: &[f64]) -> Vec<f64> {
 
 /// typical price
 /// https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/typical-price
-pub fn hlc3(high: &[f64], low: &[f64], close: &[f64], window: u8) -> Vec<f64> {
+pub fn hlc3(high: &[f64], low: &[f64], close: &[f64], window: usize) -> Vec<f64> {
     smooth::sma(
         &izip!(high, low, close)
             .map(|(h, l, c)| (h + l + c) / 3.0)
@@ -563,7 +563,7 @@ pub fn hlc3(high: &[f64], low: &[f64], close: &[f64], window: u8) -> Vec<f64> {
 
 /// Triple Exponential Average
 /// https://www.investopedia.com/terms/t/trix.asp
-pub fn trix(close: &[f64], window: u8) -> Vec<f64> {
+pub fn trix(close: &[f64], window: usize) -> Vec<f64> {
     let ema3 = smooth::ewma(&smooth::ewma(&smooth::ewma(close, window), window), window);
     ema3[..ema3.len() - 1]
         .iter()
@@ -574,10 +574,10 @@ pub fn trix(close: &[f64], window: u8) -> Vec<f64> {
 
 /// trend intensity index
 /// https://www.marketvolume.com/technicalanalysis/trendintensityindex.asp
-pub fn tii(data: &[f64], window: u8) -> Vec<f64> {
+pub fn tii(data: &[f64], window: usize) -> Vec<f64> {
     smooth::sma(data, window)
         .iter()
-        .zip(&data[(window - 1) as usize..])
+        .zip(&data[(window - 1)..])
         .map(|(avg, actual)| {
             let dev: f64 = actual - avg;
             let pos_dev = if dev > 0.0 { dev } else { 0.0 };
@@ -585,7 +585,7 @@ pub fn tii(data: &[f64], window: u8) -> Vec<f64> {
             (pos_dev, neg_dev)
         })
         .collect::<Vec<(f64, f64)>>()
-        .windows(u8::div_ceil(window, 2).into())
+        .windows(window.div_ceil(2))
         .map(|w| {
             let mut sd_pos = 0.0;
             let mut sd_neg = 0.0;
@@ -624,55 +624,50 @@ pub fn supertrend(
     high: &[f64],
     low: &[f64],
     close: &[f64],
-    window: u8,
+    window: usize,
     multiplier: f64,
 ) -> Vec<f64> {
     // TODO: needs a test for when it actually flips to use upper band line
     let atr = smooth::wilder(&_true_range(high, low, close).collect::<Vec<f64>>(), window);
-    izip!(
-        &high[window.into()..],
-        &low[window.into()..],
-        &close[window.into()..],
-        &atr
-    )
-    .scan(
-        (f64::NAN, f64::NAN, f64::MIN_POSITIVE, 1),
-        |state, (h, l, c, tr)| {
-            let (prevlower, prevupper, prevc, prevdir) = state;
-            let mut lower = (h + l) / 2.0 - multiplier * tr;
-            let mut upper = (h + l) / 2.0 + multiplier * tr;
-            if prevc > prevlower && *prevlower > lower {
-                lower = *prevlower;
-            }
-            if prevc < prevupper && *prevupper < upper {
-                upper = *prevupper;
-            }
-            let dir = if c > prevupper {
-                1
-            } else if c < prevlower {
-                -1
-            } else {
-                *prevdir
-            };
-            *state = (lower, upper, *c, dir);
-            if dir > 0 {
-                Some(lower)
-            } else {
-                Some(upper)
-            }
-        },
-    )
-    .collect::<Vec<f64>>()
+    izip!(&high[window..], &low[window..], &close[window..], &atr)
+        .scan(
+            (f64::NAN, f64::NAN, f64::MIN_POSITIVE, 1),
+            |state, (h, l, c, tr)| {
+                let (prevlower, prevupper, prevc, prevdir) = state;
+                let mut lower = (h + l) / 2.0 - multiplier * tr;
+                let mut upper = (h + l) / 2.0 + multiplier * tr;
+                if prevc > prevlower && *prevlower > lower {
+                    lower = *prevlower;
+                }
+                if prevc < prevupper && *prevupper < upper {
+                    upper = *prevupper;
+                }
+                let dir = if c > prevupper {
+                    1
+                } else if c < prevlower {
+                    -1
+                } else {
+                    *prevdir
+                };
+                *state = (lower, upper, *c, dir);
+                if dir > 0 {
+                    Some(lower)
+                } else {
+                    Some(upper)
+                }
+            },
+        )
+        .collect::<Vec<f64>>()
 }
 
 /// Stochastic Oscillator
 /// https://www.investopedia.com/articles/technical/073001.asp
-pub fn stochastic(high: &[f64], low: &[f64], close: &[f64], window: u8) -> (Vec<f64>, Vec<f64>) {
+pub fn stochastic(high: &[f64], low: &[f64], close: &[f64], window: usize) -> (Vec<f64>, Vec<f64>) {
     let fast_k = smooth::sma(
         &izip!(
-            high.windows(window.into()),
-            low.windows(window.into()),
-            &close[(window - 1).into()..]
+            high.windows(window),
+            low.windows(window),
+            &close[(window - 1)..]
         )
         .map(|(h, l, c)| {
             let hh = h.iter().fold(f64::NAN, |state, &x| state.max(x));
@@ -686,10 +681,10 @@ pub fn stochastic(high: &[f64], low: &[f64], close: &[f64], window: u8) -> (Vec<
     (fast_k, k)
 }
 
-fn _stc(series: &[f64], window: u8) -> Vec<f64> {
+fn _stc(series: &[f64], window: usize) -> Vec<f64> {
     smooth::wilder(
         &series
-            .windows(window.into())
+            .windows(window)
             .map(|w| {
                 let mut hh = f64::NAN;
                 let mut ll = f64::NAN;
@@ -707,14 +702,14 @@ fn _stc(series: &[f64], window: u8) -> Vec<f64> {
 /// Shaff Trend Cycle
 /// https://www.investopedia.com/articles/forex/10/schaff-trend-cycle-indicator.asp
 /// https://www.stockmaniacs.net/schaff-trend-cycle-indicator/
-pub fn stc(close: &[f64], window: u8, short: u8, long: u8) -> Vec<f64> {
+pub fn stc(close: &[f64], window: usize, short: usize, long: usize) -> Vec<f64> {
     let series = macd(close, short, long);
     _stc(&_stc(&series, window), window)
 }
 
 /// Relative Volatility
 /// https://www.tradingview.com/support/solutions/43000594684-relative-volatility-index/
-pub fn relative_vol(close: &[f64], window: u8, smoothing: u8) -> Vec<f64> {
+pub fn relative_vol(close: &[f64], window: usize, smoothing: usize) -> Vec<f64> {
     let stdev = smooth::std_dev(close, window);
     let (gain, loss): (Vec<f64>, Vec<f64>) = izip!(
         &stdev,
@@ -745,7 +740,7 @@ pub fn relative_vigor(
     high: &[f64],
     low: &[f64],
     close: &[f64],
-    window: u8,
+    window: usize,
 ) -> Vec<f64> {
     let close_open = open
         .iter()
