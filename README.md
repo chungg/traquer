@@ -13,5 +13,4 @@ technical analysis library that gives you false hope that you can beat the marke
 - publish
 - more algos
 - handle div by zero scenarios
-- switch window param to usize
 - return iterable instead vec
