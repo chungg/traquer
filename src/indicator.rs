@@ -372,15 +372,39 @@ pub fn vortex(high: &[f64], low: &[f64], close: &[f64], window: usize) -> (Vec<f
     .unzip()
 }
 
-/// percent oscillator
+/// percent price oscillator
 /// pass in any data (close, high, low, etc...), and two window ranges
-pub fn po(data: &[f64], short: usize, long: usize) -> Vec<f64> {
+pub fn ppo(data: &[f64], short: usize, long: usize) -> Vec<f64> {
     let short_ma = smooth::ewma(data, short);
     let long_ma = smooth::ewma(data, long);
     short_ma[short_ma.len() - long_ma.len()..]
         .iter()
         .zip(long_ma)
         .map(|(x, y)| 100.0 * (x / y - 1.0))
+        .collect::<Vec<f64>>()
+}
+
+/// Absolute Price Oscillator
+/// https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/apo
+pub fn apo(data: &[f64], short: usize, long: usize) -> Vec<f64> {
+    let short_ma = smooth::ewma(data, short);
+    let long_ma = smooth::ewma(data, long);
+    short_ma[short_ma.len() - long_ma.len()..]
+        .iter()
+        .zip(long_ma)
+        .map(|(x, y)| x - y)
+        .collect::<Vec<f64>>()
+}
+
+/// Detrended Price Oscillator
+pub fn dpo(data: &[f64], window: usize) -> Vec<f64> {
+    let ma = smooth::sma(data, window);
+    let lag = window / 2 + 1;
+    dbg!(&ma);
+    data[window - lag - 1..]
+        .iter()
+        .zip(ma)
+        .map(|(x, y)| x - y)
         .collect::<Vec<f64>>()
 }
 

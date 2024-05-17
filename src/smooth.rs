@@ -172,3 +172,17 @@ pub fn trima(data: &[f64], window: usize) -> Vec<f64> {
     let win2 = if window & 2 == 0 { win1 + 1 } else { win1 };
     sma(&sma(data, win1), win2)
 }
+
+/// Zero Lag Moving Average
+/// https://en.wikipedia.org/wiki/Zero_lag_exponential_moving_average
+pub fn zlma(data: &[f64], window: usize) -> Vec<f64> {
+    let lag = (window - 1) / 2;
+    ewma(
+        &data
+            .iter()
+            .zip(data[lag..].iter())
+            .map(|(prev, curr)| 2.0 * curr - prev)
+            .collect::<Vec<f64>>(),
+        window,
+    )
+}
