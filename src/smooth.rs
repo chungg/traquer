@@ -71,7 +71,7 @@ pub fn hull(data: &[f64], window: u8) -> Vec<f64> {
 }
 
 /// standard deviation
-fn std_dev(data: &[f64], window: u8) -> Vec<f64> {
+pub(crate) fn std_dev(data: &[f64], window: u8) -> Vec<f64> {
     data.windows(window.into())
         .map(|w| {
             let mean = w.iter().sum::<f64>() / window as f64;
