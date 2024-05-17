@@ -21,6 +21,7 @@ pub fn sma(data: &[f64], window: usize) -> Vec<f64> {
 }
 
 /// double exponential moving average
+/// https://www.investopedia.com/terms/d/double-exponential-moving-average.asp
 pub fn dema(data: &[f64], window: usize) -> Vec<f64> {
     let ma = ewma(data, window);
     let mama = ewma(&ma, window);
@@ -29,6 +30,21 @@ pub fn dema(data: &[f64], window: usize) -> Vec<f64> {
         .zip(mama.iter())
         .map(|(ma1, ma2)| 2.0 * ma1 - ma2)
         .collect::<Vec<f64>>()
+}
+
+/// triple exponential moving average
+/// https://www.investopedia.com/terms/t/triple-exponential-moving-average.asp
+pub fn tema(data: &[f64], window: usize) -> Vec<f64> {
+    let ma = ewma(data, window);
+    let ma2 = ewma(&ma, window);
+    let ma3 = ewma(&ma2, window);
+    izip!(
+        &ma[ma.len() - ma3.len()..],
+        &ma2[ma2.len() - ma3.len()..],
+        &ma3
+    )
+    .map(|(ma1, ma2, ma3)| 3.0 * ma1 - 3.0 * ma2 + ma3)
+    .collect::<Vec<f64>>()
 }
 
 /// weighted moving average
@@ -127,8 +143,7 @@ pub fn vma(data: &[f64], window: usize) -> Vec<f64> {
         .collect::<Vec<f64>>()
 }
 
-/// Linear Regression Forecast
-/// aka Time series forecast
+/// Linear Regression Forecast aka Time Series Forecast
 /// https://quantstrategy.io/blog/what-is-tsf-understanding-time-series-forecast-indicator/
 pub fn lrf(data: &[f64], window: usize) -> Vec<f64> {
     let x_sum = (window * (window + 1)) as f64 / 2.0;
@@ -148,4 +163,12 @@ pub fn lrf(data: &[f64], window: usize) -> Vec<f64> {
             m * window as f64 + b
         })
         .collect::<Vec<f64>>()
+}
+
+/// triangular moving average
+/// computes sma(N/2) and then sma(N/2) again.
+pub fn trima(data: &[f64], window: usize) -> Vec<f64> {
+    let win1 = window.div_ceil(2);
+    let win2 = if window & 2 == 0 { win1 + 1 } else { win1 };
+    sma(&sma(data, win1), win2)
 }
