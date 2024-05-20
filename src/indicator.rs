@@ -799,3 +799,30 @@ pub fn relative_vigor(
         .map(|(n, d)| n / d)
         .collect::<Vec<f64>>()
 }
+
+/// Random Walk Index
+/// https://www.technicalindicators.net/indicators-technical-analysis/168-rwi-random-walk-index
+/// https://www.investopedia.com/terms/r/random-walk-index.asp
+pub fn rwi(high: &[f64], low: &[f64], close: &[f64], window: usize) -> Vec<(f64, f64)> {
+    // looks back n number of periods *including* current. other libs may not include current.
+    izip!(
+        high[1..].windows(window),
+        low[1..].windows(window),
+        _true_range(high, low, close)
+            .collect::<Vec<f64>>()
+            .windows(window),
+    )
+    .map(|(h, l, tr)| {
+        let mut rwi_high: f64 = 0.0;
+        let mut rwi_low: f64 = 0.0;
+        let mut tr_sum = 0.0;
+        for i in 2..=window {
+            tr_sum += tr[window - i];
+            let denom = (tr_sum / (i - 1) as f64) * ((i - 1) as f64).sqrt();
+            rwi_high = rwi_high.max((h[window - 1] - l[window - i]) / denom);
+            rwi_low = rwi_low.max((h[window - i] - l[window - 1]) / denom);
+        }
+        (rwi_high, rwi_low)
+    })
+    .collect::<Vec<(f64, f64)>>()
+}
