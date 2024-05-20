@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::fs;
 
-use traquer::indicator;
+use traquer::*;
 
 #[derive(Deserialize, Serialize, Debug)]
 struct SecStats {
@@ -16,5 +16,5 @@ fn main() {
     let data = fs::read_to_string("./tests/rddt.input").expect("Unable to read file");
     let stats: SecStats = serde_json::from_str(&data).expect("JSON does not have correct format.");
 
-    dbg!(indicator::dpo(&stats.close, 16));
+    dbg!(smooth::dema(&stats.close, 16).count());
 }

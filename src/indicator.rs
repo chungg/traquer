@@ -31,8 +31,8 @@ pub fn kvo(
     let vf = vforce(high, low, close, volume);
     let short_ma = smooth::ewma(&vf, short);
     let long_ma = smooth::ewma(&vf, long);
-    short_ma[short_ma.len() - long_ma.len()..]
-        .iter()
+    short_ma
+        .skip(long - short)
         .zip(long_ma)
         .map(|(x, y)| x - y)
         .collect::<Vec<f64>>()
@@ -46,7 +46,7 @@ pub fn qstick(open: &[f64], close: &[f64], window: usize) -> Vec<f64> {
         .zip(open.iter())
         .map(|(c, o)| c - o)
         .collect::<Vec<f64>>();
-    smooth::ewma(&q, window)
+    smooth::ewma(&q, window).collect::<Vec<f64>>()
 }
 
 fn wilder_sum(data: &[f64], window: usize) -> Vec<f64> {
@@ -146,7 +146,7 @@ pub fn adx(
             (dm_pos, dm_neg, tr)
         }),
     );
-    let atr = smooth::wilder(&tr, period);
+    let atr = smooth::wilder(&tr, period).collect::<Vec<f64>>();
     let di_pos = izip!(smooth::wilder(&dm_pos, period), &atr)
         .map(|(di, tr)| di / tr * 100.0)
         .collect::<Vec<f64>>();
@@ -156,7 +156,11 @@ pub fn adx(
     let dx = izip!(&di_pos, &di_neg)
         .map(|(pos, neg)| f64::abs(pos - neg) / (pos + neg) * 100.0)
         .collect::<Vec<f64>>();
-    (di_pos, di_neg, smooth::wilder(&dx, smoothing))
+    (
+        di_pos,
+        di_neg,
+        smooth::wilder(&dx, smoothing).collect::<Vec<f64>>(),
+    )
 }
 
 /// relative strength index
@@ -168,8 +172,7 @@ pub fn rsi(data: &[f64], window: usize) -> Vec<f64> {
         .map(|(curr, prev)| (f64::max(0.0, curr - prev), f64::min(0.0, curr - prev).abs()))
         .unzip();
     smooth::wilder(&gain, window)
-        .iter()
-        .zip(smooth::wilder(&loss, window).iter())
+        .zip(smooth::wilder(&loss, window))
         .map(|(g, l)| 100.0 * g / (g + l))
         .collect::<Vec<f64>>()
 }
@@ -179,8 +182,8 @@ pub fn rsi(data: &[f64], window: usize) -> Vec<f64> {
 pub fn macd(close: &[f64], short: usize, long: usize) -> Vec<f64> {
     let short_ma = smooth::ewma(close, short);
     let long_ma = smooth::ewma(close, long);
-    short_ma[short_ma.len() - long_ma.len()..]
-        .iter()
+    short_ma
+        .skip(long - short)
         .zip(long_ma)
         .map(|(x, y)| x - y)
         .collect::<Vec<f64>>()
@@ -190,7 +193,6 @@ pub fn macd(close: &[f64], short: usize, long: usize) -> Vec<f64> {
 /// https://www.investopedia.com/terms/c/chandemomentumoscillator.asp
 pub fn cmo(data: &[f64], window: usize) -> Vec<f64> {
     smooth::_cmo(data, window)
-        .iter()
         .map(|x| x * 100.0)
         .collect::<Vec<f64>>()
 }
@@ -198,12 +200,13 @@ pub fn cmo(data: &[f64], window: usize) -> Vec<f64> {
 /// centre of gravity
 /// https://www.stockmaniacs.net/center-of-gravity-indicator/
 pub fn cog(data: &[f64], window: usize) -> Vec<f64> {
+    let weights: Vec<f64> = (1..=window).map(|x| x as f64).collect();
     data.windows(window)
         .map(|w| {
             -w.iter()
                 .rev()
-                .enumerate()
-                .map(|(i, e)| (e * (i + 1) as f64))
+                .zip(weights.iter())
+                .map(|(e, i)| e * i)
                 .sum::<f64>()
                 / w.iter().sum::<f64>()
         })
@@ -248,8 +251,8 @@ pub fn ad_yahoo(high: &[f64], low: &[f64], close: &[f64], volume: &[f64]) -> Vec
 pub fn elder_ray(high: &[f64], low: &[f64], close: &[f64], window: usize) -> (Vec<f64>, Vec<f64>) {
     let close_ma = smooth::ewma(close, window);
     izip!(
-        &high[high.len() - close_ma.len()..],
-        &low[low.len() - close_ma.len()..],
+        high.iter().skip(window - 1),
+        low.iter().skip(window - 1),
         close_ma
     )
     .map(|(h, l, c)| (h - c, l - c))
@@ -265,6 +268,7 @@ pub fn elder_force(close: &[f64], volume: &[f64], window: usize) -> Vec<f64> {
             .collect::<Vec<f64>>(),
         window,
     )
+    .collect::<Vec<f64>>()
 }
 
 /// williams alligator
@@ -320,6 +324,7 @@ pub fn cvi(high: &[f64], low: &[f64], window: usize, rate_of_change: usize) -> V
             .collect::<Vec<f64>>(),
         window,
     )
+    .collect::<Vec<f64>>()
     .windows(rate_of_change + 1)
     .map(|w| 100.0 * (w.last().unwrap() / w.first().unwrap() - 1.0))
     .collect::<Vec<f64>>()
@@ -377,8 +382,8 @@ pub fn vortex(high: &[f64], low: &[f64], close: &[f64], window: usize) -> (Vec<f
 pub fn ppo(data: &[f64], short: usize, long: usize) -> Vec<f64> {
     let short_ma = smooth::ewma(data, short);
     let long_ma = smooth::ewma(data, long);
-    short_ma[short_ma.len() - long_ma.len()..]
-        .iter()
+    short_ma
+        .skip(long - short)
         .zip(long_ma)
         .map(|(x, y)| 100.0 * (x / y - 1.0))
         .collect::<Vec<f64>>()
@@ -389,8 +394,8 @@ pub fn ppo(data: &[f64], short: usize, long: usize) -> Vec<f64> {
 pub fn apo(data: &[f64], short: usize, long: usize) -> Vec<f64> {
     let short_ma = smooth::ewma(data, short);
     let long_ma = smooth::ewma(data, long);
-    short_ma[short_ma.len() - long_ma.len()..]
-        .iter()
+    short_ma
+        .skip(long - short)
         .zip(long_ma)
         .map(|(x, y)| x - y)
         .collect::<Vec<f64>>()
@@ -400,7 +405,6 @@ pub fn apo(data: &[f64], short: usize, long: usize) -> Vec<f64> {
 pub fn dpo(data: &[f64], window: usize) -> Vec<f64> {
     let ma = smooth::sma(data, window);
     let lag = window / 2 + 1;
-    dbg!(&ma);
     data[window - lag - 1..]
         .iter()
         .zip(ma)
@@ -411,10 +415,12 @@ pub fn dpo(data: &[f64], window: usize) -> Vec<f64> {
 /// vertical horizontal filter
 /// https://www.upcomingtrader.com/blog/the-vertical-horizontal-filter-a-traders-guide-to-market-phases/
 pub fn vhf(high: &[f64], low: &[f64], close: &[f64], window: usize) -> Vec<f64> {
-    let diffs = &close[1..]
-        .iter()
-        .zip(&close[..close.len() - 1])
-        .map(|(curr, prev)| (curr - prev).abs())
+    let diffs = close
+        .windows(2)
+        .map(|pair| {
+            let (prev, curr) = (pair[0], pair[1]);
+            (curr - prev).abs()
+        })
         .collect::<Vec<f64>>();
     izip!(
         diffs.windows(window),
@@ -475,15 +481,12 @@ pub fn ultimate(
 /// pretty good oscillator
 /// https://library.tradingtechnologies.com/trade/chrt-ti-pretty-good-oscillator.html
 pub fn pgo(high: &[f64], low: &[f64], close: &[f64], window: usize) -> Vec<f64> {
-    let atr = smooth::ewma(&_true_range(high, low, close).collect::<Vec<f64>>(), window);
+    let tr = _true_range(high, low, close).collect::<Vec<f64>>();
+    let atr = smooth::ewma(&tr, window);
     let sma_close = smooth::sma(close, window);
-    izip!(
-        &close[close.len() - atr.len()..],
-        &sma_close[sma_close.len() - atr.len()..],
-        atr
-    )
-    .map(|(c, c_ma, tr_ma)| (c - c_ma) / tr_ma)
-    .collect::<Vec<f64>>()
+    izip!(close.iter().skip(window), sma_close.skip(1), atr)
+        .map(|(c, c_ma, tr_ma)| (c - c_ma) / tr_ma)
+        .collect::<Vec<f64>>()
 }
 
 fn _swing<'a>(
@@ -544,17 +547,14 @@ pub fn asi(open: &[f64], high: &[f64], low: &[f64], close: &[f64], limit: f64) -
 pub fn ulcer(data: &[f64], window: usize) -> Vec<f64> {
     let highest = data
         .windows(window)
-        .map(|w| w.iter().fold(f64::NAN, |state, &x| state.max(x)))
-        .collect::<Vec<f64>>();
+        .map(|w| w.iter().fold(f64::NAN, |state, &x| state.max(x)));
     smooth::sma(
         &highest
-            .iter()
-            .zip(&data[data.len() - highest.len()..])
+            .zip(data.iter().skip(window - 1))
             .map(|(high, c)| (100.0 * (c - high) / high).powi(2))
             .collect::<Vec<f64>>(),
         window,
     )
-    .iter()
     .map(|x| x.sqrt())
     .collect::<Vec<f64>>()
 }
@@ -583,12 +583,18 @@ pub fn hlc3(high: &[f64], low: &[f64], close: &[f64], window: usize) -> Vec<f64>
             .collect::<Vec<f64>>(),
         window,
     )
+    .collect::<Vec<f64>>()
 }
 
 /// Triple Exponential Average
 /// https://www.investopedia.com/terms/t/trix.asp
 pub fn trix(close: &[f64], window: usize) -> Vec<f64> {
-    let ema3 = smooth::ewma(&smooth::ewma(&smooth::ewma(close, window), window), window);
+    let ema3 = smooth::ewma(
+        &smooth::ewma(&smooth::ewma(close, window).collect::<Vec<f64>>(), window)
+            .collect::<Vec<f64>>(),
+        window,
+    )
+    .collect::<Vec<f64>>();
     ema3[..ema3.len() - 1]
         .iter()
         .zip(&ema3[1..])
@@ -600,7 +606,6 @@ pub fn trix(close: &[f64], window: usize) -> Vec<f64> {
 /// https://www.marketvolume.com/technicalanalysis/trendintensityindex.asp
 pub fn tii(data: &[f64], window: usize) -> Vec<f64> {
     smooth::sma(data, window)
-        .iter()
         .zip(&data[(window - 1)..])
         .map(|(avg, actual)| {
             let dev: f64 = actual - avg;
@@ -652,8 +657,9 @@ pub fn supertrend(
     multiplier: f64,
 ) -> Vec<f64> {
     // TODO: needs a test for when it actually flips to use upper band line
-    let atr = smooth::wilder(&_true_range(high, low, close).collect::<Vec<f64>>(), window);
-    izip!(&high[window..], &low[window..], &close[window..], &atr)
+    let tr = _true_range(high, low, close).collect::<Vec<f64>>();
+    let atr = smooth::wilder(&tr, window);
+    izip!(&high[window..], &low[window..], &close[window..], atr)
         .scan(
             (f64::NAN, f64::NAN, f64::MIN_POSITIVE, 1),
             |state, (h, l, c, tr)| {
@@ -700,8 +706,9 @@ pub fn stochastic(high: &[f64], low: &[f64], close: &[f64], window: usize) -> (V
         })
         .collect::<Vec<f64>>(),
         3,
-    );
-    let k = smooth::sma(&fast_k, 3);
+    )
+    .collect::<Vec<f64>>();
+    let k = smooth::sma(&fast_k, 3).collect::<Vec<f64>>();
     (fast_k, k)
 }
 
@@ -721,6 +728,7 @@ fn _stc(series: &[f64], window: usize) -> Vec<f64> {
             .collect::<Vec<f64>>(),
         2,
     )
+    .collect::<Vec<f64>>()
 }
 
 /// Shaff Trend Cycle
@@ -734,7 +742,7 @@ pub fn stc(close: &[f64], window: usize, short: usize, long: usize) -> Vec<f64> 
 /// Relative Volatility
 /// https://www.tradingview.com/support/solutions/43000594684-relative-volatility-index/
 pub fn relative_vol(close: &[f64], window: usize, smoothing: usize) -> Vec<f64> {
-    let stdev = smooth::std_dev(close, window);
+    let stdev = smooth::std_dev(close, window).collect::<Vec<f64>>();
     let (gain, loss): (Vec<f64>, Vec<f64>) = izip!(
         &stdev,
         &close[close.len() - stdev.len()..],
@@ -751,8 +759,7 @@ pub fn relative_vol(close: &[f64], window: usize, smoothing: usize) -> Vec<f64> 
     })
     .unzip();
     smooth::wilder(&gain, smoothing)
-        .iter()
-        .zip(smooth::wilder(&loss, smoothing).iter())
+        .zip(smooth::wilder(&loss, smoothing))
         .map(|(g, l)| 100.0 * g / (g + l))
         .collect::<Vec<f64>>()
 }
@@ -786,6 +793,7 @@ pub fn relative_vigor(
         .map(|w| (w[3] + 2.0 * w[2] + 2.0 * w[1] + w[0]) / 6.0)
         .collect::<Vec<f64>>();
     smooth::sma(&numerator, window)
+        .collect::<Vec<f64>>()
         .iter()
         .zip(smooth::sma(&denominator, window))
         .map(|(n, d)| n / d)
