@@ -49,16 +49,13 @@ pub fn qstick(open: &[f64], close: &[f64], window: usize) -> Vec<f64> {
     smooth::ewma(&q, window).collect::<Vec<f64>>()
 }
 
-fn wilder_sum(data: &[f64], window: usize) -> Vec<f64> {
+fn wilder_sum(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
     let initial = data[..(window - 1)].iter().sum::<f64>();
-    data[(window - 1)..]
-        .iter()
-        .scan(initial, |state, x| {
-            let ma = *state * (window - 1) as f64 / window as f64 + x;
-            *state = ma;
-            Some(ma)
-        })
-        .collect::<Vec<f64>>()
+    data[(window - 1)..].iter().scan(initial, move |state, x| {
+        let ma = *state * (window - 1) as f64 / window as f64 + x;
+        *state = ma;
+        Some(ma)
+    })
 }
 
 /// twiggs money flow
@@ -67,7 +64,7 @@ fn wilder_sum(data: &[f64], window: usize) -> Vec<f64> {
 pub fn twiggs(high: &[f64], low: &[f64], close: &[f64], volume: &[f64], window: usize) -> Vec<f64> {
     let data = izip!(&high[1..], &low[1..], &close[1..], &volume[1..]);
     // not using wilder moving average to minimise drift caused by floating point math
-    let ad = wilder_sum(
+    wilder_sum(
         &data
             .scan(close[0], |state, (h, l, c, vol)| {
                 let range_vol = vol
@@ -78,11 +75,10 @@ pub fn twiggs(high: &[f64], low: &[f64], close: &[f64], volume: &[f64], window: 
             })
             .collect::<Vec<f64>>(),
         window,
-    );
-    ad.iter()
-        .zip(wilder_sum(&volume[1..], window).iter())
-        .map(|(range, vol)| range / vol)
-        .collect()
+    )
+    .zip(wilder_sum(&volume[1..], window))
+    .map(|(range, vol)| range / vol)
+    .collect()
 }
 
 /// shinohara intensity ratio

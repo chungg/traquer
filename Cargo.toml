@@ -12,7 +12,6 @@ serde_json = "*"
 
 [dev-dependencies]
 criterion = "0.5.1"
-divan = "0.1.14"
 
 [[bench]]
 name = "my_benchmark"
