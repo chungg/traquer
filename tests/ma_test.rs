@@ -535,7 +535,7 @@ fn test_wilder_odd() {
 #[test]
 fn test_lrf() {
     let stats = common::test_data();
-    let result = smooth::lrf(&stats.close, 16);
+    let result = smooth::lrf(stats.close, 16);
     assert_eq!(
         vec![
             40.43308849895702,

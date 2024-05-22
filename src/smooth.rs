@@ -58,9 +58,13 @@ pub fn wma(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
 }
 
 /// welles wilder's moving average
-pub fn wilder(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
-    let initial = data[..window - 1].iter().sum::<f64>() / (window - 1) as f64;
-    data[window - 1..].iter().scan(initial, move |state, x| {
+pub fn wilder<I>(data: I, window: usize) -> impl Iterator<Item = f64>
+where
+    I: IntoIterator<Item = f64>,
+{
+    let mut data_iter = data.into_iter();
+    let initial = data_iter.by_ref().take(window - 1).sum::<f64>() / (window - 1) as f64;
+    data_iter.scan(initial, move |state, x| {
         let ma = (*state * (window - 1) as f64 + x) / window as f64;
         *state = ma;
         Some(ma)
@@ -145,13 +149,16 @@ pub fn vma(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
 
 /// Linear Regression Forecast aka Time Series Forecast
 /// https://quantstrategy.io/blog/what-is-tsf-understanding-time-series-forecast-indicator/
-pub fn lrf(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
+pub fn lrf<I>(data: I, window: usize) -> impl Iterator<Item = f64>
+where
+    I: IntoIterator<Item = f64>,
+{
     let x_sum = (window * (window + 1)) as f64 / 2.0;
     let x2_sum: f64 = x_sum * (2 * window + 1) as f64 / 3.0;
     let divisor = window as f64 * x2_sum - x_sum.powi(2);
     let indices: Vec<f64> = (1..=window).map(|x| x as f64).collect();
 
-    data.windows(window).map(move |w| {
+    data.into_iter().collect::<Vec<f64>>().windows(window).map(move |w| {
         let mut y_sum = 0.0;
         let mut xy_sum = 0.0;
         for (count, val) in indices.iter().zip(w.iter()) {
@@ -162,6 +169,7 @@ pub fn lrf(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
         let b = (y_sum * x2_sum - x_sum * xy_sum) / divisor;
         m * window as f64 + b
     })
+    .collect::<Vec<f64>>().into_iter()
 }
 
 /// triangular moving average
@@ -176,16 +184,19 @@ pub fn trima(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
 
 /// Zero Lag Moving Average
 /// https://en.wikipedia.org/wiki/Zero_lag_exponential_moving_average
-pub fn zlma(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
+pub fn zlma<I>(data: I, window: usize) -> impl Iterator<Item = f64>
+where
+    I: IntoIterator<Item = f64>,
+{
     let lag = (window - 1) / 2;
+    let data_vec = data.into_iter().collect::<Vec<f64>>();
     ewma(
-        &data
+        &data_vec
             .iter()
-            .zip(data[lag..].iter())
+            .zip(data_vec[lag..].iter())
             .map(|(prev, curr)| 2.0 * curr - prev)
             .collect::<Vec<f64>>(),
         window,
     )
-    .collect::<Vec<f64>>()
-    .into_iter()
+        .collect::<Vec<f64>>().into_iter()
 }
