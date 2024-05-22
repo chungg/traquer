@@ -264,7 +264,7 @@ fn criterion_benchmark(c: &mut Criterion) {
         b.iter(|| black_box(smooth::wma(&stats.close, 16).collect::<Vec<f64>>()))
     });
     c.bench_function("ma-wilder", |b| {
-        b.iter(|| black_box(smooth::wilder(&stats.close, 16).collect::<Vec<f64>>()))
+        b.iter(|| black_box(smooth::wilder(stats.close.iter().copied(), 16).collect::<Vec<f64>>()))
     });
     c.bench_function("ma-hull", |b| {
         b.iter(|| black_box(smooth::hull(&stats.close, 16).collect::<Vec<f64>>()))
@@ -276,13 +276,13 @@ fn criterion_benchmark(c: &mut Criterion) {
         b.iter(|| black_box(smooth::vma(&stats.close, 16).collect::<Vec<f64>>()))
     });
     c.bench_function("ma-lrf", |b| {
-        b.iter(|| black_box(smooth::lrf(&stats.close, 16).collect::<Vec<f64>>()))
+        b.iter(|| black_box(smooth::lrf(stats.close.iter().copied(), 16).collect::<Vec<f64>>()))
     });
     c.bench_function("ma-trima", |b| {
         b.iter(|| black_box(smooth::trima(&stats.close, 16).collect::<Vec<f64>>()))
     });
     c.bench_function("ma-zlma", |b| {
-        b.iter(|| black_box(smooth::zlma(&stats.close, 16).collect::<Vec<f64>>()))
+        b.iter(|| black_box(smooth::zlma(stats.close.iter().copied(), 16).collect::<Vec<f64>>()))
     });
 }
 

@@ -17,5 +17,5 @@ fn main() {
     let stats: SecStats = serde_json::from_str(&data).expect("JSON does not have correct format.");
 
     //dbg!(indicator::rwi(&stats.high, &stats.low, &stats.close, 16));
-    dbg!(smooth::sma(&stats.close, 16).collect::<Vec<f64>>());
+    dbg!(smooth::dema(&stats.close, 16).collect::<Vec<f64>>());
 }

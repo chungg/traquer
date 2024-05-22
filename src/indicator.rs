@@ -142,20 +142,20 @@ pub fn adx(
             (dm_pos, dm_neg, tr)
         }),
     );
-    let atr = smooth::wilder(&tr, period).collect::<Vec<f64>>();
-    let di_pos = izip!(smooth::wilder(&dm_pos, period), &atr)
+    let atr = smooth::wilder(tr, period).collect::<Vec<f64>>();
+    let di_pos = izip!(smooth::wilder(dm_pos, period), &atr)
         .map(|(di, tr)| di / tr * 100.0)
         .collect::<Vec<f64>>();
-    let di_neg = izip!(smooth::wilder(&dm_neg, period), &atr)
+    let di_neg = izip!(smooth::wilder(dm_neg, period), &atr)
         .map(|(di, tr)| di / tr * 100.0)
         .collect::<Vec<f64>>();
-    let dx = izip!(&di_pos, &di_neg)
-        .map(|(pos, neg)| f64::abs(pos - neg) / (pos + neg) * 100.0)
+    let dx = smooth::wilder(izip!(&di_pos, &di_neg)
+        .map(|(pos, neg)| f64::abs(pos - neg) / (pos + neg) * 100.0), smoothing)
         .collect::<Vec<f64>>();
     (
         di_pos,
         di_neg,
-        smooth::wilder(&dx, smoothing).collect::<Vec<f64>>(),
+        dx
     )
 }
 
@@ -167,8 +167,8 @@ pub fn rsi(data: &[f64], window: usize) -> Vec<f64> {
         .zip(data[..data.len() - 1].iter())
         .map(|(curr, prev)| (f64::max(0.0, curr - prev), f64::min(0.0, curr - prev).abs()))
         .unzip();
-    smooth::wilder(&gain, window)
-        .zip(smooth::wilder(&loss, window))
+    smooth::wilder(gain, window)
+        .zip(smooth::wilder(loss, window))
         .map(|(g, l)| 100.0 * g / (g + l))
         .collect::<Vec<f64>>()
 }
@@ -653,8 +653,7 @@ pub fn supertrend(
     multiplier: f64,
 ) -> Vec<f64> {
     // TODO: needs a test for when it actually flips to use upper band line
-    let tr = _true_range(high, low, close).collect::<Vec<f64>>();
-    let atr = smooth::wilder(&tr, window);
+    let atr = smooth::wilder(_true_range(high, low, close), window);
     izip!(&high[window..], &low[window..], &close[window..], atr)
         .scan(
             (f64::NAN, f64::NAN, f64::MIN_POSITIVE, 1),
@@ -710,7 +709,7 @@ pub fn stochastic(high: &[f64], low: &[f64], close: &[f64], window: usize) -> (V
 
 fn _stc(series: &[f64], window: usize) -> Vec<f64> {
     smooth::wilder(
-        &series
+        series
             .windows(window)
             .map(|w| {
                 let mut hh = f64::NAN;
@@ -720,8 +719,7 @@ fn _stc(series: &[f64], window: usize) -> Vec<f64> {
                     ll = ll.min(*x);
                 }
                 100.0 * (w.last().unwrap() - ll) / (hh - ll)
-            })
-            .collect::<Vec<f64>>(),
+            }),
         2,
     )
     .collect::<Vec<f64>>()
@@ -754,8 +752,8 @@ pub fn relative_vol(close: &[f64], window: usize, smoothing: usize) -> Vec<f64> 
         )
     })
     .unzip();
-    smooth::wilder(&gain, smoothing)
-        .zip(smooth::wilder(&loss, smoothing))
+    smooth::wilder(gain, smoothing)
+        .zip(smooth::wilder(loss, smoothing))
         .map(|(g, l)| 100.0 * g / (g + l))
         .collect::<Vec<f64>>()
 }
