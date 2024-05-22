@@ -33,7 +33,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     });
     c.bench_function("sig-twiggs", |b| {
         b.iter(|| {
-            black_box(indicator::twiggs(
+            black_box(volume::twiggs(
                 &stats.high,
                 &stats.low,
                 &stats.close,
@@ -47,7 +47,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     });
     c.bench_function("sig-kvo", |b| {
         b.iter(|| {
-            black_box(indicator::kvo(
+            black_box(volume::kvo(
                 &stats.high,
                 &stats.low,
                 &stats.close,
@@ -87,11 +87,11 @@ fn criterion_benchmark(c: &mut Criterion) {
         })
     });
     c.bench_function("sig-elder_force", |b| {
-        b.iter(|| black_box(indicator::elder_force(&stats.close, &stats.volume, 16)))
+        b.iter(|| black_box(volume::elder_force(&stats.close, &stats.volume, 16)))
     });
     c.bench_function("sig-mfi", |b| {
         b.iter(|| {
-            black_box(indicator::mfi(
+            black_box(volume::mfi(
                 &stats.high,
                 &stats.low,
                 &stats.close,
@@ -102,7 +102,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     });
     c.bench_function("sig-ad", |b| {
         b.iter(|| {
-            black_box(indicator::ad(
+            black_box(volume::ad(
                 &stats.high,
                 &stats.low,
                 &stats.close,
@@ -112,7 +112,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     });
     c.bench_function("sig-ad_yahoo", |b| {
         b.iter(|| {
-            black_box(indicator::ad_yahoo(
+            black_box(volume::ad_yahoo(
                 &stats.high,
                 &stats.low,
                 &stats.close,
@@ -122,7 +122,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     });
     c.bench_function("sig-cmf", |b| {
         b.iter(|| {
-            black_box(indicator::cmf(
+            black_box(volume::cmf(
                 &stats.high,
                 &stats.low,
                 &stats.close,
@@ -205,7 +205,7 @@ fn criterion_benchmark(c: &mut Criterion) {
         b.iter(|| black_box(indicator::tii(&stats.close, 16)))
     });
     c.bench_function("sig-tvi", |b| {
-        b.iter(|| black_box(indicator::tvi(&stats.close, &stats.volume, 0.5)))
+        b.iter(|| black_box(volume::tvi(&stats.close, &stats.volume, 0.5)))
     });
     c.bench_function("sig-supertrend", |b| {
         b.iter(|| {
