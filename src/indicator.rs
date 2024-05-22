@@ -1,3 +1,5 @@
+use std::iter;
+
 use itertools::{izip, multiunzip};
 
 use crate::smooth;
@@ -681,4 +683,42 @@ pub fn fisher(high: &[f64], low: &[f64], window: usize) -> Vec<f64> {
             Some(state.1)
         })
         .collect::<Vec<f64>>()
+}
+
+/// Rainbow Oscillator
+/// https://www.tradingview.com/script/gWYg0ti0-Indicators-Rainbow-Charts-Oscillator-Binary-Wave-and-MAs/
+pub fn rainbow(data: &[f64], window: usize, lookback: usize) -> Vec<(f64, f64)> {
+    let mut smas = Vec::with_capacity(10);
+    smas.push(smooth::sma(data, window).collect::<Vec<f64>>());
+    for _ in 1..10 {
+        smas.push(
+            iter::repeat(f64::NAN)
+                .take(window - 1)
+                .chain(smooth::sma(&smas[smas.len() - 1], window))
+                .collect::<Vec<f64>>(),
+        );
+    }
+    ((window - 1) * 10..data.len())
+        .map(|i| {
+            let mut total: f64 = 0.0;
+            let mut hsma = f64::MIN;
+            let mut lsma = f64::MAX;
+            for sma in smas.iter() {
+                let val = sma[i - (window - 1)];
+                total += val;
+                hsma = hsma.max(val);
+                lsma = lsma.min(val);
+            }
+            let mut hlookback = f64::MIN;
+            let mut llookback = f64::MAX;
+            ((i - (lookback - 1)).max(0)..=i).for_each(|x| {
+                let val = data[x];
+                hlookback = hlookback.max(val);
+                llookback = llookback.min(val);
+            });
+            let osc = 100.0 * (data[i] - total / 10.0) / (hlookback - llookback).max(0.000001);
+            let band = 100.0 * (hsma - lsma) / (hlookback - llookback).max(0.000001);
+            (osc, band)
+        })
+        .collect::<Vec<(f64, f64)>>()
 }
