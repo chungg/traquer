@@ -654,3 +654,31 @@ pub fn rwi(high: &[f64], low: &[f64], close: &[f64], window: usize) -> Vec<(f64,
     })
     .collect::<Vec<(f64, f64)>>()
 }
+
+/// Elhers Fisher Transform
+/// https://www.investopedia.com/terms/f/fisher-transform.asp
+pub fn fisher(high: &[f64], low: &[f64], window: usize) -> Vec<f64> {
+    let hl2 = high
+        .iter()
+        .zip(low)
+        .map(|(h, l)| (h + l) / 2.0)
+        .collect::<Vec<f64>>();
+    hl2.windows(window)
+        .scan((0.0, 0.0), |state, w| {
+            let mut hl_max: f64 = 0.0;
+            let mut hl_min: f64 = f64::MAX;
+            for &e in w {
+                hl_max = hl_max.max(e);
+                hl_min = hl_min.min(e);
+            }
+            let transform = (0.66
+                * ((w[window - 1] - hl_min) / (hl_max - hl_min).max(0.000001) - 0.5)
+                + 0.67 * state.0)
+                .min(0.999999)
+                .max(-0.999999);
+            let result = 0.5 * ((1.0 + transform) / (1.0 - transform)).ln() + 0.5 * state.1;
+            *state = (transform, result);
+            Some(state.1)
+        })
+        .collect::<Vec<f64>>()
+}
