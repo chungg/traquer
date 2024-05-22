@@ -4,3 +4,4 @@
 
 pub mod indicator;
 pub mod smooth;
+pub mod volume;
