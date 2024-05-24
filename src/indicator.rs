@@ -17,17 +17,17 @@ pub fn qstick(open: &[f64], close: &[f64], window: usize) -> Vec<f64> {
 
 /// shinohara intensity ratio
 /// https://www.sevendata.co.jp/shihyou/technical/shinohara.html
-pub fn shinohara(high: &[f64], low: &[f64], close: &[f64], period: usize) -> (Vec<f64>, Vec<f64>) {
+pub fn shinohara(high: &[f64], low: &[f64], close: &[f64], window: usize) -> (Vec<f64>, Vec<f64>) {
     let high_win = high
-        .windows(period)
+        .windows(window)
         .map(|w| w.iter().sum())
         .collect::<Vec<f64>>();
     let low_win = low
-        .windows(period)
+        .windows(window)
         .map(|w| w.iter().sum())
         .collect::<Vec<f64>>();
     let close_win = close
-        .windows(period)
+        .windows(window)
         .map(|w| w.iter().sum())
         .collect::<Vec<f64>>();
     // yahoo uses close rather than open for weak ratio described above
@@ -50,7 +50,7 @@ pub fn adx(
     high: &[f64],
     low: &[f64],
     close: &[f64],
-    period: usize,
+    window: usize,
     smoothing: usize,
 ) -> (Vec<f64>, Vec<f64>, Vec<f64>) {
     let (dm_pos, dm_neg, tr): (Vec<_>, Vec<_>, Vec<_>) = multiunzip(
@@ -76,11 +76,11 @@ pub fn adx(
             (dm_pos, dm_neg, tr)
         }),
     );
-    let atr = smooth::wilder(&tr, period).collect::<Vec<f64>>();
-    let di_pos = izip!(smooth::wilder(&dm_pos, period), &atr)
+    let atr = smooth::wilder(&tr, window).collect::<Vec<f64>>();
+    let di_pos = izip!(smooth::wilder(&dm_pos, window), &atr)
         .map(|(di, tr)| di / tr * 100.0)
         .collect::<Vec<f64>>();
-    let di_neg = izip!(smooth::wilder(&dm_neg, period), &atr)
+    let di_neg = izip!(smooth::wilder(&dm_neg, window), &atr)
         .map(|(di, tr)| di / tr * 100.0)
         .collect::<Vec<f64>>();
     let dx = izip!(&di_pos, &di_neg)
@@ -423,6 +423,13 @@ pub fn tr(high: &[f64], low: &[f64], close: &[f64]) -> Vec<f64> {
     _true_range(high, low, close).collect::<Vec<f64>>()
 }
 
+/// average true range
+/// https://www.investopedia.com/terms/a/atr.asp
+pub fn atr(high: &[f64], low: &[f64], close: &[f64], window: usize) -> Vec<f64> {
+    smooth::wilder(&_true_range(high, low, close).collect::<Vec<f64>>(), window)
+        .collect::<Vec<f64>>()
+}
+
 /// typical price
 /// https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/typical-price
 pub fn hlc3(high: &[f64], low: &[f64], close: &[f64], window: usize) -> Vec<f64> {
@@ -458,9 +465,7 @@ pub fn tii(data: &[f64], window: usize) -> Vec<f64> {
         .zip(&data[(window - 1)..])
         .map(|(avg, actual)| {
             let dev: f64 = actual - avg;
-            let pos_dev = if dev > 0.0 { dev } else { 0.0 };
-            let neg_dev = if dev < 0.0 { dev.abs() } else { 0.0 };
-            (pos_dev, neg_dev)
+            (dev.max(0.0), dev.min(0.0).abs())
         })
         .collect::<Vec<(f64, f64)>>()
         .windows(window.div_ceil(2))
@@ -623,8 +628,6 @@ pub fn relative_vigor(
         .map(|w| (w[3] + 2.0 * w[2] + 2.0 * w[1] + w[0]) / 6.0)
         .collect::<Vec<f64>>();
     smooth::sma(&numerator, window)
-        .collect::<Vec<f64>>()
-        .iter()
         .zip(smooth::sma(&denominator, window))
         .map(|(n, d)| n / d)
         .collect::<Vec<f64>>()
@@ -721,4 +724,27 @@ pub fn rainbow(data: &[f64], window: usize, lookback: usize) -> Vec<(f64, f64)> 
             (osc, band)
         })
         .collect::<Vec<(f64, f64)>>()
+}
+
+/// Coppock Curve
+/// https://www.investopedia.com/terms/c/coppockcurve.asp
+pub fn coppock(data: &[f64], window: usize, short: usize, long: usize) -> Vec<f64> {
+    smooth::wma(
+        &(long..data.len())
+            .map(|x| 100.0 * (data[x] / data[x - short] + data[x] / data[x - long] - 2.0))
+            .collect::<Vec<f64>>(),
+        window,
+    )
+    .collect::<Vec<f64>>()
+}
+
+/// Psychological Line
+/// https://tradingliteracy.com/psychological-line-indicator/
+pub fn psy(data: &[f64], window: usize) -> Vec<f64> {
+    data.windows(2)
+        .map(|pair| (pair[1] - pair[0]).signum().max(0.0))
+        .collect::<Vec<f64>>()
+        .windows(window)
+        .map(|w| w.iter().sum::<f64>() * 100.0 / window as f64)
+        .collect::<Vec<f64>>()
 }
