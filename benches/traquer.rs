@@ -254,6 +254,12 @@ fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("sig-rainbow", |b| {
         b.iter(|| black_box(indicator::rainbow(&stats.close, 3, 16)))
     });
+    c.bench_function("sig-ease", |b| {
+        b.iter(|| black_box(volume::ease(&stats.high, &stats.low, &stats.volume, 16)))
+    });
+    c.bench_function("sig-obv", |b| {
+        b.iter(|| black_box(volume::obv(&stats.close, &stats.volume)))
+    });
     c.bench_function("ma-ewma", |b| {
         b.iter(|| black_box(smooth::ewma(&stats.close, 16).collect::<Vec<f64>>()))
     });

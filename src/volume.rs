@@ -169,3 +169,32 @@ pub fn tvi(close: &[f64], volume: &[f64], min_tick: f64) -> Vec<f64> {
         })
         .collect::<Vec<f64>>()
 }
+
+/// Ease of Movement
+/// https://www.investopedia.com/terms/e/easeofmovement.asp
+pub fn ease(high: &[f64], low: &[f64], volume: &[f64], window: usize) -> Vec<f64> {
+    smooth::sma(
+        &(1..high.len())
+            .map(|i| {
+                (high[i] + low[i] - high[i - 1] - low[i - 1])
+                    / 2.0
+                    / (volume[i] / 100000000.0 / (high[i] - low[i]))
+            })
+            .collect::<Vec<f64>>(),
+        window,
+    )
+    .collect::<Vec<f64>>()
+}
+
+/// On-Balance Volume
+/// https://www.investopedia.com/terms/o/onbalancevolume.asp
+pub fn obv(close: &[f64], volume: &[f64]) -> Vec<f64> {
+    close
+        .windows(2)
+        .enumerate()
+        .scan(0.0, |state, (i, pairs)| {
+            *state += (pairs[1] - pairs[0]).signum() * volume[i + 1];
+            Some(*state)
+        })
+        .collect::<Vec<f64>>()
+}
