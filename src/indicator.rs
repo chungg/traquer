@@ -748,3 +748,26 @@ pub fn psy(data: &[f64], window: usize) -> Vec<f64> {
         .map(|w| w.iter().sum::<f64>() * 100.0 / window as f64)
         .collect::<Vec<f64>>()
 }
+
+/// Mass Index
+/// https://www.investopedia.com/terms/m/mass-index.asp
+pub fn mass(high: &[f64], low: &[f64], short: usize, long: usize) -> Vec<f64> {
+    let ma1 = smooth::ewma(
+        &high
+            .iter()
+            .zip(low)
+            .map(|(h, l)| (h - l))
+            .collect::<Vec<f64>>(),
+        short,
+    )
+    .collect::<Vec<f64>>();
+    let ma2 = smooth::ewma(&ma1, short);
+    ma1.iter()
+        .skip(short - 1)
+        .zip(ma2)
+        .map(|(num, denom)| num / denom)
+        .collect::<Vec<f64>>()
+        .windows(long)
+        .map(|w| w.iter().sum::<f64>())
+        .collect::<Vec<f64>>()
+}
