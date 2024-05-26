@@ -195,6 +195,9 @@ fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("sig-tr", |b| {
         b.iter(|| black_box(indicator::tr(&stats.high, &stats.low, &stats.close)))
     });
+    c.bench_function("sig-atr", |b| {
+        b.iter(|| black_box(indicator::atr(&stats.high, &stats.low, &stats.close, 16)))
+    });
     c.bench_function("sig-hlc3", |b| {
         b.iter(|| black_box(indicator::hlc3(&stats.high, &stats.low, &stats.close, 16)))
     });
@@ -253,6 +256,12 @@ fn criterion_benchmark(c: &mut Criterion) {
     });
     c.bench_function("sig-rainbow", |b| {
         b.iter(|| black_box(indicator::rainbow(&stats.close, 3, 16)))
+    });
+    c.bench_function("sig-coppock", |b| {
+        b.iter(|| black_box(indicator::coppock(&stats.close, 10, 11, 14)))
+    });
+    c.bench_function("sig-psy", |b| {
+        b.iter(|| black_box(indicator::psy(&stats.close, 16)))
     });
     c.bench_function("sig-ease", |b| {
         b.iter(|| black_box(volume::ease(&stats.high, &stats.low, &stats.volume, 16)))
