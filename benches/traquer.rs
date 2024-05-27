@@ -266,6 +266,25 @@ fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("sig-mass", |b| {
         b.iter(|| black_box(indicator::mass(&stats.high, &stats.low, 9, 16)))
     });
+    c.bench_function("sig-roc", |b| {
+        b.iter(|| black_box(indicator::roc(&stats.low, 16)))
+    });
+    c.bench_function("sig-keltner", |b| {
+        b.iter(|| {
+            black_box(indicator::keltner(
+                &stats.high,
+                &stats.low,
+                &stats.close,
+                16,
+            ))
+        })
+    });
+    c.bench_function("sig-gri", |b| {
+        b.iter(|| black_box(indicator::gri(&stats.high, &stats.low, 16)))
+    });
+    c.bench_function("sig-bw_mfi", |b| {
+        b.iter(|| black_box(volume::bw_mfi(&stats.high, &stats.low, &stats.volume)))
+    });
     c.bench_function("sig-ease", |b| {
         b.iter(|| black_box(volume::ease(&stats.high, &stats.low, &stats.volume, 16)))
     });
