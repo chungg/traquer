@@ -18,18 +18,10 @@ fn criterion_benchmark(c: &mut Criterion) {
     let data = fs::read_to_string("./aapl.input").expect("Unable to read file");
     let stats: SecStats = serde_json::from_str(&data).expect("JSON does not have correct format.");
     c.bench_function("sig-adx", |b| {
-        b.iter(|| {
-            black_box(indicator::adx(
-                &stats.high,
-                &stats.low,
-                &stats.close,
-                14,
-                14,
-            ))
-        })
+        b.iter(|| black_box(trend::adx(&stats.high, &stats.low, &stats.close, 14, 14)))
     });
     c.bench_function("sig-qstick", |b| {
-        b.iter(|| black_box(indicator::qstick(&stats.open, &stats.close, 8)))
+        b.iter(|| black_box(trend::qstick(&stats.open, &stats.close, 8)))
     });
     c.bench_function("sig-volume-twiggs", |b| {
         b.iter(|| {
@@ -40,7 +32,7 @@ fn criterion_benchmark(c: &mut Criterion) {
         })
     });
     c.bench_function("sig-rsi", |b| {
-        b.iter(|| black_box(indicator::rsi(&stats.close, 16)))
+        b.iter(|| black_box(momentum::rsi(&stats.close, 16)))
     });
     c.bench_function("sig-volume-kvo", |b| {
         b.iter(|| {
@@ -51,27 +43,20 @@ fn criterion_benchmark(c: &mut Criterion) {
         })
     });
     c.bench_function("sig-macd", |b| {
-        b.iter(|| black_box(indicator::macd(&stats.close, 12, 26)))
+        b.iter(|| black_box(momentum::macd(&stats.close, 12, 26)))
     });
     c.bench_function("sig-cmo", |b| {
-        b.iter(|| black_box(indicator::cmo(&stats.close, 16)))
+        b.iter(|| black_box(momentum::cmo(&stats.close, 16)))
     });
     c.bench_function("sig-cog", |b| {
-        b.iter(|| black_box(indicator::cog(&stats.close, 16)))
+        b.iter(|| black_box(trend::cog(&stats.close, 16)))
     });
     c.bench_function("sig-shinohara", |b| {
-        b.iter(|| {
-            black_box(indicator::shinohara(
-                &stats.high,
-                &stats.low,
-                &stats.close,
-                26,
-            ))
-        })
+        b.iter(|| black_box(trend::shinohara(&stats.high, &stats.low, &stats.close, 26)))
     });
     c.bench_function("sig-elder_ray", |b| {
         b.iter(|| {
-            black_box(indicator::elder_ray(
+            black_box(momentum::elder_ray(
                 &stats.high,
                 &stats.low,
                 &stats.close,
@@ -123,29 +108,29 @@ fn criterion_benchmark(c: &mut Criterion) {
         })
     });
     c.bench_function("sig-cvi", |b| {
-        b.iter(|| black_box(indicator::cvi(&stats.high, &stats.low, 16, 2)))
+        b.iter(|| black_box(momentum::cvi(&stats.high, &stats.low, 16, 2)))
     });
     c.bench_function("sig-wpr", |b| {
-        b.iter(|| black_box(indicator::wpr(&stats.high, &stats.low, &stats.close, 16)))
+        b.iter(|| black_box(momentum::wpr(&stats.high, &stats.low, &stats.close, 16)))
     });
     c.bench_function("sig-vortex", |b| {
-        b.iter(|| black_box(indicator::vortex(&stats.high, &stats.low, &stats.close, 16)))
+        b.iter(|| black_box(trend::vortex(&stats.high, &stats.low, &stats.close, 16)))
     });
     c.bench_function("sig-ppo", |b| {
-        b.iter(|| black_box(indicator::ppo(&stats.volume, 10, 16)))
+        b.iter(|| black_box(momentum::ppo(&stats.volume, 10, 16)))
     });
     c.bench_function("sig-apo", |b| {
-        b.iter(|| black_box(indicator::apo(&stats.close, 10, 16)))
+        b.iter(|| black_box(momentum::apo(&stats.close, 10, 16)))
     });
     c.bench_function("sig-dpo", |b| {
-        b.iter(|| black_box(indicator::dpo(&stats.close, 16)))
+        b.iter(|| black_box(momentum::dpo(&stats.close, 16)))
     });
     c.bench_function("sig-vhf", |b| {
-        b.iter(|| black_box(indicator::vhf(&stats.high, &stats.low, &stats.close, 16)))
+        b.iter(|| black_box(trend::vhf(&stats.high, &stats.low, &stats.close, 16)))
     });
     c.bench_function("sig-ultimate", |b| {
         b.iter(|| {
-            black_box(indicator::ultimate(
+            black_box(momentum::ultimate(
                 &stats.high,
                 &stats.low,
                 &stats.close,
@@ -156,11 +141,11 @@ fn criterion_benchmark(c: &mut Criterion) {
         })
     });
     c.bench_function("sig-pgo", |b| {
-        b.iter(|| black_box(indicator::pgo(&stats.high, &stats.low, &stats.close, 16)))
+        b.iter(|| black_box(momentum::pgo(&stats.high, &stats.low, &stats.close, 16)))
     });
     c.bench_function("sig-si", |b| {
         b.iter(|| {
-            black_box(indicator::si(
+            black_box(momentum::si(
                 &stats.open,
                 &stats.high,
                 &stats.low,
@@ -171,7 +156,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     });
     c.bench_function("sig-asi", |b| {
         b.iter(|| {
-            black_box(indicator::asi(
+            black_box(trend::asi(
                 &stats.open,
                 &stats.high,
                 &stats.low,
@@ -181,29 +166,29 @@ fn criterion_benchmark(c: &mut Criterion) {
         })
     });
     c.bench_function("sig-ulcer", |b| {
-        b.iter(|| black_box(indicator::ulcer(&stats.close, 8)))
+        b.iter(|| black_box(trend::ulcer(&stats.close, 8)))
     });
     c.bench_function("sig-tr", |b| {
-        b.iter(|| black_box(indicator::tr(&stats.high, &stats.low, &stats.close)))
+        b.iter(|| black_box(trend::tr(&stats.high, &stats.low, &stats.close)))
     });
     c.bench_function("sig-atr", |b| {
-        b.iter(|| black_box(indicator::atr(&stats.high, &stats.low, &stats.close, 16)))
+        b.iter(|| black_box(trend::atr(&stats.high, &stats.low, &stats.close, 16)))
     });
-    c.bench_function("sig-hlc3", |b| {
-        b.iter(|| black_box(indicator::hlc3(&stats.high, &stats.low, &stats.close, 16)))
+    c.bench_function("sig-typical", |b| {
+        b.iter(|| black_box(trend::typical(&stats.high, &stats.low, &stats.close, 16)))
     });
     c.bench_function("sig-trix", |b| {
-        b.iter(|| black_box(indicator::trix(&stats.close, 7)))
+        b.iter(|| black_box(momentum::trix(&stats.close, 7)))
     });
     c.bench_function("sig-tii", |b| {
-        b.iter(|| black_box(indicator::tii(&stats.close, 16)))
+        b.iter(|| black_box(momentum::tii(&stats.close, 16)))
     });
     c.bench_function("sig-volume-tvi", |b| {
         b.iter(|| black_box(volume::tvi(&stats.close, &stats.volume, 0.5).collect::<Vec<f64>>()))
     });
     c.bench_function("sig-supertrend", |b| {
         b.iter(|| {
-            black_box(indicator::supertrend(
+            black_box(trend::supertrend(
                 &stats.high,
                 &stats.low,
                 &stats.close,
@@ -214,7 +199,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     });
     c.bench_function("sig-stochastic", |b| {
         b.iter(|| {
-            black_box(indicator::stochastic(
+            black_box(momentum::stochastic(
                 &stats.high,
                 &stats.low,
                 &stats.close,
@@ -223,14 +208,14 @@ fn criterion_benchmark(c: &mut Criterion) {
         })
     });
     c.bench_function("sig-stc", |b| {
-        b.iter(|| black_box(indicator::stc(&stats.close, 3, 6, 12)))
+        b.iter(|| black_box(momentum::stc(&stats.close, 3, 6, 12)))
     });
     c.bench_function("sig-relative_vol", |b| {
-        b.iter(|| black_box(indicator::relative_vol(&stats.close, 6, 10)))
+        b.iter(|| black_box(momentum::relative_vol(&stats.close, 6, 10)))
     });
     c.bench_function("sig-relative_vigor", |b| {
         b.iter(|| {
-            black_box(indicator::relative_vigor(
+            black_box(momentum::relative_vigor(
                 &stats.open,
                 &stats.high,
                 &stats.low,
@@ -240,38 +225,31 @@ fn criterion_benchmark(c: &mut Criterion) {
         })
     });
     c.bench_function("sig-rwi", |b| {
-        b.iter(|| black_box(indicator::rwi(&stats.high, &stats.low, &stats.close, 16)))
+        b.iter(|| black_box(trend::rwi(&stats.high, &stats.low, &stats.close, 16)))
     });
     c.bench_function("sig-fisher", |b| {
-        b.iter(|| black_box(indicator::fisher(&stats.high, &stats.low, 16)))
+        b.iter(|| black_box(momentum::fisher(&stats.high, &stats.low, 16)))
     });
     c.bench_function("sig-rainbow", |b| {
-        b.iter(|| black_box(indicator::rainbow(&stats.close, 3, 16)))
+        b.iter(|| black_box(momentum::rainbow(&stats.close, 3, 16)))
     });
     c.bench_function("sig-coppock", |b| {
-        b.iter(|| black_box(indicator::coppock(&stats.close, 10, 11, 14)))
+        b.iter(|| black_box(momentum::coppock(&stats.close, 10, 11, 14)))
     });
     c.bench_function("sig-psy", |b| {
-        b.iter(|| black_box(indicator::psy(&stats.close, 16)))
+        b.iter(|| black_box(trend::psy(&stats.close, 16)))
     });
     c.bench_function("sig-mass", |b| {
-        b.iter(|| black_box(indicator::mass(&stats.high, &stats.low, 9, 16)))
+        b.iter(|| black_box(trend::mass(&stats.high, &stats.low, 9, 16)))
     });
     c.bench_function("sig-roc", |b| {
-        b.iter(|| black_box(indicator::roc(&stats.low, 16)))
+        b.iter(|| black_box(momentum::roc(&stats.low, 16)))
     });
     c.bench_function("sig-keltner", |b| {
-        b.iter(|| {
-            black_box(indicator::keltner(
-                &stats.high,
-                &stats.low,
-                &stats.close,
-                16,
-            ))
-        })
+        b.iter(|| black_box(trend::keltner(&stats.high, &stats.low, &stats.close, 16)))
     });
     c.bench_function("sig-gri", |b| {
-        b.iter(|| black_box(indicator::gri(&stats.high, &stats.low, 16)))
+        b.iter(|| black_box(trend::gri(&stats.high, &stats.low, 16)))
     });
     c.bench_function("sig-volume-bw_mfi", |b| {
         b.iter(|| {
