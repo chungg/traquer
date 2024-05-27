@@ -27,7 +27,7 @@ fn test_twiggs() {
             -0.14855035203055256,
             -0.15469018900758857,
         ],
-        result
+        result.collect::<Vec<f64>>()
     );
 }
 
@@ -56,7 +56,7 @@ fn test_kvo() {
             1045791.2002935112,
             491703.71571153356,
         ],
-        result
+        result.collect::<Vec<f64>>()
     );
 }
 
@@ -85,7 +85,7 @@ fn test_elder_force() {
             6967489.387947403,
             5483494.728818839,
         ],
-        result
+        result.collect::<Vec<f64>>()
     );
 }
 #[test]
@@ -113,14 +113,20 @@ fn test_mfi() {
             87.34401989374501,
             85.51147984689622,
         ],
-        result,
+        result.collect::<Vec<f64>>(),
     );
 }
 
 #[test]
 fn test_ad() {
     let stats = common::test_data();
-    let result = volume::ad(&stats.high, &stats.low, &stats.close, &stats.volume);
+    let result = volume::ad(
+        &stats.high,
+        &stats.low,
+        &stats.close,
+        &stats.volume,
+        Some(false),
+    );
     assert_eq!(
         vec![
             -12220014.53999535,
@@ -158,14 +164,32 @@ fn test_ad() {
             -55780759.43377636,
             -56496069.02735695,
         ],
-        result
+        result.collect::<Vec<f64>>()
+    );
+    assert_eq!(
+        volume::ad(&stats.high, &stats.low, &stats.close, &stats.volume, None)
+            .collect::<Vec<f64>>(),
+        volume::ad(
+            &stats.high,
+            &stats.low,
+            &stats.close,
+            &stats.volume,
+            Some(false)
+        )
+        .collect::<Vec<f64>>()
     );
 }
 
 #[test]
 fn test_ad_yahoo() {
     let stats = common::test_data();
-    let result = volume::ad_yahoo(&stats.high, &stats.low, &stats.close, &stats.volume);
+    let result = volume::ad(
+        &stats.high,
+        &stats.low,
+        &stats.close,
+        &stats.volume,
+        Some(true),
+    );
     assert_eq!(
         vec![
             336703421.3851929,
@@ -202,7 +226,7 @@ fn test_ad_yahoo() {
             304462333.9931488,
             298815868.7785034,
         ],
-        result
+        result.collect::<Vec<f64>>()
     );
 }
 
@@ -232,7 +256,7 @@ fn test_cmf() {
             -0.1013140453290804,
             -0.09237139625802167,
         ],
-        result
+        result.collect::<Vec<f64>>()
     );
 }
 
@@ -248,7 +272,7 @@ fn test_tvi() {
             11944400.0, 10458600.0, 13222800.0, 15901100.0, 14148200.0, 15746300.0, 18111300.0,
             16923000.0, 19039700.0, 25281400.0, 38772900.0, 36090498.0,
         ],
-        result
+        result.collect::<Vec<f64>>()
     );
 }
 
@@ -277,7 +301,7 @@ fn test_ease() {
             76.98413524618097,
             64.64598529287485,
         ],
-        result
+        result.collect::<Vec<f64>>()
     );
 }
 
@@ -293,7 +317,7 @@ fn test_obv() {
             11944400.0, 10458600.0, 13222800.0, 15901100.0, 14148200.0, 15746300.0, 18111300.0,
             16923000.0, 19039700.0, 25281400.0, 38772900.0, 36090498.0,
         ],
-        result
+        result.collect::<Vec<f64>>()
     );
 }
 
@@ -338,6 +362,6 @@ fn test_bw_mfi() {
             0.4046991872269693,
             1.0624799989416553,
         ],
-        result
+        result.collect::<Vec<f64>>()
     );
 }
