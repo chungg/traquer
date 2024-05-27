@@ -771,3 +771,33 @@ pub fn mass(high: &[f64], low: &[f64], short: usize, long: usize) -> Vec<f64> {
         .map(|w| w.iter().sum::<f64>())
         .collect::<Vec<f64>>()
 }
+
+/// Rate of Change
+/// https://www.investopedia.com/terms/p/pricerateofchange.asp.
+pub fn roc(data: &[f64], window: usize) -> Vec<f64> {
+    data.windows(window)
+        .map(|w| 100.0 * (w[w.len() - 1] / w[0] - 1.0))
+        .collect::<Vec<f64>>()
+}
+
+/// Keltner Channel
+/// https://www.investopedia.com/terms/k/keltnerchannel.asp
+pub fn keltner(high: &[f64], low: &[f64], close: &[f64], window: usize) -> Vec<(f64, f64, f64)> {
+    smooth::ewma(close, window)
+        .zip(iter::once(f64::NAN).chain(atr(high, low, close, window)))
+        .map(|(middle, atr)| (middle, middle + 2.0 * atr, middle - 2.0 * atr))
+        .collect::<Vec<(f64, f64, f64)>>()
+}
+
+/// Gopalakrishnan Range Index
+/// https://library.tradingtechnologies.com/trade/chrt-ti-gopalakrishnan-range-index.html
+pub fn gri(high: &[f64], low: &[f64], window: usize) -> Vec<f64> {
+    high.windows(window)
+        .zip(low.windows(window))
+        .map(|(h, l)| {
+            let hh = h.iter().fold(f64::NAN, |state, &x| state.max(x));
+            let ll = l.iter().fold(f64::NAN, |state, &x| state.min(x));
+            f64::ln(hh - ll) / f64::ln(window as f64)
+        })
+        .collect::<Vec<f64>>()
+}

@@ -198,3 +198,13 @@ pub fn obv(close: &[f64], volume: &[f64]) -> Vec<f64> {
         })
         .collect::<Vec<f64>>()
 }
+
+/// Market Facilitation Index
+/// https://www.metatrader5.com/en/terminal/help/indicators/bw_indicators/market_facilitation
+pub fn bw_mfi(high: &[f64], low: &[f64], volume: &[f64]) -> Vec<f64> {
+    high.iter()
+        .zip(low)
+        .zip(volume)
+        .map(|((h, l), vol)| (h - l) / vol * (10.0_f64).powi(6))
+        .collect::<Vec<f64>>()
+}
