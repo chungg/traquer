@@ -263,6 +263,9 @@ fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("sig-psy", |b| {
         b.iter(|| black_box(indicator::psy(&stats.close, 16)))
     });
+    c.bench_function("sig-mass", |b| {
+        b.iter(|| black_box(indicator::mass(&stats.high, &stats.low, 9, 16)))
+    });
     c.bench_function("sig-ease", |b| {
         b.iter(|| black_box(volume::ease(&stats.high, &stats.low, &stats.volume, 16)))
     });
