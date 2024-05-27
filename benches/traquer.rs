@@ -31,30 +31,23 @@ fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("sig-qstick", |b| {
         b.iter(|| black_box(indicator::qstick(&stats.open, &stats.close, 8)))
     });
-    c.bench_function("sig-twiggs", |b| {
+    c.bench_function("sig-volume-twiggs", |b| {
         b.iter(|| {
-            black_box(volume::twiggs(
-                &stats.high,
-                &stats.low,
-                &stats.close,
-                &stats.volume,
-                16,
-            ))
+            black_box(
+                volume::twiggs(&stats.high, &stats.low, &stats.close, &stats.volume, 16)
+                    .collect::<Vec<f64>>(),
+            )
         })
     });
     c.bench_function("sig-rsi", |b| {
         b.iter(|| black_box(indicator::rsi(&stats.close, 16)))
     });
-    c.bench_function("sig-kvo", |b| {
+    c.bench_function("sig-volume-kvo", |b| {
         b.iter(|| {
-            black_box(volume::kvo(
-                &stats.high,
-                &stats.low,
-                &stats.close,
-                &stats.volume,
-                10,
-                16,
-            ))
+            black_box(
+                volume::kvo(&stats.high, &stats.low, &stats.close, &stats.volume, 10, 16)
+                    .collect::<Vec<f64>>(),
+            )
         })
     });
     c.bench_function("sig-macd", |b| {
@@ -86,49 +79,47 @@ fn criterion_benchmark(c: &mut Criterion) {
             ))
         })
     });
-    c.bench_function("sig-elder_force", |b| {
-        b.iter(|| black_box(volume::elder_force(&stats.close, &stats.volume, 16)))
-    });
-    c.bench_function("sig-mfi", |b| {
+    c.bench_function("sig-volume-elder_force", |b| {
         b.iter(|| {
-            black_box(volume::mfi(
-                &stats.high,
-                &stats.low,
-                &stats.close,
-                &stats.volume,
-                16,
-            ))
+            black_box(volume::elder_force(&stats.close, &stats.volume, 16).collect::<Vec<f64>>())
         })
     });
-    c.bench_function("sig-ad", |b| {
+    c.bench_function("sig-volume-mfi", |b| {
         b.iter(|| {
-            black_box(volume::ad(
-                &stats.high,
-                &stats.low,
-                &stats.close,
-                &stats.volume,
-            ))
+            black_box(
+                volume::mfi(&stats.high, &stats.low, &stats.close, &stats.volume, 16)
+                    .collect::<Vec<f64>>(),
+            )
         })
     });
-    c.bench_function("sig-ad_yahoo", |b| {
+    c.bench_function("sig-volume-ad", |b| {
         b.iter(|| {
-            black_box(volume::ad_yahoo(
-                &stats.high,
-                &stats.low,
-                &stats.close,
-                &stats.volume,
-            ))
+            black_box(
+                volume::ad(&stats.high, &stats.low, &stats.close, &stats.volume, None)
+                    .collect::<Vec<f64>>(),
+            )
         })
     });
-    c.bench_function("sig-cmf", |b| {
+    c.bench_function("sig-volume-ad_yahoo", |b| {
         b.iter(|| {
-            black_box(volume::cmf(
-                &stats.high,
-                &stats.low,
-                &stats.close,
-                &stats.volume,
-                16,
-            ))
+            black_box(
+                volume::ad(
+                    &stats.high,
+                    &stats.low,
+                    &stats.close,
+                    &stats.volume,
+                    Some(true),
+                )
+                .collect::<Vec<f64>>(),
+            )
+        })
+    });
+    c.bench_function("sig-volume-cmf", |b| {
+        b.iter(|| {
+            black_box(
+                volume::cmf(&stats.high, &stats.low, &stats.close, &stats.volume, 16)
+                    .collect::<Vec<f64>>(),
+            )
         })
     });
     c.bench_function("sig-cvi", |b| {
@@ -207,8 +198,8 @@ fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("sig-tii", |b| {
         b.iter(|| black_box(indicator::tii(&stats.close, 16)))
     });
-    c.bench_function("sig-tvi", |b| {
-        b.iter(|| black_box(volume::tvi(&stats.close, &stats.volume, 0.5)))
+    c.bench_function("sig-volume-tvi", |b| {
+        b.iter(|| black_box(volume::tvi(&stats.close, &stats.volume, 0.5).collect::<Vec<f64>>()))
     });
     c.bench_function("sig-supertrend", |b| {
         b.iter(|| {
@@ -282,14 +273,20 @@ fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("sig-gri", |b| {
         b.iter(|| black_box(indicator::gri(&stats.high, &stats.low, 16)))
     });
-    c.bench_function("sig-bw_mfi", |b| {
-        b.iter(|| black_box(volume::bw_mfi(&stats.high, &stats.low, &stats.volume)))
+    c.bench_function("sig-volume-bw_mfi", |b| {
+        b.iter(|| {
+            black_box(volume::bw_mfi(&stats.high, &stats.low, &stats.volume).collect::<Vec<f64>>())
+        })
     });
-    c.bench_function("sig-ease", |b| {
-        b.iter(|| black_box(volume::ease(&stats.high, &stats.low, &stats.volume, 16)))
+    c.bench_function("sig-volume-ease", |b| {
+        b.iter(|| {
+            black_box(
+                volume::ease(&stats.high, &stats.low, &stats.volume, 16).collect::<Vec<f64>>(),
+            )
+        })
     });
-    c.bench_function("sig-obv", |b| {
-        b.iter(|| black_box(volume::obv(&stats.close, &stats.volume)))
+    c.bench_function("sig-volume-obv", |b| {
+        b.iter(|| black_box(volume::obv(&stats.close, &stats.volume).collect::<Vec<f64>>()))
     });
     c.bench_function("ma-ewma", |b| {
         b.iter(|| black_box(smooth::ewma(&stats.close, 16).collect::<Vec<f64>>()))
