@@ -110,20 +110,19 @@ pub fn vidya(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
 
 /// chande momentum oscillator
 pub(crate) fn _cmo(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
-    data.windows(2)
-        .map(|pair| {
+    iter::once((0.0, 0.0))
+        .chain(data.windows(2).scan((0.0, 0.0), |state, pair| {
             let (prev, curr) = (pair[0], pair[1]);
-            (f64::max(0.0, curr - prev), f64::max(0.0, prev - curr))
-        })
+            let gain = state.0 + f64::max(0.0, curr - prev);
+            let loss = state.1 + f64::max(0.0, prev - curr);
+            *state = (gain, loss);
+            Some((gain, loss))
+        }))
         .collect::<Vec<(f64, f64)>>()
-        .windows(window)
+        .windows(window + 1)
         .map(|w| {
-            let mut gain_sum = 0.0;
-            let mut loss_sum = 0.0;
-            for (g, l) in w {
-                gain_sum += g;
-                loss_sum += l;
-            }
+            let gain_sum = w[w.len() - 1].0 - w[0].0;
+            let loss_sum = w[w.len() - 1].1 - w[0].1;
             (gain_sum - loss_sum) / (gain_sum + loss_sum)
         })
         .collect::<Vec<f64>>()

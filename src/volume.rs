@@ -9,17 +9,11 @@ fn vforce<'a>(
     volume: &'a [f64],
 ) -> impl Iterator<Item = f64> + 'a {
     izip!(&high[1..], &low[1..], &close[1..], &volume[1..]).scan(
-        (high[0], low[0], close[0], 99),
+        (high[0], low[0], close[0], 0.0),
         |state, (h, l, c, v)| {
-            let trend: i8 = {
-                if h + l + c > state.0 + state.1 + state.2 {
-                    1
-                } else {
-                    -1
-                }
-            };
+            let trend = ((h + l + c) - (state.0 + state.1 + state.2)).signum();
             *state = (*h, *l, *c, trend);
-            Some(v * trend as f64)
+            Some(v * trend)
         },
     )
 }
