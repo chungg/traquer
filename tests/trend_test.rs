@@ -1,3 +1,4 @@
+use itertools::multiunzip;
 use traquer::trend;
 
 mod common;
@@ -5,7 +6,8 @@ mod common;
 #[test]
 fn test_adx() {
     let stats = common::test_data();
-    let result = trend::adx(&stats.high, &stats.low, &stats.close, 14, 14);
+    let result: (Vec<f64>, Vec<f64>, Vec<f64>) =
+        multiunzip(trend::adx(&stats.high, &stats.low, &stats.close, 14, 14));
     assert_eq!(
         vec![
             31.860139412194698,
@@ -66,7 +68,7 @@ fn test_adx() {
             16.086895874937387,
             17.27152240413718,
         ],
-        result.2
+        result.2[14 - 1..]
     );
 }
 
@@ -104,7 +106,7 @@ fn test_qstick() {
             -0.2854447322330791,
             -0.6542355716305024,
         ],
-        result
+        result.collect::<Vec<f64>>()
     );
 }
 
@@ -134,47 +136,36 @@ fn test_cog() {
             -8.179093436115151,
             -8.204185273664265,
         ],
-        result
+        result.collect::<Vec<f64>>()
     );
 }
 
 #[test]
 fn test_shinohara() {
     let stats = common::test_data();
-    let results = trend::shinohara(&stats.high, &stats.low, &stats.close, 26);
+    let results =
+        trend::shinohara(&stats.high, &stats.low, &stats.close, 26).collect::<Vec<(f64, f64)>>();
     assert_eq!(
         vec![
-            119.72458721822203,
-            95.38515682324336,
-            68.70621869411681,
-            85.35865719588207,
-            119.54886405652606,
-            139.72926160563833,
-            150.77427373025645,
-            150.9041867287,
+            //(f64::NAN, 130.9311144714237),
+            (119.72458721822203, 126.54955949420238),
+            (95.38515682324336, 167.3688494557726),
+            (68.70621869411681, 146.27994868199906),
+            (85.35865719588207, 142.35182619352173),
+            (119.54886405652606, 125.70722906999697),
+            (139.72926160563833, 118.00938106154118),
+            (150.77427373025645, 143.57856018147575),
+            (150.9041867287, 133.74958218587676),
         ],
-        results.0
-    );
-    assert_eq!(
-        vec![
-            130.9311144714237,
-            126.54955949420238,
-            167.3688494557726,
-            146.27994868199906,
-            142.35182619352173,
-            125.70722906999697,
-            118.00938106154118,
-            143.57856018147575,
-            133.74958218587676,
-        ],
-        results.1
+        results[1..]
     );
 }
 
 #[test]
 fn test_vortex() {
     let stats = common::test_data();
-    let (vi_pos, vi_neg) = trend::vortex(&stats.high, &stats.low, &stats.close, 16);
+    let (vi_pos, vi_neg): (Vec<f64>, Vec<f64>) =
+        trend::vortex(&stats.high, &stats.low, &stats.close, 16).unzip();
     assert_eq!(
         vec![
             0.8610723090930696,
@@ -248,7 +239,7 @@ fn test_vhf() {
             0.7716635213608084,
             0.7671760704973449,
         ],
-        result
+        result.collect::<Vec<f64>>()
     );
 }
 
@@ -292,7 +283,7 @@ fn test_asi() {
             499.93140160760476,
             178.6712171227731,
         ],
-        result
+        result.collect::<Vec<f64>>()
     );
 }
 
@@ -323,7 +314,7 @@ fn test_ulcer() {
             1.6390653783421978,
             2.187009055695484,
         ],
-        result
+        result.collect::<Vec<f64>>()
     );
 }
 
@@ -352,7 +343,7 @@ fn test_supertrend() {
             39.78407957956028,
             39.78407957956028,
         ],
-        result
+        result.collect::<Vec<f64>>()
     );
 }
 
@@ -381,7 +372,7 @@ fn test_rwi() {
             (2.6484633151147925, 0.21501740699560723,),
             (1.111277033009784, 1.1996531008663207,),
         ],
-        result
+        result.collect::<Vec<(f64, f64)>>()
     );
 }
 
@@ -394,7 +385,7 @@ fn test_psych() {
             37.5, 31.25, 31.25, 31.25, 37.5, 43.75, 43.75, 43.75, 50.0, 50.0, 50.0, 56.25, 62.5,
             56.25, 62.5, 68.75, 68.75, 68.75,
         ],
-        result
+        result.collect::<Vec<f64>>()
     );
 }
 
@@ -418,7 +409,7 @@ fn test_mass() {
             5.942103734664013,
             6.0808751147235265,
         ],
-        result
+        result.collect::<Vec<f64>>()
     );
 }
 
@@ -448,7 +439,7 @@ fn test_keltner() {
             (46.717392383280725, 55.14800620035773, 38.28677856620372,),
             (47.02064012277067, 55.31809076701522, 38.72318947852612,),
         ],
-        result[1..]
+        result.collect::<Vec<(f64, f64, f64)>>()[1..]
     );
 }
 
@@ -478,7 +469,7 @@ fn test_gri() {
             1.0386539306425049,
             1.0386539306425049,
         ],
-        result
+        result.collect::<Vec<f64>>()
     );
 }
 
@@ -522,7 +513,7 @@ fn test_tr() {
             5.759998321533203,
             3.1500015258789063,
         ],
-        result
+        result.collect::<Vec<f64>>()
     );
 }
 
@@ -551,7 +542,7 @@ fn test_atr() {
             4.215306908538501,
             4.148725322122276,
         ],
-        result
+        result.collect::<Vec<f64>>()
     );
 }
 
@@ -581,6 +572,6 @@ fn test_typical() {
             44.90875029563905,
             45.53729192415874,
         ],
-        result
+        result.collect::<Vec<f64>>()
     );
 }

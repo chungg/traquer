@@ -7,18 +7,27 @@ use crate::smooth;
 
 /// quick stick
 /// https://www.investopedia.com/terms/q/qstick.asp
-pub fn qstick(open: &[f64], close: &[f64], window: usize) -> Vec<f64> {
+pub fn qstick<'a>(
+    open: &'a [f64],
+    close: &'a [f64],
+    window: usize,
+) -> impl Iterator<Item = f64> + 'a {
     let q = close
         .iter()
         .zip(open.iter())
         .map(|(c, o)| c - o)
         .collect::<Vec<f64>>();
-    smooth::ewma(&q, window).collect::<Vec<f64>>()
+    smooth::ewma(&q, window).collect::<Vec<f64>>().into_iter()
 }
 
 /// shinohara intensity ratio
 /// https://www.sevendata.co.jp/shihyou/technical/shinohara.html
-pub fn shinohara(high: &[f64], low: &[f64], close: &[f64], window: usize) -> (Vec<f64>, Vec<f64>) {
+pub fn shinohara<'a>(
+    high: &'a [f64],
+    low: &'a [f64],
+    close: &'a [f64],
+    window: usize,
+) -> impl Iterator<Item = (f64, f64)> + 'a {
     let high_win = high
         .windows(window)
         .map(|w| w.iter().sum())
@@ -42,18 +51,21 @@ pub fn shinohara(high: &[f64], low: &[f64], close: &[f64], window: usize) -> (Ve
     )
     .map(|(h, l, c)| 100.0 * (h - c) / (c - l))
     .collect::<Vec<f64>>();
-    (strong_ratio, weak_ratio)
+    iter::repeat(f64::NAN)
+        .take(1)
+        .chain(strong_ratio)
+        .zip(weak_ratio)
 }
 
 /// average directional index
 /// https://www.investopedia.com/terms/a/adx.asp
-pub fn adx(
-    high: &[f64],
-    low: &[f64],
-    close: &[f64],
+pub fn adx<'a>(
+    high: &'a [f64],
+    low: &'a [f64],
+    close: &'a [f64],
     window: usize,
     smoothing: usize,
-) -> (Vec<f64>, Vec<f64>, Vec<f64>) {
+) -> impl Iterator<Item = (f64, f64, f64)> + 'a {
     let (dm_pos, dm_neg, tr): (Vec<_>, Vec<_>, Vec<_>) = multiunzip(
         izip!(
             &high[..high.len() - 1],
@@ -87,32 +99,37 @@ pub fn adx(
     let dx = izip!(&di_pos, &di_neg)
         .map(|(pos, neg)| f64::abs(pos - neg) / (pos + neg) * 100.0)
         .collect::<Vec<f64>>();
-    (
+    izip!(
         di_pos,
         di_neg,
-        smooth::wilder(&dx, smoothing).collect::<Vec<f64>>(),
+        iter::repeat(f64::NAN)
+            .take(smoothing - 1)
+            .chain(smooth::wilder(&dx, smoothing).collect::<Vec<f64>>()),
     )
 }
 
 /// centre of gravity
 /// https://www.stockmaniacs.net/center-of-gravity-indicator/
-pub fn cog(data: &[f64], window: usize) -> Vec<f64> {
+pub fn cog(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
     let weights: Vec<f64> = (1..=window).map(|x| x as f64).collect();
-    data.windows(window)
-        .map(|w| {
-            -w.iter()
-                .rev()
-                .zip(weights.iter())
-                .map(|(e, i)| e * i)
-                .sum::<f64>()
-                / w.iter().sum::<f64>()
-        })
-        .collect::<Vec<f64>>()
+    data.windows(window).map(move |w| {
+        -w.iter()
+            .rev()
+            .zip(weights.iter())
+            .map(|(e, i)| e * i)
+            .sum::<f64>()
+            / w.iter().sum::<f64>()
+    })
 }
 
 /// vortex
 /// https://www.investopedia.com/terms/v/vortex-indicator-vi.asp
-pub fn vortex(high: &[f64], low: &[f64], close: &[f64], window: usize) -> (Vec<f64>, Vec<f64>) {
+pub fn vortex<'a>(
+    high: &'a [f64],
+    low: &'a [f64],
+    close: &'a [f64],
+    window: usize,
+) -> impl Iterator<Item = (f64, f64)> + 'a {
     izip!(
         &high[..high.len() - 1],
         &high[1..],
@@ -138,12 +155,18 @@ pub fn vortex(high: &[f64], low: &[f64], close: &[f64], window: usize) -> (Vec<f
             .unwrap();
         (vm_pos / tr, vm_neg / tr)
     })
-    .unzip()
+    .collect::<Vec<(f64, f64)>>()
+    .into_iter()
 }
 
 /// vertical horizontal filter
 /// https://www.upcomingtrader.com/blog/the-vertical-horizontal-filter-a-traders-guide-to-market-phases/
-pub fn vhf(high: &[f64], low: &[f64], close: &[f64], window: usize) -> Vec<f64> {
+pub fn vhf<'a>(
+    high: &'a [f64],
+    low: &'a [f64],
+    close: &'a [f64],
+    window: usize,
+) -> impl Iterator<Item = f64> + 'a {
     let diffs = close
         .windows(2)
         .map(|pair| {
@@ -162,23 +185,28 @@ pub fn vhf(high: &[f64], low: &[f64], close: &[f64], window: usize) -> Vec<f64> 
             / diff.iter().sum::<f64>()
     })
     .collect::<Vec<f64>>()
+    .into_iter()
 }
 
 /// Accumulative Swing Index
 /// https://www.investopedia.com/terms/a/asi.asp
 /// https://quantstrategy.io/blog/accumulative-swing-index-how-to-trade/
-pub fn asi(open: &[f64], high: &[f64], low: &[f64], close: &[f64], limit: f64) -> Vec<f64> {
-    _swing(open, high, low, close, limit)
-        .scan(0.0, |acc, x| {
-            *acc += x;
-            Some(*acc)
-        })
-        .collect::<Vec<f64>>()
+pub fn asi<'a>(
+    open: &'a [f64],
+    high: &'a [f64],
+    low: &'a [f64],
+    close: &'a [f64],
+    limit: f64,
+) -> impl Iterator<Item = f64> + 'a {
+    _swing(open, high, low, close, limit).scan(0.0, |acc, x| {
+        *acc += x;
+        Some(*acc)
+    })
 }
 
 /// Ulcer Index
 /// https://en.wikipedia.org/wiki/Ulcer_index
-pub fn ulcer(data: &[f64], window: usize) -> Vec<f64> {
+pub fn ulcer(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
     let highest = data
         .windows(window)
         .map(|w| w.iter().fold(f64::NAN, |state, &x| state.max(x)));
@@ -191,18 +219,19 @@ pub fn ulcer(data: &[f64], window: usize) -> Vec<f64> {
     )
     .map(|x| x.sqrt())
     .collect::<Vec<f64>>()
+    .into_iter()
 }
 
 /// supertrend
 /// https://www.tradingview.com/support/solutions/43000634738-supertrend/
 /// https://www.investopedia.com/supertrend-indicator-7976167
-pub fn supertrend(
-    high: &[f64],
-    low: &[f64],
-    close: &[f64],
+pub fn supertrend<'a>(
+    high: &'a [f64],
+    low: &'a [f64],
+    close: &'a [f64],
     window: usize,
     multiplier: f64,
-) -> Vec<f64> {
+) -> impl Iterator<Item = f64> + 'a {
     // TODO: needs a test for when it actually flips to use upper band line
     let tr = _true_range(high, low, close).collect::<Vec<f64>>();
     let atr = smooth::wilder(&tr, window);
@@ -235,12 +264,18 @@ pub fn supertrend(
             },
         )
         .collect::<Vec<f64>>()
+        .into_iter()
 }
 
 /// Random Walk Index
 /// https://www.technicalindicators.net/indicators-technical-analysis/168-rwi-random-walk-index
 /// https://www.investopedia.com/terms/r/random-walk-index.asp
-pub fn rwi(high: &[f64], low: &[f64], close: &[f64], window: usize) -> Vec<(f64, f64)> {
+pub fn rwi<'a>(
+    high: &'a [f64],
+    low: &'a [f64],
+    close: &'a [f64],
+    window: usize,
+) -> impl Iterator<Item = (f64, f64)> + 'a {
     // looks back n number of periods *including* current. other libs may not include current.
     izip!(
         high[1..].windows(window),
@@ -262,22 +297,29 @@ pub fn rwi(high: &[f64], low: &[f64], close: &[f64], window: usize) -> Vec<(f64,
         (rwi_high, rwi_low)
     })
     .collect::<Vec<(f64, f64)>>()
+    .into_iter()
 }
 
 /// Psychological Line
 /// https://tradingliteracy.com/psychological-line-indicator/
-pub fn psych(data: &[f64], window: usize) -> Vec<f64> {
+pub fn psych(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
     data.windows(2)
         .map(|pair| (pair[1] - pair[0]).signum().max(0.0))
         .collect::<Vec<f64>>()
         .windows(window)
         .map(|w| w.iter().sum::<f64>() * 100.0 / window as f64)
         .collect::<Vec<f64>>()
+        .into_iter()
 }
 
 /// Mass Index
 /// https://www.investopedia.com/terms/m/mass-index.asp
-pub fn mass(high: &[f64], low: &[f64], short: usize, long: usize) -> Vec<f64> {
+pub fn mass<'a>(
+    high: &'a [f64],
+    low: &'a [f64],
+    short: usize,
+    long: usize,
+) -> impl Iterator<Item = f64> + 'a {
     let ma1 = smooth::ewma(
         &high
             .iter()
@@ -296,28 +338,32 @@ pub fn mass(high: &[f64], low: &[f64], short: usize, long: usize) -> Vec<f64> {
         .windows(long)
         .map(|w| w.iter().sum::<f64>())
         .collect::<Vec<f64>>()
+        .into_iter()
 }
 
 /// Keltner Channel
 /// https://www.investopedia.com/terms/k/keltnerchannel.asp
-pub fn keltner(high: &[f64], low: &[f64], close: &[f64], window: usize) -> Vec<(f64, f64, f64)> {
+pub fn keltner<'a>(
+    high: &'a [f64],
+    low: &'a [f64],
+    close: &'a [f64],
+    window: usize,
+) -> impl Iterator<Item = (f64, f64, f64)> + 'a {
     smooth::ewma(close, window)
         .zip(iter::once(f64::NAN).chain(atr(high, low, close, window)))
         .map(|(middle, atr)| (middle, middle + 2.0 * atr, middle - 2.0 * atr))
-        .collect::<Vec<(f64, f64, f64)>>()
 }
 
 /// Gopalakrishnan Range Index
 /// https://library.tradingtechnologies.com/trade/chrt-ti-gopalakrishnan-range-index.html
-pub fn gri(high: &[f64], low: &[f64], window: usize) -> Vec<f64> {
+pub fn gri<'a>(high: &'a [f64], low: &'a [f64], window: usize) -> impl Iterator<Item = f64> + 'a {
     high.windows(window)
         .zip(low.windows(window))
-        .map(|(h, l)| {
+        .map(move |(h, l)| {
             let hh = h.iter().fold(f64::NAN, |state, &x| state.max(x));
             let ll = l.iter().fold(f64::NAN, |state, &x| state.min(x));
             f64::ln(hh - ll) / f64::ln(window as f64)
         })
-        .collect::<Vec<f64>>()
 }
 
 pub(crate) fn _true_range<'a>(
@@ -331,20 +377,31 @@ pub(crate) fn _true_range<'a>(
 
 /// true range
 /// https://www.investopedia.com/terms/a/atr.asp
-pub fn tr(high: &[f64], low: &[f64], close: &[f64]) -> Vec<f64> {
-    _true_range(high, low, close).collect::<Vec<f64>>()
+pub fn tr<'a>(high: &'a [f64], low: &'a [f64], close: &'a [f64]) -> impl Iterator<Item = f64> + 'a {
+    _true_range(high, low, close)
 }
 
 /// average true range
 /// https://www.investopedia.com/terms/a/atr.asp
-pub fn atr(high: &[f64], low: &[f64], close: &[f64], window: usize) -> Vec<f64> {
+pub fn atr<'a>(
+    high: &'a [f64],
+    low: &'a [f64],
+    close: &'a [f64],
+    window: usize,
+) -> impl Iterator<Item = f64> + 'a {
     smooth::wilder(&_true_range(high, low, close).collect::<Vec<f64>>(), window)
         .collect::<Vec<f64>>()
+        .into_iter()
 }
 
 /// typical price
 /// https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/typical-price
-pub fn typical(high: &[f64], low: &[f64], close: &[f64], window: usize) -> Vec<f64> {
+pub fn typical<'a>(
+    high: &'a [f64],
+    low: &'a [f64],
+    close: &'a [f64],
+    window: usize,
+) -> impl Iterator<Item = f64> + 'a {
     smooth::sma(
         &izip!(high, low, close)
             .map(|(h, l, c)| (h + l + c) / 3.0)
@@ -352,4 +409,5 @@ pub fn typical(high: &[f64], low: &[f64], close: &[f64], window: usize) -> Vec<f
         window,
     )
     .collect::<Vec<f64>>()
+    .into_iter()
 }
