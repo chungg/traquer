@@ -40,6 +40,5 @@ encouraged.
 - simplify reqs
 - more algos
 - handle div by zero scenarios
-- return iterable instead vec
 - pad results with nan to match len of inputs
 - allow other numeric types rather than just f64
