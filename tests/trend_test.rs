@@ -386,9 +386,9 @@ fn test_rwi() {
 }
 
 #[test]
-fn test_psy() {
+fn test_psych() {
     let stats = common::test_data();
-    let result = trend::psy(&stats.close, 16);
+    let result = trend::psych(&stats.close, 16);
     assert_eq!(
         vec![
             37.5, 31.25, 31.25, 31.25, 37.5, 43.75, 43.75, 43.75, 50.0, 50.0, 50.0, 56.25, 62.5,

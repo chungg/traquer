@@ -266,7 +266,7 @@ pub fn rwi(high: &[f64], low: &[f64], close: &[f64], window: usize) -> Vec<(f64,
 
 /// Psychological Line
 /// https://tradingliteracy.com/psychological-line-indicator/
-pub fn psy(data: &[f64], window: usize) -> Vec<f64> {
+pub fn psych(data: &[f64], window: usize) -> Vec<f64> {
     data.windows(2)
         .map(|pair| (pair[1] - pair[0]).signum().max(0.0))
         .collect::<Vec<f64>>()
