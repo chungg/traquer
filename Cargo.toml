@@ -4,6 +4,8 @@ version = "0.0.1"
 edition = "2021"
 description = "statistical functions library"
 license = "Apache-2.0"
+repository = "https://github.com/chungg/traquer"
+categories = ["statistics", "finance"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
