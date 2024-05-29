@@ -505,3 +505,28 @@ pub fn roc(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
     data.windows(window)
         .map(|w| 100.0 * (w[w.len() - 1] / w[0] - 1.0))
 }
+
+/// Choppiness Index
+/// https://www.tradingview.com/support/solutions/43000501980-choppiness-index-chop/
+pub fn chop<'a>(
+    high: &'a [f64],
+    low: &'a [f64],
+    close: &'a [f64],
+    window: usize,
+) -> impl Iterator<Item = f64> + 'a {
+    izip!(
+        high[1..].windows(window),
+        low[1..].windows(window),
+        _true_range(high, low, close)
+            .collect::<Vec<f64>>()
+            .windows(window)
+    )
+    .map(|(h, l, tr)| {
+        let hh = h.iter().fold(f64::NAN, |state, &x| state.max(x));
+        let ll = l.iter().fold(f64::NAN, |state, &x| state.min(x));
+        let tr_sum = tr.iter().sum::<f64>();
+        100.0 * f64::ln(tr_sum / (hh - ll)) / f64::ln(window as f64)
+    })
+    .collect::<Vec<f64>>()
+    .into_iter()
+}
