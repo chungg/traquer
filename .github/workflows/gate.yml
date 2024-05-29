@@ -39,7 +39,7 @@ jobs:
         run: cargo test
 
   benchmark:
-    if: ${{ github.event.pull_request.merged }}
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
