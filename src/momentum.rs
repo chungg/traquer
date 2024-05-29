@@ -340,6 +340,17 @@ pub fn stc(
     .into_iter()
 }
 
+/// Inertia
+/// https://theforexgeek.com/inertia-indicator/
+pub fn inertia(close: &[f64], window: usize, smoothing: usize) -> impl Iterator<Item = f64> + '_ {
+    smooth::lrf(
+        &relative_vol(close, window, window).collect::<Vec<f64>>(),
+        smoothing,
+    )
+    .collect::<Vec<f64>>()
+    .into_iter()
+}
+
 /// Relative Volatility
 /// https://www.tradingview.com/support/solutions/43000594684-relative-volatility-index/
 pub fn relative_vol(
@@ -347,10 +358,6 @@ pub fn relative_vol(
     window: usize,
     smoothing: usize,
 ) -> impl Iterator<Item = f64> + '_ {
-    dbg!(
-        &close.len(),
-        smooth::std_dev(close, window).collect::<Vec<_>>().len()
-    );
     let (gain, loss): (Vec<f64>, Vec<f64>) = izip!(
         smooth::std_dev(close, window),
         &close[window - 1..],
@@ -358,11 +365,8 @@ pub fn relative_vol(
     )
     .map(|(std, curr, prev)| {
         (
-            f64::max(0.0, f64::max(0.0, curr - prev) * std / (curr - prev).abs()),
-            f64::max(
-                0.0,
-                f64::min(0.0, curr - prev).abs() * std / (curr - prev).abs(),
-            ),
+            f64::max(0.0, (curr - prev).signum()) * std,
+            f64::max(0.0, (prev - curr).signum()) * std,
         )
     })
     .unzip();
@@ -529,4 +533,32 @@ pub fn chop<'a>(
     })
     .collect::<Vec<f64>>()
     .into_iter()
+}
+
+/// Balance of Power
+/// https://www.tradingview.com/support/solutions/43000589100-balance-of-power-bop/
+pub fn bal_power<'a>(
+    open: &'a [f64],
+    high: &'a [f64],
+    low: &'a [f64],
+    close: &'a [f64],
+    window: usize,
+) -> impl Iterator<Item = f64> + 'a {
+    smooth::ewma(
+        &izip!(open, high, low, close)
+            .map(|(o, h, l, c)| (c - o) / (h - l))
+            .collect::<Vec<f64>>(),
+        window,
+    )
+    .collect::<Vec<f64>>()
+    .into_iter()
+}
+
+/// Disparity Index
+/// https://www.investopedia.com/terms/d/disparityindex.asp
+pub fn disparity(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
+    data.iter()
+        .skip(window - 1)
+        .zip(smooth::ewma(data, window))
+        .map(|(x, ma)| 100.0 * (x - ma) / ma)
 }

@@ -82,13 +82,16 @@ pub fn pwma(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
 }
 
 /// welles wilder's moving average
-pub fn wilder(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
+pub fn wilder(data: &[f64], window: usize) -> Box<dyn Iterator<Item = f64> + '_> {
+    if window == 1 {
+        return Box::new(data.iter().copied());
+    }
     let initial = data[..window - 1].iter().sum::<f64>() / (window - 1) as f64;
-    data[window - 1..].iter().scan(initial, move |state, x| {
+    Box::new(data[window - 1..].iter().scan(initial, move |state, x| {
         let ma = (*state * (window - 1) as f64 + x) / window as f64;
         *state = ma;
         Some(ma)
-    })
+    }))
 }
 
 /// hull's moving average

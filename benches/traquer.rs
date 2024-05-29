@@ -267,6 +267,20 @@ fn criterion_benchmark(c: &mut Criterion) {
             )
         })
     });
+    c.bench_function("sig-momentum-bal_power", |b| {
+        b.iter(|| {
+            black_box(
+                momentum::bal_power(&stats.open, &stats.high, &stats.low, &stats.close, 16)
+                    .collect::<Vec<f64>>(),
+            )
+        })
+    });
+    c.bench_function("sig-momentum-inertia", |b| {
+        b.iter(|| black_box(momentum::inertia(&stats.close, 6, 10).collect::<Vec<f64>>()))
+    });
+    c.bench_function("sig-momentum-disparity", |b| {
+        b.iter(|| black_box(momentum::disparity(&stats.close, 16).collect::<Vec<f64>>()))
+    });
     c.bench_function("sig-trend-keltner", |b| {
         b.iter(|| {
             black_box(
