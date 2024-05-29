@@ -302,6 +302,9 @@ fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("ma-zlma", |b| {
         b.iter(|| black_box(smooth::zlma(&stats.close, 16).collect::<Vec<f64>>()))
     });
+    c.bench_function("ma-pwma", |b| {
+        b.iter(|| black_box(smooth::pwma(&stats.close, 16).collect::<Vec<f64>>()))
+    });
 }
 
 criterion_group!(benches, criterion_benchmark);

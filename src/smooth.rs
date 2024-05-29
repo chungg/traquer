@@ -57,6 +57,30 @@ pub fn wma(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
     })
 }
 
+/// Pascal's Triangle moving average
+/// https://en.wikipedia.org/wiki/Pascal%27s_triangle
+pub fn pwma(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
+    let n = window - 1;
+    let mut row = vec![1; window];
+    let mut denom = 2_usize;
+    for i in 1..=(n / 2) {
+        let k = i - 1;
+        row[i] = (row[k] * (n - k)) / (k + 1);
+        row[n - i] = row[i];
+        denom += row[i] * 2;
+    }
+    if window % 2 == 1 {
+        denom -= row[n / 2];
+    }
+    let weights: Vec<f64> = row.into_iter().map(|i| i as f64 / denom as f64).collect();
+    data.windows(window).map(move |w| {
+        w.iter()
+            .zip(weights.iter())
+            .map(|(value, weight)| value * weight)
+            .sum()
+    })
+}
+
 /// welles wilder's moving average
 pub fn wilder(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
     let initial = data[..window - 1].iter().sum::<f64>() / (window - 1) as f64;
