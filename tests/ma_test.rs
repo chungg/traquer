@@ -3,6 +3,23 @@ use traquer::smooth;
 mod common;
 
 #[test]
+fn test_ma() {
+    let stats = common::test_data();
+    assert_eq!(
+        smooth::ewma(&stats.close, 16).collect::<Vec<f64>>(),
+        smooth::ma(&stats.close, 16, smooth::MaMode::EWMA).collect::<Vec<f64>>()
+    );
+    assert_eq!(
+        smooth::wilder(&stats.close, 16).collect::<Vec<f64>>(),
+        smooth::ma(&stats.close, 16, smooth::MaMode::Wilder).collect::<Vec<f64>>()
+    );
+    assert_eq!(
+        smooth::pwma(&stats.close, 16).collect::<Vec<f64>>(),
+        smooth::ma(&stats.close, 16, smooth::MaMode::Pascal).collect::<Vec<f64>>()
+    );
+}
+
+#[test]
 fn test_ewma_even() {
     let stats = common::test_data();
     let results = smooth::ewma(&stats.close, 16);
