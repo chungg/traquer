@@ -27,7 +27,7 @@ fn test_rsi() {
             58.06858163571402,
             54.77626809114967
         ],
-        result
+        result.collect::<Vec<f64>>()
     );
 }
 
@@ -47,7 +47,7 @@ fn test_macd() {
             0.06315775884193187,
             0.24329207900761673,
         ],
-        result
+        result.collect::<Vec<f64>>()
     );
 }
 
@@ -76,14 +76,15 @@ fn test_cmo() {
             44.454063824420864,
             43.61402085815939,
         ],
-        result
+        result.collect::<Vec<f64>>()
     );
 }
 
 #[test]
 fn test_elder_ray() {
     let stats = common::test_data();
-    let results = momentum::elder_ray(&stats.high, &stats.low, &stats.close, 16);
+    let results: (Vec<f64>, Vec<f64>) =
+        momentum::elder_ray(&stats.high, &stats.low, &stats.close, 16).unzip();
     assert_eq!(
         vec![
             -6.323126792907715,
@@ -158,7 +159,7 @@ fn test_cvi() {
             6.497958034939444,
             5.52228653707274,
         ],
-        result
+        result.collect::<Vec<f64>>()
     );
 }
 
@@ -188,7 +189,7 @@ fn test_wpr() {
             -21.111723928174033,
             -32.930944560522704,
         ],
-        result
+        result.collect::<Vec<f64>>()
     );
 }
 
@@ -218,7 +219,7 @@ fn test_ppo() {
             2.308566455542005,
             -0.92080395315155,
         ],
-        result
+        result.collect::<Vec<f64>>()
     );
 }
 
@@ -248,7 +249,7 @@ fn test_apo() {
             0.6097419848129704,
             0.6642876636596782,
         ],
-        result
+        result.collect::<Vec<f64>>()
     );
 }
 
@@ -278,7 +279,7 @@ fn test_dpo() {
             -2.404374599456787,
             -0.057187557220458984,
         ],
-        result
+        result.collect::<Vec<f64>>()
     );
 }
 
@@ -299,7 +300,7 @@ fn test_ultimate() {
             44.154676988833835,
             42.65072465563253,
         ],
-        result
+        result.collect::<Vec<f64>>()
     );
 }
 
@@ -328,7 +329,7 @@ fn test_pgo() {
             1.7570721475194715,
             1.0410621667725752,
         ],
-        result
+        result.collect::<Vec<f64>>()
     );
 }
 
@@ -372,7 +373,7 @@ fn test_si() {
             59.009650555611834,
             -321.26018448483165,
         ],
-        result
+        result.collect::<Vec<f64>>()
     );
 }
 
@@ -398,7 +399,7 @@ fn test_trix() {
             0.9560958810856369,
             1.0335513961870586,
         ],
-        result
+        result.collect::<Vec<f64>>()
     );
 }
 
@@ -421,7 +422,7 @@ fn test_tii_even() {
             100.0,
             100.0,
         ],
-        result
+        result.collect::<Vec<f64>>()
     );
 }
 
@@ -445,14 +446,15 @@ fn test_tii_odd() {
             100.0,
             100.0,
         ],
-        result
+        result.collect::<Vec<f64>>()
     );
 }
 
 #[test]
 fn test_stochastic() {
     let stats = common::test_data();
-    let results = momentum::stochastic(&stats.high, &stats.low, &stats.close, 16);
+    let results: (Vec<f64>, Vec<f64>) =
+        momentum::stochastic(&stats.high, &stats.low, &stats.close, 16).unzip();
     assert_eq!(
         vec![
             2.4407137600029882,
@@ -493,7 +495,7 @@ fn test_stochastic() {
             84.62596744261917,
             83.70977542628769,
         ],
-        results.1
+        results.1[2..]
     );
 }
 
@@ -521,7 +523,7 @@ fn test_stc() {
             99.99923706054688,
             49.99961853027344,
         ],
-        result
+        result.collect::<Vec<f64>>()
     );
 }
 
@@ -552,7 +554,7 @@ fn test_relative_vol() {
             62.43245885296475,
             56.96821515395683,
         ],
-        result
+        result.collect::<Vec<f64>>()
     );
 }
 
@@ -579,7 +581,7 @@ fn test_relative_vigor() {
             0.17222662984562823,
             0.1687163540078826,
         ],
-        result
+        result.collect::<Vec<f64>>()
     );
 }
 
@@ -609,7 +611,7 @@ fn test_fisher() {
             2.7111315248922243,
             2.457215146525715,
         ],
-        result
+        result.collect::<Vec<f64>>()
     );
 }
 
@@ -634,7 +636,7 @@ fn test_rainbow() {
             (96.19784933644493, 117.51887397606791),
             (53.817510802467865, 130.69353809849056),
         ],
-        result
+        result.collect::<Vec<(f64, f64)>>()
     );
 }
 
@@ -656,7 +658,7 @@ fn test_coppock() {
             30.587155565412456,
             32.92949971385037,
         ],
-        result
+        result.collect::<Vec<f64>>()
     );
 }
 
@@ -686,6 +688,6 @@ fn test_roc() {
             31.222884678686967,
             18.156751501922706,
         ],
-        result
+        result.collect::<Vec<f64>>()
     );
 }

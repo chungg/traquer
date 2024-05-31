@@ -7,7 +7,7 @@ use crate::trend::_true_range;
 
 /// relative strength index
 /// https://www.investopedia.com/terms/r/rsi.asp
-pub fn rsi(data: &[f64], window: usize) -> Vec<f64> {
+pub fn rsi(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
     let (gain, loss): (Vec<f64>, Vec<f64>) = data[1..]
         .iter()
         .zip(data[..data.len() - 1].iter())
@@ -17,32 +17,32 @@ pub fn rsi(data: &[f64], window: usize) -> Vec<f64> {
         .zip(smooth::wilder(&loss, window))
         .map(|(g, l)| 100.0 * g / (g + l))
         .collect::<Vec<f64>>()
+        .into_iter()
 }
 
 /// moving average convergence/divergence
 /// https://www.investopedia.com/terms/m/macd.asp
-pub fn macd(close: &[f64], short: usize, long: usize) -> Vec<f64> {
+pub fn macd(close: &[f64], short: usize, long: usize) -> impl Iterator<Item = f64> + '_ {
     let short_ma = smooth::ewma(close, short);
     let long_ma = smooth::ewma(close, long);
-    short_ma
-        .skip(long - short)
-        .zip(long_ma)
-        .map(|(x, y)| x - y)
-        .collect::<Vec<f64>>()
+    short_ma.skip(long - short).zip(long_ma).map(|(x, y)| x - y)
 }
 
 /// chande momentum oscillator
 /// https://www.investopedia.com/terms/c/chandemomentumoscillator.asp
-pub fn cmo(data: &[f64], window: usize) -> Vec<f64> {
-    smooth::_cmo(data, window)
-        .map(|x| x * 100.0)
-        .collect::<Vec<f64>>()
+pub fn cmo(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
+    smooth::_cmo(data, window).map(|x| x * 100.0)
 }
 
 /// elder ray
 /// https://www.investopedia.com/articles/trading/03/022603.asp
 /// returns tuple of bull power vec and bear power vec
-pub fn elder_ray(high: &[f64], low: &[f64], close: &[f64], window: usize) -> (Vec<f64>, Vec<f64>) {
+pub fn elder_ray<'a>(
+    high: &'a [f64],
+    low: &'a [f64],
+    close: &'a [f64],
+    window: usize,
+) -> impl Iterator<Item = (f64, f64)> + 'a {
     let close_ma = smooth::ewma(close, window);
     izip!(
         high.iter().skip(window - 1),
@@ -50,7 +50,6 @@ pub fn elder_ray(high: &[f64], low: &[f64], close: &[f64], window: usize) -> (Ve
         close_ma
     )
     .map(|(h, l, c)| (h - c, l - c))
-    .unzip()
 }
 
 /// williams alligator
@@ -60,7 +59,12 @@ pub fn alligator(_data: &[f64]) {}
 /// chaikin volatility
 /// https://www.tradingview.com/chart/AUDUSD/gjfxqWqW-What-Is-a-Chaikin-Volatility-Indicator-in-Trading/
 /// https://theforexgeek.com/chaikins-volatility-indicator/
-pub fn cvi(high: &[f64], low: &[f64], window: usize, rate_of_change: usize) -> Vec<f64> {
+pub fn cvi<'a>(
+    high: &'a [f64],
+    low: &'a [f64],
+    window: usize,
+    rate_of_change: usize,
+) -> impl Iterator<Item = f64> + 'a {
     smooth::ewma(
         &high
             .iter()
@@ -73,11 +77,17 @@ pub fn cvi(high: &[f64], low: &[f64], window: usize, rate_of_change: usize) -> V
     .windows(rate_of_change + 1)
     .map(|w| 100.0 * (w.last().unwrap() / w.first().unwrap() - 1.0))
     .collect::<Vec<f64>>()
+    .into_iter()
 }
 
 /// Williams Percent Range
 /// https://www.investopedia.com/terms/w/williamsr.asp
-pub fn wpr(high: &[f64], low: &[f64], close: &[f64], window: usize) -> Vec<f64> {
+pub fn wpr<'a>(
+    high: &'a [f64],
+    low: &'a [f64],
+    close: &'a [f64],
+    window: usize,
+) -> impl Iterator<Item = f64> + 'a {
     izip!(
         high.windows(window),
         low.windows(window),
@@ -88,54 +98,44 @@ pub fn wpr(high: &[f64], low: &[f64], close: &[f64], window: usize) -> Vec<f64> 
         let ll = l.iter().fold(f64::NAN, |state, &x| state.min(x));
         -100.0 * ((hh - c) / (hh - ll))
     })
-    .collect::<Vec<f64>>()
 }
 
 /// percent price oscillator
 /// pass in any data (close, high, low, etc...), and two window ranges
-pub fn ppo(data: &[f64], short: usize, long: usize) -> Vec<f64> {
+pub fn ppo(data: &[f64], short: usize, long: usize) -> impl Iterator<Item = f64> + '_ {
     let short_ma = smooth::ewma(data, short);
     let long_ma = smooth::ewma(data, long);
     short_ma
         .skip(long - short)
         .zip(long_ma)
         .map(|(x, y)| 100.0 * (x / y - 1.0))
-        .collect::<Vec<f64>>()
 }
 
 /// Absolute Price Oscillator
 /// https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/apo
-pub fn apo(data: &[f64], short: usize, long: usize) -> Vec<f64> {
+pub fn apo(data: &[f64], short: usize, long: usize) -> impl Iterator<Item = f64> + '_ {
     let short_ma = smooth::ewma(data, short);
     let long_ma = smooth::ewma(data, long);
-    short_ma
-        .skip(long - short)
-        .zip(long_ma)
-        .map(|(x, y)| x - y)
-        .collect::<Vec<f64>>()
+    short_ma.skip(long - short).zip(long_ma).map(|(x, y)| x - y)
 }
 
 /// Detrended Price Oscillator
-pub fn dpo(data: &[f64], window: usize) -> Vec<f64> {
+pub fn dpo(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
     let ma = smooth::sma(data, window);
     let lag = window / 2 + 1;
-    data[window - lag - 1..]
-        .iter()
-        .zip(ma)
-        .map(|(x, y)| x - y)
-        .collect::<Vec<f64>>()
+    data[window - lag - 1..].iter().zip(ma).map(|(x, y)| x - y)
 }
 
 /// ultimate oscillator
 /// https://www.investopedia.com/terms/u/ultimateoscillator.asp
-pub fn ultimate(
-    high: &[f64],
-    low: &[f64],
-    close: &[f64],
+pub fn ultimate<'a>(
+    high: &'a [f64],
+    low: &'a [f64],
+    close: &'a [f64],
     win1: usize,
     win2: usize,
     win3: usize,
-) -> Vec<f64> {
+) -> impl Iterator<Item = f64> + 'a {
     let bp_tr_vals = izip!(
         &high[1..],
         &low[1..],
@@ -167,17 +167,24 @@ pub fn ultimate(
                 / (4.0 + 2.0 + 1.0)
         })
         .collect::<Vec<f64>>()
+        .into_iter()
 }
 
 /// pretty good oscillator
 /// https://library.tradingtechnologies.com/trade/chrt-ti-pretty-good-oscillator.html
-pub fn pgo(high: &[f64], low: &[f64], close: &[f64], window: usize) -> Vec<f64> {
+pub fn pgo<'a>(
+    high: &'a [f64],
+    low: &'a [f64],
+    close: &'a [f64],
+    window: usize,
+) -> impl Iterator<Item = f64> + 'a {
     let tr = _true_range(high, low, close).collect::<Vec<f64>>();
     let atr = smooth::ewma(&tr, window);
     let sma_close = smooth::sma(close, window);
     izip!(close.iter().skip(window), sma_close.skip(1), atr)
         .map(|(c, c_ma, tr_ma)| (c - c_ma) / tr_ma)
         .collect::<Vec<f64>>()
+        .into_iter()
 }
 
 pub(crate) fn _swing<'a>(
@@ -217,25 +224,19 @@ pub(crate) fn _swing<'a>(
 /// Swing Index
 /// https://www.investopedia.com/terms/a/asi.asp
 /// https://quantstrategy.io/blog/accumulative-swing-index-how-to-trade/
-pub fn si(open: &[f64], high: &[f64], low: &[f64], close: &[f64], limit: f64) -> Vec<f64> {
-    _swing(open, high, low, close, limit).collect::<Vec<f64>>()
-}
-
-/// typical price
-/// https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/typical-price
-pub fn hlc3(high: &[f64], low: &[f64], close: &[f64], window: usize) -> Vec<f64> {
-    smooth::sma(
-        &izip!(high, low, close)
-            .map(|(h, l, c)| (h + l + c) / 3.0)
-            .collect::<Vec<f64>>(),
-        window,
-    )
-    .collect::<Vec<f64>>()
+pub fn si<'a>(
+    open: &'a [f64],
+    high: &'a [f64],
+    low: &'a [f64],
+    close: &'a [f64],
+    limit: f64,
+) -> impl Iterator<Item = f64> + 'a {
+    _swing(open, high, low, close, limit)
 }
 
 /// Triple Exponential Average
 /// https://www.investopedia.com/terms/t/trix.asp
-pub fn trix(close: &[f64], window: usize) -> Vec<f64> {
+pub fn trix(close: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
     let ema3 = smooth::ewma(
         &smooth::ewma(&smooth::ewma(close, window).collect::<Vec<f64>>(), window)
             .collect::<Vec<f64>>(),
@@ -247,11 +248,12 @@ pub fn trix(close: &[f64], window: usize) -> Vec<f64> {
         .zip(&ema3[1..])
         .map(|(prev, curr)| 100.0 * (curr - prev) / prev)
         .collect::<Vec<f64>>()
+        .into_iter()
 }
 
 /// trend intensity index
 /// https://www.marketvolume.com/technicalanalysis/trendintensityindex.asp
-pub fn tii(data: &[f64], window: usize) -> Vec<f64> {
+pub fn tii(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
     smooth::sma(data, window)
         .zip(&data[(window - 1)..])
         .map(|(avg, actual)| {
@@ -270,11 +272,17 @@ pub fn tii(data: &[f64], window: usize) -> Vec<f64> {
             100.0 * sd_pos / (sd_pos + sd_neg)
         })
         .collect::<Vec<f64>>()
+        .into_iter()
 }
 
 /// Stochastic Oscillator
 /// https://www.investopedia.com/articles/technical/073001.asp
-pub fn stochastic(high: &[f64], low: &[f64], close: &[f64], window: usize) -> (Vec<f64>, Vec<f64>) {
+pub fn stochastic<'a>(
+    high: &'a [f64],
+    low: &'a [f64],
+    close: &'a [f64],
+    window: usize,
+) -> impl Iterator<Item = (f64, f64)> + 'a {
     let fast_k = smooth::sma(
         &izip!(
             high.windows(window),
@@ -291,10 +299,10 @@ pub fn stochastic(high: &[f64], low: &[f64], close: &[f64], window: usize) -> (V
     )
     .collect::<Vec<f64>>();
     let k = smooth::sma(&fast_k, 3).collect::<Vec<f64>>();
-    (fast_k, k)
+    izip!(fast_k, iter::repeat(f64::NAN).take(3 - 1).chain(k))
 }
 
-fn _stc(series: &[f64], window: usize) -> Vec<f64> {
+fn _stc(series: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
     smooth::wilder(
         &series
             .windows(window)
@@ -311,24 +319,42 @@ fn _stc(series: &[f64], window: usize) -> Vec<f64> {
         2,
     )
     .collect::<Vec<f64>>()
+    .into_iter()
 }
 
 /// Schaff Trend Cycle
 /// https://www.investopedia.com/articles/forex/10/schaff-trend-cycle-indicator.asp
 /// https://www.stockmaniacs.net/schaff-trend-cycle-indicator/
-pub fn stc(close: &[f64], window: usize, short: usize, long: usize) -> Vec<f64> {
+pub fn stc(
+    close: &[f64],
+    window: usize,
+    short: usize,
+    long: usize,
+) -> impl Iterator<Item = f64> + '_ {
     let series = macd(close, short, long);
-    _stc(&_stc(&series, window), window)
+    _stc(
+        &_stc(&series.collect::<Vec<f64>>(), window).collect::<Vec<f64>>(),
+        window,
+    )
+    .collect::<Vec<f64>>()
+    .into_iter()
 }
 
 /// Relative Volatility
 /// https://www.tradingview.com/support/solutions/43000594684-relative-volatility-index/
-pub fn relative_vol(close: &[f64], window: usize, smoothing: usize) -> Vec<f64> {
-    let stdev = smooth::std_dev(close, window).collect::<Vec<f64>>();
+pub fn relative_vol(
+    close: &[f64],
+    window: usize,
+    smoothing: usize,
+) -> impl Iterator<Item = f64> + '_ {
+    dbg!(
+        &close.len(),
+        smooth::std_dev(close, window).collect::<Vec<_>>().len()
+    );
     let (gain, loss): (Vec<f64>, Vec<f64>) = izip!(
-        &stdev,
-        &close[close.len() - stdev.len()..],
-        &close[close.len() - stdev.len() - 1..close.len() - 1]
+        smooth::std_dev(close, window),
+        &close[window - 1..],
+        &close[window - 2..close.len() - 1]
     )
     .map(|(std, curr, prev)| {
         (
@@ -344,17 +370,18 @@ pub fn relative_vol(close: &[f64], window: usize, smoothing: usize) -> Vec<f64> 
         .zip(smooth::wilder(&loss, smoothing))
         .map(|(g, l)| 100.0 * g / (g + l))
         .collect::<Vec<f64>>()
+        .into_iter()
 }
 
 /// Relative Vigor
 /// https://www.investopedia.com/terms/r/relative_vigor_index.asp
-pub fn relative_vigor(
-    open: &[f64],
-    high: &[f64],
-    low: &[f64],
-    close: &[f64],
+pub fn relative_vigor<'a>(
+    open: &'a [f64],
+    high: &'a [f64],
+    low: &'a [f64],
+    close: &'a [f64],
     window: usize,
-) -> Vec<f64> {
+) -> impl Iterator<Item = f64> + 'a {
     let close_open = open
         .iter()
         .zip(close)
@@ -378,11 +405,16 @@ pub fn relative_vigor(
         .zip(smooth::sma(&denominator, window))
         .map(|(n, d)| n / d)
         .collect::<Vec<f64>>()
+        .into_iter()
 }
 
 /// Elhers Fisher Transform
 /// https://www.investopedia.com/terms/f/fisher-transform.asp
-pub fn fisher(high: &[f64], low: &[f64], window: usize) -> Vec<f64> {
+pub fn fisher<'a>(
+    high: &'a [f64],
+    low: &'a [f64],
+    window: usize,
+) -> impl Iterator<Item = f64> + 'a {
     let hl2 = high
         .iter()
         .zip(low)
@@ -406,11 +438,16 @@ pub fn fisher(high: &[f64], low: &[f64], window: usize) -> Vec<f64> {
             Some(state.1)
         })
         .collect::<Vec<f64>>()
+        .into_iter()
 }
 
 /// Rainbow Oscillator
 /// https://www.tradingview.com/script/gWYg0ti0-Indicators-Rainbow-Charts-Oscillator-Binary-Wave-and-MAs/
-pub fn rainbow(data: &[f64], window: usize, lookback: usize) -> Vec<(f64, f64)> {
+pub fn rainbow(
+    data: &[f64],
+    window: usize,
+    lookback: usize,
+) -> impl Iterator<Item = (f64, f64)> + '_ {
     let mut smas = Vec::with_capacity(10);
     smas.push(smooth::sma(data, window).collect::<Vec<f64>>());
     for _ in 1..10 {
@@ -421,34 +458,37 @@ pub fn rainbow(data: &[f64], window: usize, lookback: usize) -> Vec<(f64, f64)> 
                 .collect::<Vec<f64>>(),
         );
     }
-    ((window - 1) * 10..data.len())
-        .map(|i| {
-            let mut total: f64 = 0.0;
-            let mut hsma = f64::MIN;
-            let mut lsma = f64::MAX;
-            for sma in smas.iter() {
-                let val = sma[i - (window - 1)];
-                total += val;
-                hsma = hsma.max(val);
-                lsma = lsma.min(val);
-            }
-            let mut hlookback = f64::MIN;
-            let mut llookback = f64::MAX;
-            ((i - (lookback - 1)).max(0)..=i).for_each(|x| {
-                let val = data[x];
-                hlookback = hlookback.max(val);
-                llookback = llookback.min(val);
-            });
-            let osc = 100.0 * (data[i] - total / 10.0) / (hlookback - llookback).max(0.000001);
-            let band = 100.0 * (hsma - lsma) / (hlookback - llookback).max(0.000001);
-            (osc, band)
-        })
-        .collect::<Vec<(f64, f64)>>()
+    ((window - 1) * 10..data.len()).map(move |i| {
+        let mut total: f64 = 0.0;
+        let mut hsma = f64::MIN;
+        let mut lsma = f64::MAX;
+        for sma in smas.iter() {
+            let val = sma[i - (window - 1)];
+            total += val;
+            hsma = hsma.max(val);
+            lsma = lsma.min(val);
+        }
+        let mut hlookback = f64::MIN;
+        let mut llookback = f64::MAX;
+        ((i - (lookback - 1)).max(0)..=i).for_each(|x| {
+            let val = data[x];
+            hlookback = hlookback.max(val);
+            llookback = llookback.min(val);
+        });
+        let osc = 100.0 * (data[i] - total / 10.0) / (hlookback - llookback).max(0.000001);
+        let band = 100.0 * (hsma - lsma) / (hlookback - llookback).max(0.000001);
+        (osc, band)
+    })
 }
 
 /// Coppock Curve
 /// https://www.investopedia.com/terms/c/coppockcurve.asp
-pub fn coppock(data: &[f64], window: usize, short: usize, long: usize) -> Vec<f64> {
+pub fn coppock(
+    data: &[f64],
+    window: usize,
+    short: usize,
+    long: usize,
+) -> impl Iterator<Item = f64> + '_ {
     smooth::wma(
         &(long..data.len())
             .map(|x| 100.0 * (data[x] / data[x - short] + data[x] / data[x - long] - 2.0))
@@ -456,12 +496,12 @@ pub fn coppock(data: &[f64], window: usize, short: usize, long: usize) -> Vec<f6
         window,
     )
     .collect::<Vec<f64>>()
+    .into_iter()
 }
 
 /// Rate of Change
 /// https://www.investopedia.com/terms/p/pricerateofchange.asp.
-pub fn roc(data: &[f64], window: usize) -> Vec<f64> {
+pub fn roc(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
     data.windows(window)
         .map(|w| 100.0 * (w[w.len() - 1] / w[0] - 1.0))
-        .collect::<Vec<f64>>()
 }
