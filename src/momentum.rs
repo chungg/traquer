@@ -120,8 +120,12 @@ pub fn apo(data: &[f64], short: usize, long: usize) -> impl Iterator<Item = f64>
 }
 
 /// Detrended Price Oscillator
-pub fn dpo(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
-    let ma = smooth::sma(data, window);
+pub fn dpo(
+    data: &[f64],
+    window: usize,
+    mamode: Option<smooth::MaMode>,
+) -> impl Iterator<Item = f64> + '_ {
+    let ma = smooth::ma(data, window, mamode.unwrap_or(smooth::MaMode::SMA));
     let lag = window / 2 + 1;
     data[window - lag - 1..].iter().zip(ma).map(|(x, y)| x - y)
 }

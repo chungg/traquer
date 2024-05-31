@@ -140,7 +140,7 @@ fn criterion_benchmark(c: &mut Criterion) {
         b.iter(|| black_box(momentum::apo(&stats.close, 10, 16).collect::<Vec<f64>>()))
     });
     c.bench_function("sig-momentum-dpo", |b| {
-        b.iter(|| black_box(momentum::dpo(&stats.close, 16).collect::<Vec<f64>>()))
+        b.iter(|| black_box(momentum::dpo(&stats.close, 16, None).collect::<Vec<f64>>()))
     });
     c.bench_function("sig-trend-vhf", |b| {
         b.iter(|| {

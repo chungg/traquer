@@ -1,6 +1,40 @@
 use itertools::izip;
 use std::iter;
 
+pub enum MaMode {
+    SMA,
+    EWMA,
+    DEMA,
+    TEMA,
+    WMA,
+    Hull,
+    LinReg,
+    Pascal,
+    Triangle,
+    Variable,
+    Vidya,
+    Wilder,
+    ZeroLag,
+}
+
+pub fn ma(data: &[f64], window: usize, mamode: MaMode) -> Box<dyn Iterator<Item = f64> + '_> {
+    match mamode {
+        MaMode::SMA => Box::new(sma(data, window)),
+        MaMode::EWMA => Box::new(ewma(data, window)),
+        MaMode::DEMA => Box::new(dema(data, window)),
+        MaMode::TEMA => Box::new(tema(data, window)),
+        MaMode::WMA => Box::new(wma(data, window)),
+        MaMode::Hull => Box::new(hull(data, window)),
+        MaMode::LinReg => Box::new(lrf(data, window)),
+        MaMode::Pascal => Box::new(pwma(data, window)),
+        MaMode::Triangle => Box::new(trima(data, window)),
+        MaMode::Variable => Box::new(vma(data, window)),
+        MaMode::Vidya => Box::new(vidya(data, window)),
+        MaMode::Wilder => Box::new(wilder(data, window)),
+        MaMode::ZeroLag => Box::new(zlma(data, window)),
+    }
+}
+
 // exponentially weighted moving average
 pub fn ewma(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
     let initial = data[..window].iter().sum::<f64>() / window as f64;

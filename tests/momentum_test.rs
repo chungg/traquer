@@ -256,7 +256,7 @@ fn test_apo() {
 #[test]
 fn test_dpo() {
     let stats = common::test_data();
-    let result = momentum::dpo(&stats.close, 16);
+    let result = momentum::dpo(&stats.close, 16, None);
     assert_eq!(
         vec![
             2.0268754959106445,
