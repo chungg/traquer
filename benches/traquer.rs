@@ -260,6 +260,13 @@ fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("sig-momentum-roc", |b| {
         b.iter(|| black_box(momentum::roc(&stats.low, 16).collect::<Vec<f64>>()))
     });
+    c.bench_function("sig-momentum-chop", |b| {
+        b.iter(|| {
+            black_box(
+                momentum::chop(&stats.high, &stats.low, &stats.close, 16).collect::<Vec<f64>>(),
+            )
+        })
+    });
     c.bench_function("sig-trend-keltner", |b| {
         b.iter(|| {
             black_box(
