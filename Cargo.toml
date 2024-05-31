@@ -1,6 +1,6 @@
 [package]
 name = "traquer"
-version = "0.0.1"
+version = "0.1.0"
 edition = "2021"
 description = "statistical functions library"
 license = "Apache-2.0"
