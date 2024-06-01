@@ -411,3 +411,40 @@ pub fn typical<'a>(
     .collect::<Vec<f64>>()
     .into_iter()
 }
+
+/// Standard Deviation
+pub fn std_dev(
+    data: &[f64],
+    window: usize,
+    deviations: Option<f64>,
+) -> impl Iterator<Item = f64> + '_ {
+    let devs = deviations.unwrap_or(2.0);
+    smooth::std_dev(data, window).map(move |x| x * devs)
+}
+
+/// Bollinger Bands
+/// https://www.investopedia.com/terms/b/bollingerbands.asp
+pub fn bbands(
+    data: &[f64],
+    window: usize,
+    deviations: Option<f64>,
+    mamode: Option<smooth::MaMode>,
+) -> impl Iterator<Item = (f64, f64, f64)> + '_ {
+    smooth::ma(data, window, mamode.unwrap_or(smooth::MaMode::EWMA))
+        .zip(std_dev(data, window, deviations))
+        .map(|(ma, stdev)| (ma + stdev, ma, ma - stdev))
+}
+
+/// Donchian Channels
+/// https://www.tradingview.com/support/solutions/43000502253-donchian-channels-dc/
+pub fn donchian<'a>(
+    high: &'a [f64],
+    low: &'a [f64],
+    window: usize,
+) -> impl Iterator<Item = (f64, f64, f64)> + 'a {
+    high.windows(window).zip(low.windows(window)).map(|(h, l)| {
+        let hh = h.iter().fold(f64::NAN, |state, &x| state.max(x));
+        let ll = l.iter().fold(f64::NAN, |state, &x| state.min(x));
+        (hh, (hh + ll) / 2.0, ll)
+    })
+}

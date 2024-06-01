@@ -34,6 +34,14 @@ pub fn cmo(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
     smooth::_cmo(data, window).map(|x| x * 100.0)
 }
 
+/// Chande Forecast Oscillator
+/// https://www.stockmaniacs.net/chande-forecast-oscillator/
+pub fn cfo(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
+    smooth::lrf(data, window)
+        .zip(data.iter().skip(window - 1))
+        .map(|(tsf, x)| 100.0 * (x - tsf) / x)
+}
+
 /// elder ray
 /// https://www.investopedia.com/articles/trading/03/022603.asp
 /// returns tuple of bull power vec and bear power vec
@@ -565,4 +573,43 @@ pub fn disparity(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ 
         .skip(window - 1)
         .zip(smooth::ewma(data, window))
         .map(|(x, ma)| 100.0 * (x - ma) / ma)
+}
+
+/// Aroon
+/// https://www.tradingview.com/support/solutions/43000501801-aroon/
+pub fn aroon<'a>(
+    high: &'a [f64],
+    low: &'a [f64],
+    window: usize,
+) -> impl Iterator<Item = (f64, f64)> + 'a {
+    high.windows(window + 1)
+        .zip(low.windows(window + 1))
+        .map(move |(h, l)| {
+            let (hh, _) =
+                h.iter().enumerate().fold(
+                    (0, h[0]),
+                    |state, (idx, x)| {
+                        if x >= &state.1 {
+                            (idx, *x)
+                        } else {
+                            state
+                        }
+                    },
+                );
+            let (ll, _) =
+                l.iter().enumerate().fold(
+                    (0, l[0]),
+                    |state, (idx, x)| {
+                        if x <= &state.1 {
+                            (idx, *x)
+                        } else {
+                            state
+                        }
+                    },
+                );
+            (
+                hh as f64 / window as f64 * 100.0,
+                ll as f64 / window as f64 * 100.0,
+            )
+        })
 }
