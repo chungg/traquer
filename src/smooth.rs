@@ -249,3 +249,32 @@ pub fn zlma(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
     .collect::<Vec<f64>>()
     .into_iter()
 }
+
+/// Kernel Regression
+///
+/// https://www.stat.cmu.edu/~ryantibs/advmethods/notes/kernel.pdf
+/// https://mccormickml.com/2014/02/26/kernel-regression/
+///
+/// This only considers historical data and a backwindow of 255 datapoints.
+pub fn kernel(data: &[f64], sigma: usize) -> impl Iterator<Item = f64> + '_ {
+    let beta = 1.0 / (2 * sigma.pow(2)) as f64;
+    let window = 255;
+    let weights = (0..=window)
+        .map(|x| (-beta * (x as f64).powi(2)).exp())
+        .collect::<Vec<f64>>();
+    (0..data.len()).map(move |i| {
+        let mut sum: f64 = 0.0;
+        let mut sumw: f64 = 0.0;
+        // for (j, val) in data.iter().take(i+1).enumerate() {
+        //     // gaussian kernel
+        //     let w = (-beta * (i as f64 - j as f64).powi(2)).exp();
+        for (w, val) in weights
+            .iter()
+            .zip(data[..=i].iter().rev().take(std::cmp::min(i + 1, window)))
+        {
+            sum += w * val;
+            sumw += w;
+        }
+        sum / sumw
+    })
+}

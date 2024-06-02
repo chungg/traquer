@@ -315,6 +315,23 @@ fn criterion_benchmark(c: &mut Criterion) {
             )
         })
     });
+    c.bench_function("sig-trend-fbands", |b| {
+        b.iter(|| black_box(trend::fbands(&stats.high, &stats.low).collect::<Vec<(f64, f64)>>()))
+    });
+    c.bench_function("sig-trend-hv", |b| {
+        b.iter(|| black_box(trend::hv(&stats.close, 16, None).collect::<Vec<f64>>()))
+    });
+    c.bench_function("sig-trend-starc", |b| {
+        b.iter(|| {
+            black_box(
+                trend::starc(&stats.high, &stats.low, &stats.close, 16, 5, None)
+                    .collect::<Vec<(f64, f64)>>(),
+            )
+        })
+    });
+    c.bench_function("sig-trend-psar", |b| {
+        b.iter(|| black_box(trend::psar(&stats.high, &stats.low, None, None).collect::<Vec<f64>>()))
+    });
     c.bench_function("sig-volume-bw_mfi", |b| {
         b.iter(|| {
             black_box(volume::bw_mfi(&stats.high, &stats.low, &stats.volume).collect::<Vec<f64>>())
@@ -368,6 +385,9 @@ fn criterion_benchmark(c: &mut Criterion) {
     });
     c.bench_function("ma-pwma", |b| {
         b.iter(|| black_box(smooth::pwma(&stats.close, 16).collect::<Vec<f64>>()))
+    });
+    c.bench_function("ma-kernel", |b| {
+        b.iter(|| black_box(smooth::kernel(&stats.close, 16).collect::<Vec<f64>>()))
     });
 }
 
