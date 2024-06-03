@@ -53,6 +53,9 @@ fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("sig-momentum-cmo", |b| {
         b.iter(|| black_box(momentum::cmo(&stats.close, 16).collect::<Vec<f64>>()))
     });
+    c.bench_function("sig-momentum-cfo", |b| {
+        b.iter(|| black_box(momentum::cfo(&stats.close, 16).collect::<Vec<f64>>()))
+    });
     c.bench_function("sig-trend-cog", |b| {
         b.iter(|| black_box(trend::cog(&stats.close, 16).collect::<Vec<f64>>()))
     });
@@ -281,6 +284,11 @@ fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("sig-momentum-disparity", |b| {
         b.iter(|| black_box(momentum::disparity(&stats.close, 16).collect::<Vec<f64>>()))
     });
+    c.bench_function("sig-momentum-aroon", |b| {
+        b.iter(|| {
+            black_box(momentum::aroon(&stats.high, &stats.low, 16).collect::<Vec<(f64, f64)>>())
+        })
+    });
     c.bench_function("sig-trend-keltner", |b| {
         b.iter(|| {
             black_box(
@@ -291,6 +299,21 @@ fn criterion_benchmark(c: &mut Criterion) {
     });
     c.bench_function("sig-trend-gri", |b| {
         b.iter(|| black_box(trend::gri(&stats.high, &stats.low, 16).collect::<Vec<f64>>()))
+    });
+    c.bench_function("sig-trend-std_dev", |b| {
+        b.iter(|| black_box(trend::std_dev(&stats.close, 16, None).collect::<Vec<f64>>()))
+    });
+    c.bench_function("sig-trend-bbands", |b| {
+        b.iter(|| {
+            black_box(trend::bbands(&stats.close, 16, None, None).collect::<Vec<(f64, f64, f64)>>())
+        })
+    });
+    c.bench_function("sig-trend-donchian", |b| {
+        b.iter(|| {
+            black_box(
+                trend::donchian(&stats.high, &stats.low, 16).collect::<Vec<(f64, f64, f64)>>(),
+            )
+        })
     });
     c.bench_function("sig-volume-bw_mfi", |b| {
         b.iter(|| {
