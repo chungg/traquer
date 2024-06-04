@@ -1,3 +1,8 @@
+//! Volume Indicators
+//!
+//! Provides technical indicators that measures the efficiency of price movement
+//! by analyzing the relationship between price changes and trading volume.
+
 use itertools::izip;
 
 use crate::smooth;
@@ -18,8 +23,30 @@ fn vforce<'a>(
     )
 }
 
-/// klinger volume oscillator
-/// different from formula defined by https://www.investopedia.com/terms/k/klingeroscillator.asp
+/// Klinger volume oscillator (KVO)
+///
+/// Developed by Stephen Klinger. It helps determine the long-term trend of money flow
+/// while remaining sensitive enough to detect short-term fluctuations.
+///
+/// Note: This is different from formula defined in source. The vforce value is simply
+/// volume * trend
+///
+/// # Source
+/// https://www.investopedia.com/terms/k/klingeroscillator.asp
+///
+/// # Examples
+///
+/// ```
+/// use traquer::volume;
+///
+/// volume::kvo(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     3, 6).collect::<Vec<f64>>();
+///
+/// ```
 pub fn kvo<'a>(
     high: &'a [f64],
     low: &'a [f64],
@@ -48,9 +75,30 @@ fn wilder_sum(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
     })
 }
 
-/// twiggs money flow
+/// Twiggs money flow
+///
+/// Developed by Colin Twiggs that measures the flow of money into and out of a security.
+/// It's similar to the Accumulation/Distribution Line. A rising TMF indicates buying pressure,
+/// as more money is flowing into the security.
+///
+/// # Source
+///
 /// https://www.marketvolume.com/technicalanalysis/twiggsmoneyflow.asp
 /// https://www.incrediblecharts.com/indicators/twiggs_money_flow.php
+///
+/// # Examples
+///
+/// ```
+/// use traquer::volume;
+///
+/// volume::twiggs(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     6).collect::<Vec<f64>>();
+///
+/// ```
 pub fn twiggs<'a>(
     high: &'a [f64],
     low: &'a [f64],
@@ -78,9 +126,32 @@ pub fn twiggs<'a>(
     .into_iter()
 }
 
-/// accumulation/distribution
+/// Accumulation/Distribution (A/D) indicator
+///
+/// Developed by Marc Chaikin. A momentum indicator that measures the flow of money into
+/// and out of a security.
+///
+/// Calculated by multiplying the money flow multiplier (which is based on the security's
+/// price and volume) by the money flow volume (which is the volume at the current price level).
+/// This function supports alternate logic to consider prior close like yahoo
+///
+/// # Source
+///
 /// https://www.investopedia.com/terms/a/accumulationdistribution.asp
-/// supports alternate logic to consider prior close like yahoo
+///
+/// # Examples
+///
+/// ```
+/// use traquer::volume;
+///
+/// volume::ad(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     None).collect::<Vec<f64>>();
+///
+/// ```
 pub fn ad<'a>(
     high: &'a [f64],
     low: &'a [f64],
@@ -119,8 +190,27 @@ pub fn ad<'a>(
     }
 }
 
-/// elder force index
+/// Elder force index
+///
+/// Calculated by multiplying the change in price by the volume traded during that period.
+/// A high EFI value indicates a strong price move with high volume, which can be a sign of
+/// a strong trend
+///
+/// # Source
+///
 /// https://www.investopedia.com/articles/trading/03/031203.asp
+///
+/// # Examples
+///
+/// ```
+/// use traquer::volume;
+///
+/// volume::elder_force(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     6).collect::<Vec<f64>>();
+///
+/// ```
 pub fn elder_force<'a>(
     close: &'a [f64],
     volume: &'a [f64],
@@ -136,8 +226,29 @@ pub fn elder_force<'a>(
     .into_iter()
 }
 
-/// money flow index
+/// Money flow index
+///
+/// Calculated by using the typical price and the volume traded during that period.
+/// A high MFI value (above 80) indicates that the security is overbought, and a
+/// correction may be due.
+///
+/// # Source
+///
 /// https://www.investopedia.com/terms/m/mfi.asp
+///
+/// # Examples
+///
+/// ```
+/// use traquer::volume;
+///
+/// volume::mfi(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     6).collect::<Vec<f64>>();
+///
+/// ```
 pub fn mfi<'a>(
     high: &'a [f64],
     low: &'a [f64],
@@ -168,8 +279,30 @@ pub fn mfi<'a>(
         .into_iter()
 }
 
-/// chaikin money flow
+/// Chaikin money flow
+///
+/// Calculated by multiplying the money flow multiplier (which is based on the
+/// security's price and volume) by the money flow volume (which is the volume at
+/// the current price level). A positive CMF value indicates that money is flowing into
+/// the security, which can be a sign of buying pressure.
+///
+/// # Source
+///
 /// https://corporatefinanceinstitute.com/resources/equities/chaikin-money-flow-cmf/
+///
+/// # Examples
+///
+/// ```
+/// use traquer::volume;
+///
+/// volume::cmf(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     6).collect::<Vec<f64>>();
+///
+/// ```
 pub fn cmf<'a>(
     high: &'a [f64],
     low: &'a [f64],
@@ -188,7 +321,25 @@ pub fn cmf<'a>(
 }
 
 /// Trade Volume Index
+///
+/// Measures the flow of money into and out of a security by analyzing the trading volume at
+/// different price levels.
+///
+/// # Source
+///
 /// https://www.investopedia.com/terms/t/tradevolumeindex.asp
+///
+/// # Examples
+///
+/// ```
+/// use traquer::volume;
+///
+/// volume::tvi(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     0.5).collect::<Vec<f64>>();
+///
+/// ```
 pub fn tvi<'a>(
     close: &'a [f64],
     volume: &'a [f64],
@@ -212,7 +363,26 @@ pub fn tvi<'a>(
 }
 
 /// Ease of Movement
+///
+/// Ease shows the amount of volume required to move prices by a certain amount.
+/// A high Ease value indicates that prices can move easily with low volume, while a
+/// low Ease value indicates that prices are difficult to move and require high volume.
+///
+/// # Source
 /// https://www.investopedia.com/terms/e/easeofmovement.asp
+///
+/// # Examples
+///
+/// ```
+/// use traquer::volume;
+///
+/// volume::ease(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     6).collect::<Vec<f64>>();
+///
+/// ```
 pub fn ease<'a>(
     high: &'a [f64],
     low: &'a [f64],
@@ -234,7 +404,24 @@ pub fn ease<'a>(
 }
 
 /// On-Balance Volume
+///
+/// Shows the cumulative total of volume traded on up days minus the cumulative total of
+/// volume traded on down days.
+///
+/// # Source
+///
 /// https://www.investopedia.com/terms/o/onbalancevolume.asp
+///
+/// # Examples
+///
+/// ```
+/// use traquer::volume;
+///
+/// volume::obv(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0]).collect::<Vec<f64>>();
+///
+/// ```
 pub fn obv<'a>(close: &'a [f64], volume: &'a [f64]) -> impl Iterator<Item = f64> + 'a {
     close.windows(2).enumerate().scan(0.0, |state, (i, pairs)| {
         *state += (pairs[1] - pairs[0]).signum() * volume[i + 1];
@@ -243,7 +430,26 @@ pub fn obv<'a>(close: &'a [f64], volume: &'a [f64]) -> impl Iterator<Item = f64>
 }
 
 /// Market Facilitation Index
+///
+/// Shows the amount of price change per unit of volume traded. A high BW MFI value
+/// indicates that prices are moving efficiently with low volume, while a low BW MFI
+/// value indicates that prices are moving inefficiently with high volume.
+///
+/// # Source
+///
 /// https://www.metatrader5.com/en/terminal/help/indicators/bw_indicators/market_facilitation
+///
+/// # Examples
+///
+/// ```
+/// use traquer::volume;
+///
+/// volume::bw_mfi(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0]).collect::<Vec<f64>>();
+///
+/// ```
 pub fn bw_mfi<'a>(
     high: &'a [f64],
     low: &'a [f64],
