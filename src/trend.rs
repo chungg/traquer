@@ -448,3 +448,121 @@ pub fn donchian<'a>(
         (hh, (hh + ll) / 2.0, ll)
     })
 }
+
+/// Fractal Chaos Bands
+/// https://www.tradingview.com/script/Yy2ASjTq-Fractal-Chaos-Bands/
+pub fn fbands<'a>(high: &'a [f64], low: &'a [f64]) -> impl Iterator<Item = (f64, f64)> + 'a {
+    high.windows(5)
+        .zip(low.windows(5))
+        .scan((0.0, 0.0), |state, (h, l)| {
+            let (hh, _) =
+                h.iter().enumerate().fold(
+                    (0, h[0]),
+                    |state, (idx, x)| {
+                        if x > &state.1 {
+                            (idx, *x)
+                        } else {
+                            state
+                        }
+                    },
+                );
+            let upper = if hh == 2 { h[2] } else { state.0 };
+
+            let (ll, _) =
+                l.iter().enumerate().fold(
+                    (0, l[0]),
+                    |state, (idx, x)| {
+                        if x < &state.1 {
+                            (idx, *x)
+                        } else {
+                            state
+                        }
+                    },
+                );
+            let lower = if ll == 2 { l[2] } else { state.1 };
+            *state = (upper, lower);
+            Some(*state)
+        })
+}
+
+/// Historical Volatility
+/// https://www.macroption.com/historical-volatility-calculation/
+pub fn hv(data: &[f64], window: usize, deviations: Option<f64>) -> impl Iterator<Item = f64> + '_ {
+    let annualize = 252.0 * deviations.unwrap_or(1.0);
+    data.windows(2)
+        .map(|pair| f64::ln(pair[1] / pair[0]))
+        .collect::<Vec<f64>>()
+        .windows(window)
+        .map(move |w| {
+            let mean = w.iter().sum::<f64>() / window as f64;
+            (w.iter().map(|x| (x - mean).powi(2)).sum::<f64>() * annualize / window as f64).sqrt()
+        })
+        .collect::<Vec<f64>>()
+        .into_iter()
+}
+
+/// Stoller Average Range Channel (STARC)
+/// https://www.investopedia.com/terms/s/starc.asp
+pub fn starc<'a>(
+    high: &'a [f64],
+    low: &'a [f64],
+    close: &'a [f64],
+    window: usize,
+    ma_window: usize,
+    multiplier: Option<f64>,
+) -> impl Iterator<Item = (f64, f64)> + 'a {
+    let multiplier = multiplier.unwrap_or(1.2);
+    atr(high, low, close, window)
+        .skip(std::cmp::max(0_i32, (ma_window - 1) as i32 - window as i32) as usize)
+        .zip(
+            smooth::sma(close, ma_window)
+                .skip(std::cmp::max(0_i32, window as i32 - (ma_window - 1) as i32) as usize),
+        )
+        .map(move |(atr, ma)| (ma + multiplier * atr, ma - multiplier * atr))
+}
+
+/// Parabolic Stop and Reverse (SAR)
+/// https://www.investopedia.com/terms/p/parabolicindicator.asp
+pub fn psar<'a>(
+    high: &'a [f64],
+    low: &'a [f64],
+    af: Option<f64>,
+    af_max: Option<f64>,
+) -> impl Iterator<Item = f64> + 'a {
+    let af_inc = af.unwrap_or(0.02);
+    let mut af = af_inc;
+    let af_max = af_max.unwrap_or(0.2);
+    let mut fall = true;
+    let mut sar = high[0];
+    let mut ep = low[0];
+
+    let mut flip: bool;
+    let mut result = Vec::with_capacity(high.len() - 1);
+    for i in 0..high.len() - 1 {
+        sar = sar + af * (ep - sar);
+        if fall {
+            flip = high[i + 1] > sar;
+            if low[i + 1] < ep {
+                ep = low[i + 1];
+                af = f64::min(af + af_inc, af_max);
+            }
+            sar = f64::max(f64::max(high[std::cmp::max(i, 1) - 1], high[i + 1]), sar)
+        } else {
+            flip = low[i + 1] < sar;
+            if high[i + 1] > ep {
+                ep = high[i + 1];
+                af = f64::min(af + af_inc, af_max);
+            }
+            sar = f64::min(f64::min(low[std::cmp::max(i, 1) - 1], low[i + 1]), sar)
+        }
+
+        if flip {
+            sar = ep;
+            af = af_inc;
+            fall = !fall;
+            ep = if fall { low[i + 1] } else { high[i + 1] };
+        }
+        result.push(sar);
+    }
+    result.into_iter()
+}
