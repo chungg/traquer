@@ -28,11 +28,21 @@ encouraged.
 - cargo bench
 
 ## types of indicators
-- momentum - indicators where crossing a threshold (zero line) may signify opportunities.
-- trend - indicators where the direction (uptrend/downtrend) may signify opportunities.
-- volume - indicators that factor in how much an asset has been traded in a period of time.
-- smooth - moving average functions. often used to track trend, levels of support, breakouts,
-           etc... Is the same scale as input data.
+### momentum
+Indicators where crossing a threshold (zero line, signal line, etc...) may signify opportunities.
+These thresholds may be: a signal line, zero lines, upper/lower value bounds, etc...
+
+### trend
+Indicators where the direction may signify opportunities. The slope and trajectory of the
+indicator are more important than the actual value.
+
+### volume
+Indicators that factor in how much an asset has been traded in a period of time. Depending on
+indicator, it may be a momentum indicator or trend indicator.
+
+### smooth
+Provides moving average functions. Often used to track trend, levels of support, breakouts, etc...
+The results are in the same scale as input data and is often used as a signal line for input data.
 
 
 ## TODO
