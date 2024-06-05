@@ -1,3 +1,9 @@
+//! Momentum Indicators
+//!
+//! Provides technical indicators that measures the rate of change or speed of price
+//! movement of a security. In the context of this library, these indicators are typically
+//! range bound and used  alongside threshold(s) such as: zero lines, signal lines, etc...
+
 use std::iter;
 
 use itertools::izip;
@@ -5,8 +11,26 @@ use itertools::izip;
 use crate::smooth;
 use crate::trend::_true_range;
 
-/// relative strength index
+/// Relative strength index
+///
+/// Calculated by comparing the average gain of up days to the average loss of down days
+/// over a specified period. Shows the magnitude of recent price changes to determine
+/// overbought or oversold conditions.
+///
+/// # Source
+///
 /// https://www.investopedia.com/terms/r/rsi.asp
+///
+/// # Examples
+///
+/// ```
+/// use traquer::momentum;
+///
+/// momentum::rsi(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     6).collect::<Vec<f64>>();
+///
+/// ```
 pub fn rsi(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
     let (gain, loss): (Vec<f64>, Vec<f64>) = data[1..]
         .iter()
@@ -20,31 +44,115 @@ pub fn rsi(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
         .into_iter()
 }
 
-/// moving average convergence/divergence
+/// Moving average convergence/divergence
+///
+/// Shows the convergence and divergence of the two moving averages, indicating changes in
+/// the strength and direction of the trend. When the MACD crosses above the signal line,
+/// it's a bullish signal, indicating a potential uptrend.
+///
+/// # Source
+///
 /// https://www.investopedia.com/terms/m/macd.asp
+///
+/// # Examples
+///
+/// ```
+/// use traquer::momentum;
+///
+/// momentum::macd(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     3, 6).collect::<Vec<f64>>();
+///
+/// ```
 pub fn macd(close: &[f64], short: usize, long: usize) -> impl Iterator<Item = f64> + '_ {
     let short_ma = smooth::ewma(close, short);
     let long_ma = smooth::ewma(close, long);
     short_ma.skip(long - short).zip(long_ma).map(|(x, y)| x - y)
 }
 
-/// chande momentum oscillator
+/// Chande momentum oscillator
+///
+/// The CMO oscillates between +100 and -100, with high values indicating strong upward
+/// momentum and low values indicating strong downward momentum. The indicator is
+/// calculated by summing up the positive and negative price changes over a specified
+/// period, then dividing the result by the sum of the absolute values of all price
+/// changes over the same period.
+///
+/// # Source
+///
 /// https://www.investopedia.com/terms/c/chandemomentumoscillator.asp
+///
+/// # Examples
+///
+/// ```
+/// use traquer::momentum;
+///
+/// momentum::cmo(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     6).collect::<Vec<f64>>();
+///
+/// ```
 pub fn cmo(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
     smooth::_cmo(data, window).map(|x| x * 100.0)
 }
 
 /// Chande Forecast Oscillator
+///
+/// An indicator that attempts to forecast the future direction of the market by
+/// analyzing the relationship between the current price and the price a certain number
+/// of periods ago.
+///
+/// The resulting value is then multiplied by 100 to create an oscillator that ranges
+/// from -100 to +100.
+///
+/// # Source
+///
 /// https://www.stockmaniacs.net/chande-forecast-oscillator/
+///
+/// # Examples
+///
+/// ```
+/// use traquer::momentum;
+///
+/// momentum::cfo(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     6).collect::<Vec<f64>>();
+///
+/// ```
 pub fn cfo(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
     smooth::lrf(data, window)
         .zip(data.iter().skip(window - 1))
         .map(|(tsf, x)| 100.0 * (x - tsf) / x)
 }
 
-/// elder ray
+/// Elder ray
+///
+/// The Elder Ray Index consists of two components:
+///
+/// Bull Power
+///   - This measures the ability of buyers to push the price up.
+///   - It's calculated by subtracting the EWMA from the high price.
+///
+/// Bear Power
+///   - This measures the ability of sellers to push the price down.
+///   -  It's calculated by subtracting the EWMA from the low price.
+///
+/// # Source
+///
 /// https://www.investopedia.com/articles/trading/03/022603.asp
-/// returns tuple of bull power vec and bear power vec
+///
+/// # Examples
+///
+/// ```
+/// use traquer::momentum;
+///
+/// momentum::elder_ray(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     3).collect::<Vec<(f64,f64)>>();
+///
+/// ```
 pub fn elder_ray<'a>(
     high: &'a [f64],
     low: &'a [f64],
@@ -64,9 +172,27 @@ pub fn elder_ray<'a>(
 /// https://www.investopedia.com/articles/trading/072115/exploring-williams-alligator-indicator.asp
 pub fn alligator(_data: &[f64]) {}
 
-/// chaikin volatility
+/// Chaikin volatility
+///
+/// Measures the volatility of a security's price action by comparing the spread between
+/// the high and low prices over a specified period.
+///
+/// # Source
+///
 /// https://www.tradingview.com/chart/AUDUSD/gjfxqWqW-What-Is-a-Chaikin-Volatility-Indicator-in-Trading/
 /// https://theforexgeek.com/chaikins-volatility-indicator/
+///
+/// # Examples
+///
+/// ```
+/// use traquer::momentum;
+///
+/// momentum::cvi(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     6, 3).collect::<Vec<f64>>();
+///
+/// ```
 pub fn cvi<'a>(
     high: &'a [f64],
     low: &'a [f64],
@@ -89,7 +215,27 @@ pub fn cvi<'a>(
 }
 
 /// Williams Percent Range
+///
+/// Measure the level of a security's close price in relation to its high-low range over a
+/// specified period.
+///
+/// W%R = (Highest High - Close) / (Highest High - Lowest Low) * -100
+///
+/// # Source
 /// https://www.investopedia.com/terms/w/williamsr.asp
+///
+/// # Examples
+///
+/// ```
+/// use traquer::momentum;
+///
+/// momentum::wpr(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     6).collect::<Vec<f64>>();
+///
+/// ```
 pub fn wpr<'a>(
     high: &'a [f64],
     low: &'a [f64],
@@ -108,8 +254,21 @@ pub fn wpr<'a>(
     })
 }
 
-/// percent price oscillator
-/// pass in any data (close, high, low, etc...), and two window ranges
+/// Percent price oscillator
+///
+/// Measure the difference between two moving averages as a percentage of the larger
+/// moving average.
+///
+/// # Examples
+///
+/// ```
+/// use traquer::momentum;
+///
+/// momentum::ppo(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     3, 6).collect::<Vec<f64>>();
+///
+/// ```
 pub fn ppo(data: &[f64], short: usize, long: usize) -> impl Iterator<Item = f64> + '_ {
     let short_ma = smooth::ewma(data, short);
     let long_ma = smooth::ewma(data, long);
@@ -120,7 +279,23 @@ pub fn ppo(data: &[f64], short: usize, long: usize) -> impl Iterator<Item = f64>
 }
 
 /// Absolute Price Oscillator
+///
+/// Measure the difference between two moving averages.
+///
+/// # Source
+///
 /// https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/apo
+///
+/// # Examples
+///
+/// ```
+/// use traquer::momentum;
+///
+/// momentum::apo(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     3, 6).collect::<Vec<f64>>();
+///
+/// ```
 pub fn apo(data: &[f64], short: usize, long: usize) -> impl Iterator<Item = f64> + '_ {
     let short_ma = smooth::ewma(data, short);
     let long_ma = smooth::ewma(data, long);
@@ -128,6 +303,19 @@ pub fn apo(data: &[f64], short: usize, long: usize) -> impl Iterator<Item = f64>
 }
 
 /// Detrended Price Oscillator
+///
+/// Measure the difference between a security's price and its trend.
+///
+/// # Examples
+///
+/// ```
+/// use traquer::{momentum,smooth};
+///
+/// momentum::dpo(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     6, Some(smooth::MaMode::SMA)).collect::<Vec<f64>>();
+///
+/// ```
 pub fn dpo(
     data: &[f64],
     window: usize,
@@ -138,8 +326,27 @@ pub fn dpo(
     data[window - lag - 1..].iter().zip(ma).map(|(x, y)| x - y)
 }
 
-/// ultimate oscillator
+/// Ultimate oscillator
+///
+/// A technical indicator that uses the weighted average of three different time periods
+/// to reduce the volatility and false transaction signals.
+///
+/// # Source
+///
 /// https://www.investopedia.com/terms/u/ultimateoscillator.asp
+///
+/// # Examples
+///
+/// ```
+/// use traquer::momentum;
+///
+/// momentum::ultimate(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     2, 4, 8).collect::<Vec<f64>>();
+///
+/// ```
 pub fn ultimate<'a>(
     high: &'a [f64],
     low: &'a [f64],
@@ -182,8 +389,27 @@ pub fn ultimate<'a>(
         .into_iter()
 }
 
-/// pretty good oscillator
+/// Pretty good oscillator
+///
+/// Combines moving averages and the Average True Range (ATR) to create an oscillator
+/// that oscillates around a centerline
+///
+/// # Source
+///
 /// https://library.tradingtechnologies.com/trade/chrt-ti-pretty-good-oscillator.html
+///
+/// # Examples
+///
+/// ```
+/// use traquer::momentum;
+///
+/// momentum::pgo(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     6).collect::<Vec<f64>>();
+///
+/// ```
 pub fn pgo<'a>(
     high: &'a [f64],
     low: &'a [f64],
@@ -234,8 +460,27 @@ pub(crate) fn _swing<'a>(
 }
 
 /// Swing Index
+///
+/// Calculates the strength of price movement and predicts potential trend reversal.
+///
+/// # Source
+///
 /// https://www.investopedia.com/terms/a/asi.asp
 /// https://quantstrategy.io/blog/accumulative-swing-index-how-to-trade/
+///
+/// # Examples
+///
+/// ```
+/// use traquer::momentum;
+///
+/// momentum::si(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     0.5).collect::<Vec<f64>>();
+///
+/// ```
 pub fn si<'a>(
     open: &'a [f64],
     high: &'a [f64],
@@ -247,7 +492,24 @@ pub fn si<'a>(
 }
 
 /// Triple Exponential Average
+///
+/// Indicator to show the percentage change in a moving average that has been smoothed
+/// exponentially three times.
+///
+/// # Source
+///
 /// https://www.investopedia.com/terms/t/trix.asp
+///
+/// # Examples
+///
+/// ```
+/// use traquer::momentum;
+///
+/// momentum::trix(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0,5.0,2.0],
+///     3).collect::<Vec<f64>>();
+///
+/// ```
 pub fn trix(close: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
     let ema3 = smooth::ewma(
         &smooth::ewma(&smooth::ewma(close, window).collect::<Vec<f64>>(), window)
@@ -263,8 +525,24 @@ pub fn trix(close: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
         .into_iter()
 }
 
-/// trend intensity index
+/// Trend intensity index
+///
+/// Uses RSI principles but applies them to closing price deviations instead of the closing prices
+///
+/// # Source
+///
 /// https://www.marketvolume.com/technicalanalysis/trendintensityindex.asp
+///
+/// # Examples
+///
+/// ```
+/// use traquer::momentum;
+///
+/// momentum::tii(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     6).collect::<Vec<f64>>();
+///
+/// ```
 pub fn tii(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
     smooth::sma(data, window)
         .zip(&data[(window - 1)..])
@@ -288,7 +566,26 @@ pub fn tii(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
 }
 
 /// Stochastic Oscillator
+///
+/// Compares a security’s closing price to a range of its highest highs and lowest lows
+/// over a specific time period.
+///
+/// # Source
+///
 /// https://www.investopedia.com/articles/technical/073001.asp
+///
+/// # Examples
+///
+/// ```
+/// use traquer::momentum;
+///
+/// momentum::stochastic(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     3).collect::<Vec<(f64, f64)>>();
+///
+/// ```
 pub fn stochastic<'a>(
     high: &'a [f64],
     low: &'a [f64],
@@ -335,8 +632,25 @@ fn _stc(series: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
 }
 
 /// Schaff Trend Cycle
+///
+/// A modified version of the Moving Average Convergence Divergence. It aims to improve
+/// upon traditional moving averages (MAs) by incorporating cycle analysis.
+///
+/// # Source
+///
 /// https://www.investopedia.com/articles/forex/10/schaff-trend-cycle-indicator.asp
 /// https://www.stockmaniacs.net/schaff-trend-cycle-indicator/
+///
+/// # Examples
+///
+/// ```
+/// use traquer::momentum;
+///
+/// momentum::stc(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0,6.0,1.0],
+///     2, 3, 5).collect::<Vec<f64>>();
+///
+/// ```
 pub fn stc(
     close: &[f64],
     window: usize,
@@ -353,7 +667,25 @@ pub fn stc(
 }
 
 /// Inertia
+///
+/// An extension of Donald Dorsey’s Relative Volatility Index (RVI). The name “Inertia”
+/// reflects the concept that trends require more force to reverse than to continue
+/// in the same direction.
+///
+/// # Source
+///
 /// https://theforexgeek.com/inertia-indicator/
+///
+/// # Examples
+///
+/// ```
+/// use traquer::momentum;
+///
+/// momentum::inertia(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     3, 2).collect::<Vec<f64>>();
+///
+/// ```
 pub fn inertia(close: &[f64], window: usize, smoothing: usize) -> impl Iterator<Item = f64> + '_ {
     smooth::lrf(
         &relative_vol(close, window, window).collect::<Vec<f64>>(),
@@ -364,7 +696,24 @@ pub fn inertia(close: &[f64], window: usize, smoothing: usize) -> impl Iterator<
 }
 
 /// Relative Volatility
+///
+/// Measures the direction and magnitude of volatility in an asset’s price. Unlike the
+/// Relative Strength Index (RSI), which uses absolute prices, the RVI uses standard deviation.
+///
+/// # Source
+///
 /// https://www.tradingview.com/support/solutions/43000594684-relative-volatility-index/
+///
+/// # Examples
+///
+/// ```
+/// use traquer::momentum;
+///
+/// momentum::relative_vol(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     6, 2).collect::<Vec<f64>>();
+///
+/// ```
 pub fn relative_vol(
     close: &[f64],
     window: usize,
@@ -390,7 +739,27 @@ pub fn relative_vol(
 }
 
 /// Relative Vigor
+///
+/// Measures the strength of a trend by comparing a security’s closing price to its trading range
+/// while smoothing the results using a simple moving average.
+///
+/// # Source
+///
 /// https://www.investopedia.com/terms/r/relative_vigor_index.asp
+///
+/// # Examples
+///
+/// ```
+/// use traquer::momentum;
+///
+/// momentum::relative_vigor(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     6).collect::<Vec<f64>>();
+///
+/// ```
 pub fn relative_vigor<'a>(
     open: &'a [f64],
     high: &'a [f64],
@@ -425,7 +794,25 @@ pub fn relative_vigor<'a>(
 }
 
 /// Elhers Fisher Transform
+///
+/// Converts price data into a Gaussian normal distribution.
+/// Extreme readings (above +1 or below -1) may signal potential price reversals.
+///
+/// # Source
+///
 /// https://www.investopedia.com/terms/f/fisher-transform.asp
+///
+/// # Examples
+///
+/// ```
+/// use traquer::momentum;
+///
+/// momentum::fisher(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     6).collect::<Vec<f64>>();
+///
+/// ```
 pub fn fisher<'a>(
     high: &'a [f64],
     low: &'a [f64],
@@ -458,7 +845,24 @@ pub fn fisher<'a>(
 }
 
 /// Rainbow Oscillator
+///
+/// Based on multiple simple moving averages (SMAs). The highest high and lowest low
+/// of these SMAs create high and low oscillator curves.
+///
+/// # Source
+///
 /// https://www.tradingview.com/script/gWYg0ti0-Indicators-Rainbow-Charts-Oscillator-Binary-Wave-and-MAs/
+///
+/// # Examples
+///
+/// ```
+/// use traquer::momentum;
+///
+/// momentum::rainbow(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0,1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     2, 3).collect::<Vec<(f64, f64)>>();
+///
+/// ```
 pub fn rainbow(
     data: &[f64],
     window: usize,
@@ -498,7 +902,23 @@ pub fn rainbow(
 }
 
 /// Coppock Curve
+///
+/// Calculated as a weighted moving average of the sum of two rate of change periods
+///
+/// # Source
+///
 /// https://www.investopedia.com/terms/c/coppockcurve.asp
+///
+/// # Examples
+///
+/// ```
+/// use traquer::momentum;
+///
+/// momentum::coppock(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0,1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     2, 3, 6).collect::<Vec<f64>>();
+///
+/// ```
 pub fn coppock(
     data: &[f64],
     window: usize,
@@ -516,14 +936,51 @@ pub fn coppock(
 }
 
 /// Rate of Change
+///
+/// Measures the percentage change in price between the current price
+/// and the price a certain number of periods prior.
+///
+/// # Source
+///
 /// https://www.investopedia.com/terms/p/pricerateofchange.asp.
+///
+/// # Examples
+///
+/// ```
+/// use traquer::momentum;
+///
+/// momentum::roc(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     6).collect::<Vec<f64>>();
+///
+/// ```
 pub fn roc(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
     data.windows(window)
         .map(|w| 100.0 * (w[w.len() - 1] / w[0] - 1.0))
 }
 
 /// Choppiness Index
+///
+/// Aims to capture the true volatility and directionality of the market by taking
+/// into account the range between the highest high and the lowest low prices over
+/// a specified period.
+///
+/// # Source
+///
 /// https://www.tradingview.com/support/solutions/43000501980-choppiness-index-chop/
+///
+/// # Examples
+///
+/// ```
+/// use traquer::momentum;
+///
+/// momentum::chop(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     6).collect::<Vec<f64>>();
+///
+/// ```
 pub fn chop<'a>(
     high: &'a [f64],
     low: &'a [f64],
@@ -548,7 +1005,26 @@ pub fn chop<'a>(
 }
 
 /// Balance of Power
+///
+/// An oscillator that measures the strength of buying and selling pressure
+///
+/// # Source
+///
 /// https://www.tradingview.com/support/solutions/43000589100-balance-of-power-bop/
+///
+/// # Examples
+///
+/// ```
+/// use traquer::momentum;
+///
+/// momentum::bal_power(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     3).collect::<Vec<f64>>();
+///
+/// ```
 pub fn bal_power<'a>(
     open: &'a [f64],
     high: &'a [f64],
@@ -567,7 +1043,24 @@ pub fn bal_power<'a>(
 }
 
 /// Disparity Index
+///
+/// Measures the relative position of the most recent closing price to a selected
+/// moving average as a percentage.
+///
+/// # Source
+///
 /// https://www.investopedia.com/terms/d/disparityindex.asp
+///
+/// # Examples
+///
+/// ```
+/// use traquer::momentum;
+///
+/// momentum::disparity(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     6).collect::<Vec<f64>>();
+///
+/// ```
 pub fn disparity(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
     data.iter()
         .skip(window - 1)
@@ -576,7 +1069,25 @@ pub fn disparity(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ 
 }
 
 /// Aroon
+///
+/// Measures the trend strength and direction of an asset based on the time between highs and
+/// lows. Consists of two lines that show the time since a recent high or low.
+///
+/// # Source
+///
 /// https://www.tradingview.com/support/solutions/43000501801-aroon/
+///
+/// # Examples
+///
+/// ```
+/// use traquer::momentum;
+///
+/// momentum::aroon(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     3).collect::<Vec<(f64, f64)>>();
+///
+/// ```
 pub fn aroon<'a>(
     high: &'a [f64],
     low: &'a [f64],
