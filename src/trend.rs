@@ -1,3 +1,8 @@
+//! Trend Indicators
+//!
+//! Indicators where the direction may signify opportunities. The slope and trajectory of the
+//! indicator are more important than the actual value.
+
 use std::iter;
 
 use itertools::{izip, multiunzip};
@@ -5,8 +10,28 @@ use itertools::{izip, multiunzip};
 use crate::momentum::_swing;
 use crate::smooth;
 
-/// quick stick
+/// Quick stick
+///
+/// Measures buying and selling pressure, taking an average of the difference between
+/// closing and opening prices. When the price is closing lower than it opens, the
+/// indicator moves lower. When the price is closing higher than the open,
+/// the indicator moves up
+///
+/// # Source
+///
 /// https://www.investopedia.com/terms/q/qstick.asp
+///
+/// # Examples
+///
+/// ```
+/// use traquer::trend;
+///
+/// trend::qstick(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     6).collect::<Vec<f64>>();
+///
+/// ```
 pub fn qstick<'a>(
     open: &'a [f64],
     close: &'a [f64],
@@ -20,8 +45,30 @@ pub fn qstick<'a>(
     smooth::ewma(&q, window).collect::<Vec<f64>>().into_iter()
 }
 
-/// shinohara intensity ratio
+/// Shinohara intensity ratio
+///
+/// Measures trend intensity by plotting Strong Ratio (Strength) and Weak Ratio (Popularity) lines.
+/// The Strong Ratio is (high - prev close) / (prev close - low) and the weak ratio
+/// is (high - close) / (close - low).
+///
+/// NOTE: Implementation differs from source where weak ratio uses close rather than open.
+///
+/// # Source
+///
 /// https://www.sevendata.co.jp/shihyou/technical/shinohara.html
+///
+/// # Examples
+///
+/// ```
+/// use traquer::trend;
+///
+/// trend::shinohara(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     6).collect::<Vec<(f64,f64)>>();
+///
+/// ```
 pub fn shinohara<'a>(
     high: &'a [f64],
     low: &'a [f64],
@@ -57,8 +104,28 @@ pub fn shinohara<'a>(
         .zip(weak_ratio)
 }
 
-/// average directional index
+/// Average directional index
+///
+/// Measures strength a trend, not the direction, by directional movement by comparing
+/// the difference between two consecutive lows with the difference between their
+/// respective highs.
+///
+/// # Source
+///
 /// https://www.investopedia.com/terms/a/adx.asp
+///
+/// # Examples
+///
+/// ```
+/// use traquer::trend;
+///
+/// trend::adx(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     3, 6).collect::<Vec<(f64,f64,f64)>>();
+///
+/// ```
 pub fn adx<'a>(
     high: &'a [f64],
     low: &'a [f64],
@@ -108,8 +175,25 @@ pub fn adx<'a>(
     )
 }
 
-/// centre of gravity
+/// Centre of gravity
+///
+/// Calculates the midpoint of a security's price action over a specified period. Used in
+/// tandem with a signal line.
+///
+/// # Source
+///
 /// https://www.stockmaniacs.net/center-of-gravity-indicator/
+///
+/// # Examples
+///
+/// ```
+/// use traquer::trend;
+///
+/// trend::cog(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     6).collect::<Vec<f64>>();
+///
+/// ```
 pub fn cog(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
     let weights: Vec<f64> = (1..=window).map(|x| x as f64).collect();
     data.windows(window).map(move |w| {
@@ -122,8 +206,28 @@ pub fn cog(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
     })
 }
 
-/// vortex
+/// Vortex
+///
+/// Calculates two lines: VI+ and VI-. The greater the distance between the low of a price bar and
+/// the subsequent bar's high, the greater the positive Vortex movement (VM+).
+///
+/// # Source
+///
+/// https://en.wikipedia.org/wiki/Vortex_indicator
 /// https://www.investopedia.com/terms/v/vortex-indicator-vi.asp
+///
+/// # Examples
+///
+/// ```
+/// use traquer::trend;
+///
+/// trend::vortex(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     6).collect::<Vec<(f64,f64)>>();
+///
+/// ```
 pub fn vortex<'a>(
     high: &'a [f64],
     low: &'a [f64],
@@ -159,8 +263,27 @@ pub fn vortex<'a>(
     .into_iter()
 }
 
-/// vertical horizontal filter
+/// Vertical horizontal filter
+///
+/// Measures the level of trend activity in a financial market by comparing the max price
+/// range over a specific period to the cumulative price movement within that period.
+///
+/// # Source
+///
 /// https://www.upcomingtrader.com/blog/the-vertical-horizontal-filter-a-traders-guide-to-market-phases/
+///
+/// # Examples
+///
+/// ```
+/// use traquer::trend;
+///
+/// trend::vhf(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     6).collect::<Vec<f64>>();
+///
+/// ```
 pub fn vhf<'a>(
     high: &'a [f64],
     low: &'a [f64],
@@ -189,8 +312,27 @@ pub fn vhf<'a>(
 }
 
 /// Accumulative Swing Index
+///
+/// Cumulative sum of Swing Index
+///
+/// # Source
+///
 /// https://www.investopedia.com/terms/a/asi.asp
 /// https://quantstrategy.io/blog/accumulative-swing-index-how-to-trade/
+///
+/// # Examples
+///
+/// ```
+/// use traquer::trend;
+///
+/// trend::asi(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     0.5).collect::<Vec<f64>>();
+///
+/// ```
 pub fn asi<'a>(
     open: &'a [f64],
     high: &'a [f64],
@@ -205,7 +347,25 @@ pub fn asi<'a>(
 }
 
 /// Ulcer Index
+///
+/// Measures downside risk in terms of both the depth and duration of price declines.
+/// The index increases in value as the price moves farther away from a recent high
+/// and falls as the price rises to new highs.
+///
+/// # Source
+///
 /// https://en.wikipedia.org/wiki/Ulcer_index
+///
+/// # Examples
+///
+/// ```
+/// use traquer::trend;
+///
+/// trend::ulcer(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     6).collect::<Vec<f64>>();
+///
+/// ```
 pub fn ulcer(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
     let highest = data
         .windows(window)
@@ -222,9 +382,27 @@ pub fn ulcer(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
     .into_iter()
 }
 
-/// supertrend
+/// Supertrend
+///
+/// Acts as a dynamic level of support or resistance.
+///
+/// # Source
+///
 /// https://www.tradingview.com/support/solutions/43000634738-supertrend/
 /// https://www.investopedia.com/supertrend-indicator-7976167
+///
+/// # Examples
+///
+/// ```
+/// use traquer::trend;
+///
+/// trend::supertrend(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     6, 3.0).collect::<Vec<f64>>();
+///
+/// ```
 pub fn supertrend<'a>(
     high: &'a [f64],
     low: &'a [f64],
@@ -268,8 +446,29 @@ pub fn supertrend<'a>(
 }
 
 /// Random Walk Index
+///
+/// Compares a security's price movements to random movements to determine if it's in a trend.
+///
+/// NOTE: Window includes current price where other libraries use window strictly as lookback.
+/// You may need to add 1 to window for comparable behaviour.
+///
+/// # Source
+///
 /// https://www.technicalindicators.net/indicators-technical-analysis/168-rwi-random-walk-index
 /// https://www.investopedia.com/terms/r/random-walk-index.asp
+///
+/// # Examples
+///
+/// ```
+/// use traquer::trend;
+///
+/// trend::rwi(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     6).collect::<Vec<(f64, f64)>>();
+///
+/// ```
 pub fn rwi<'a>(
     high: &'a [f64],
     low: &'a [f64],
@@ -301,7 +500,29 @@ pub fn rwi<'a>(
 }
 
 /// Psychological Line
+///
+/// Based on the presumption that people will resist paying more for a share than others,
+/// unless of course the share continues to move up. Conversely, people resist selling a
+/// share for less than the price others have been getting for it, except if it continues to
+/// decline.
+///
+/// Calculates a ratio based on the number of up bars (price higher than previous bar) over
+/// a specified number of bars.
+///
+/// # Source
+///
 /// https://tradingliteracy.com/psychological-line-indicator/
+///
+/// # Examples
+///
+/// ```
+/// use traquer::trend;
+///
+/// trend::psych(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     6).collect::<Vec<f64>>();
+///
+/// ```
 pub fn psych(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
     data.windows(2)
         .map(|pair| (pair[1] - pair[0]).signum().max(0.0))
@@ -313,7 +534,25 @@ pub fn psych(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
 }
 
 /// Mass Index
+///
+/// Measures the volatility of stock prices by calculating a ratio of two exponential
+/// moving averages of the high-low differential.
+///
+/// # Source
+///
 /// https://www.investopedia.com/terms/m/mass-index.asp
+///
+/// # Examples
+///
+/// ```
+/// use traquer::trend;
+///
+/// trend::mass(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     3, 6).collect::<Vec<f64>>();
+///
+/// ```
 pub fn mass<'a>(
     high: &'a [f64],
     low: &'a [f64],
@@ -342,7 +581,25 @@ pub fn mass<'a>(
 }
 
 /// Keltner Channel
+///
+/// Upper and lower bands are defined by True Range from moving average.
+///
+/// # Source
+///
 /// https://www.investopedia.com/terms/k/keltnerchannel.asp
+///
+/// # Examples
+///
+/// ```
+/// use traquer::trend;
+///
+/// trend::keltner(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     6).collect::<Vec<(f64,f64,f64)>>();
+///
+/// ```
 pub fn keltner<'a>(
     high: &'a [f64],
     low: &'a [f64],
@@ -355,7 +612,25 @@ pub fn keltner<'a>(
 }
 
 /// Gopalakrishnan Range Index
+///
+/// Calculates the range of a security's price action over a specified period,
+/// providing insights into the volatility
+///
+/// # Source
+///
 /// https://library.tradingtechnologies.com/trade/chrt-ti-gopalakrishnan-range-index.html
+///
+/// # Examples
+///
+/// ```
+/// use traquer::trend;
+///
+/// trend::gri(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     6).collect::<Vec<f64>>();
+///
+/// ```
 pub fn gri<'a>(high: &'a [f64], low: &'a [f64], window: usize) -> impl Iterator<Item = f64> + 'a {
     high.windows(window)
         .zip(low.windows(window))
@@ -375,14 +650,50 @@ pub(crate) fn _true_range<'a>(
         .map(|(h, l, prevc)| (h - l).max(f64::abs(h - prevc)).max(f64::abs(l - prevc)))
 }
 
-/// true range
+/// True range
+///
+/// Measures market volatility by computing the greatest of the following: current high less
+/// the current low; the absolute value of the current high less the previous close;
+/// and the absolute value of the current low less the previous close.
+///
+/// # Source
+///
 /// https://www.investopedia.com/terms/a/atr.asp
+///
+/// # Examples
+///
+/// ```
+/// use traquer::trend;
+///
+/// trend::tr(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     ).collect::<Vec<f64>>();
+///
+/// ```
 pub fn tr<'a>(high: &'a [f64], low: &'a [f64], close: &'a [f64]) -> impl Iterator<Item = f64> + 'a {
     _true_range(high, low, close)
 }
 
-/// average true range
+/// Average true range
+///
+/// Moving average of the True Range series
+///
 /// https://www.investopedia.com/terms/a/atr.asp
+///
+/// # Examples
+///
+/// ```
+/// use traquer::trend;
+///
+/// trend::atr(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     6).collect::<Vec<f64>>();
+///
+/// ```
 pub fn atr<'a>(
     high: &'a [f64],
     low: &'a [f64],
@@ -394,8 +705,26 @@ pub fn atr<'a>(
         .into_iter()
 }
 
-/// typical price
+/// Typical price
+///
+/// Average of a given day's high, low, and close price.
+///
+/// # Source
+///
 /// https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/typical-price
+///
+/// # Examples
+///
+/// ```
+/// use traquer::trend;
+///
+/// trend::typical(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     6).collect::<Vec<f64>>();
+///
+/// ```
 pub fn typical<'a>(
     high: &'a [f64],
     low: &'a [f64],
@@ -413,6 +742,19 @@ pub fn typical<'a>(
 }
 
 /// Standard Deviation
+///
+/// Measures market volatility. Standard deviation of price over a period.
+///
+/// # Examples
+///
+/// ```
+/// use traquer::trend;
+///
+/// trend::std_dev(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     6, Some(1.0)).collect::<Vec<f64>>();
+///
+/// ```
 pub fn std_dev(
     data: &[f64],
     window: usize,
@@ -423,7 +765,23 @@ pub fn std_dev(
 }
 
 /// Bollinger Bands
+///
+/// Channels defined by standard deviations away from a moving average.
+///
+/// # Source
+///
 /// https://www.investopedia.com/terms/b/bollingerbands.asp
+///
+/// # Examples
+///
+/// ```
+/// use traquer::{trend, smooth};
+///
+/// trend::bbands(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     6, Some(1.0), Some(smooth::MaMode::SMA)).collect::<Vec<(f64,f64,f64)>>();
+///
+/// ```
 pub fn bbands(
     data: &[f64],
     window: usize,
@@ -436,7 +794,24 @@ pub fn bbands(
 }
 
 /// Donchian Channels
+///
+/// Channels defined by highest high and lowest low
+///
+/// # Source
+///
 /// https://www.tradingview.com/support/solutions/43000502253-donchian-channels-dc/
+///
+/// # Examples
+///
+/// ```
+/// use traquer::trend;
+///
+/// trend::donchian(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     6).collect::<Vec<(f64,f64,f64)>>();
+///
+/// ```
 pub fn donchian<'a>(
     high: &'a [f64],
     low: &'a [f64],
@@ -450,7 +825,24 @@ pub fn donchian<'a>(
 }
 
 /// Fractal Chaos Bands
+///
+/// Channels defined by peaks or valleys in prior period.
+///
+/// # Source
+///
 /// https://www.tradingview.com/script/Yy2ASjTq-Fractal-Chaos-Bands/
+///
+/// # Examples
+///
+/// ```
+/// use traquer::trend;
+///
+/// trend::fbands(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     ).collect::<Vec<(f64,f64)>>();
+///
+/// ```
 pub fn fbands<'a>(high: &'a [f64], low: &'a [f64]) -> impl Iterator<Item = (f64, f64)> + 'a {
     high.windows(5)
         .zip(low.windows(5))
@@ -486,7 +878,23 @@ pub fn fbands<'a>(high: &'a [f64], low: &'a [f64]) -> impl Iterator<Item = (f64,
 }
 
 /// Historical Volatility
+///
+/// Measures the standard deviation of returns, annualised.
+///
+/// # Source
+///
 /// https://www.macroption.com/historical-volatility-calculation/
+///
+/// # Examples
+///
+/// ```
+/// use traquer::trend;
+///
+/// trend::hv(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     3, Some(1.0)).collect::<Vec<f64>>();
+///
+/// ```
 pub fn hv(data: &[f64], window: usize, deviations: Option<f64>) -> impl Iterator<Item = f64> + '_ {
     let annualize = 252.0 * deviations.unwrap_or(1.0);
     data.windows(2)
@@ -502,7 +910,24 @@ pub fn hv(data: &[f64], window: usize, deviations: Option<f64>) -> impl Iterator
 }
 
 /// Stoller Average Range Channel (STARC)
+///
+/// Upper and lower bands are defined by True Range from moving average with a multiplier.
+/// Similar to Keltner Channels.
+///
 /// https://www.investopedia.com/terms/s/starc.asp
+///
+/// # Examples
+///
+/// ```
+/// use traquer::trend;
+///
+/// trend::starc(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     6, 2, Some(1.3)).collect::<Vec<(f64,f64)>>();
+///
+/// ```
 pub fn starc<'a>(
     high: &'a [f64],
     low: &'a [f64],
@@ -522,7 +947,25 @@ pub fn starc<'a>(
 }
 
 /// Parabolic Stop and Reverse (SAR)
+///
+/// Calculating the stop for each upcoming period. When the stop is hit you close the
+/// current trade and initiate a new trade in the opposite direction.
+///
+/// # Source
+///
 /// https://www.investopedia.com/terms/p/parabolicindicator.asp
+///
+/// # Examples
+///
+/// ```
+/// use traquer::trend;
+///
+/// trend::psar(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     None, None).collect::<Vec<f64>>();
+///
+/// ```
 pub fn psar<'a>(
     high: &'a [f64],
     low: &'a [f64],
