@@ -118,9 +118,6 @@ fn criterion_benchmark(c: &mut Criterion) {
             )
         })
     });
-    c.bench_function("sig-momentum-cvi", |b| {
-        b.iter(|| black_box(momentum::cvi(&stats.high, &stats.low, 16, 2).collect::<Vec<f64>>()))
-    });
     c.bench_function("sig-momentum-wpr", |b| {
         b.iter(|| {
             black_box(
@@ -184,21 +181,6 @@ fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("sig-trend-ulcer", |b| {
         b.iter(|| black_box(trend::ulcer(&stats.close, 8).collect::<Vec<f64>>()))
     });
-    c.bench_function("sig-trend-tr", |b| {
-        b.iter(|| black_box(trend::tr(&stats.high, &stats.low, &stats.close).collect::<Vec<f64>>()))
-    });
-    c.bench_function("sig-trend-atr", |b| {
-        b.iter(|| {
-            black_box(trend::atr(&stats.high, &stats.low, &stats.close, 16).collect::<Vec<f64>>())
-        })
-    });
-    c.bench_function("sig-trend-typical", |b| {
-        b.iter(|| {
-            black_box(
-                trend::typical(&stats.high, &stats.low, &stats.close, 16).collect::<Vec<f64>>(),
-            )
-        })
-    });
     c.bench_function("sig-momentum-trix", |b| {
         b.iter(|| black_box(momentum::trix(&stats.close, 7).collect::<Vec<f64>>()))
     });
@@ -227,9 +209,6 @@ fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("sig-momentum-stc", |b| {
         b.iter(|| black_box(momentum::stc(&stats.close, 3, 6, 12).collect::<Vec<f64>>()))
     });
-    c.bench_function("sig-momentum-relative_vol", |b| {
-        b.iter(|| black_box(momentum::relative_vol(&stats.close, 6, 10).collect::<Vec<f64>>()))
-    });
     c.bench_function("sig-momentum-relative_vigor", |b| {
         b.iter(|| {
             black_box(
@@ -257,18 +236,8 @@ fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("sig-trend-psych", |b| {
         b.iter(|| black_box(trend::psych(&stats.close, 16).collect::<Vec<f64>>()))
     });
-    c.bench_function("sig-trend-mass", |b| {
-        b.iter(|| black_box(trend::mass(&stats.high, &stats.low, 9, 16).collect::<Vec<f64>>()))
-    });
     c.bench_function("sig-momentum-roc", |b| {
         b.iter(|| black_box(momentum::roc(&stats.low, 16).collect::<Vec<f64>>()))
-    });
-    c.bench_function("sig-momentum-chop", |b| {
-        b.iter(|| {
-            black_box(
-                momentum::chop(&stats.high, &stats.low, &stats.close, 16).collect::<Vec<f64>>(),
-            )
-        })
     });
     c.bench_function("sig-momentum-bal_power", |b| {
         b.iter(|| {
@@ -278,55 +247,12 @@ fn criterion_benchmark(c: &mut Criterion) {
             )
         })
     });
-    c.bench_function("sig-momentum-inertia", |b| {
-        b.iter(|| black_box(momentum::inertia(&stats.close, 6, 10).collect::<Vec<f64>>()))
-    });
     c.bench_function("sig-momentum-disparity", |b| {
         b.iter(|| black_box(momentum::disparity(&stats.close, 16).collect::<Vec<f64>>()))
     });
     c.bench_function("sig-momentum-aroon", |b| {
         b.iter(|| {
             black_box(momentum::aroon(&stats.high, &stats.low, 16).collect::<Vec<(f64, f64)>>())
-        })
-    });
-    c.bench_function("sig-trend-keltner", |b| {
-        b.iter(|| {
-            black_box(
-                trend::keltner(&stats.high, &stats.low, &stats.close, 16)
-                    .collect::<Vec<(f64, f64, f64)>>(),
-            )
-        })
-    });
-    c.bench_function("sig-trend-gri", |b| {
-        b.iter(|| black_box(trend::gri(&stats.high, &stats.low, 16).collect::<Vec<f64>>()))
-    });
-    c.bench_function("sig-trend-std_dev", |b| {
-        b.iter(|| black_box(trend::std_dev(&stats.close, 16, None).collect::<Vec<f64>>()))
-    });
-    c.bench_function("sig-trend-bbands", |b| {
-        b.iter(|| {
-            black_box(trend::bbands(&stats.close, 16, None, None).collect::<Vec<(f64, f64, f64)>>())
-        })
-    });
-    c.bench_function("sig-trend-donchian", |b| {
-        b.iter(|| {
-            black_box(
-                trend::donchian(&stats.high, &stats.low, 16).collect::<Vec<(f64, f64, f64)>>(),
-            )
-        })
-    });
-    c.bench_function("sig-trend-fbands", |b| {
-        b.iter(|| black_box(trend::fbands(&stats.high, &stats.low).collect::<Vec<(f64, f64)>>()))
-    });
-    c.bench_function("sig-trend-hv", |b| {
-        b.iter(|| black_box(trend::hv(&stats.close, 16, None).collect::<Vec<f64>>()))
-    });
-    c.bench_function("sig-trend-starc", |b| {
-        b.iter(|| {
-            black_box(
-                trend::starc(&stats.high, &stats.low, &stats.close, 16, 5, None)
-                    .collect::<Vec<(f64, f64)>>(),
-            )
         })
     });
     c.bench_function("sig-trend-psar", |b| {
@@ -346,6 +272,89 @@ fn criterion_benchmark(c: &mut Criterion) {
     });
     c.bench_function("sig-volume-obv", |b| {
         b.iter(|| black_box(volume::obv(&stats.close, &stats.volume).collect::<Vec<f64>>()))
+    });
+    c.bench_function("sig-volatility-mass", |b| {
+        b.iter(|| black_box(volatility::mass(&stats.high, &stats.low, 9, 16).collect::<Vec<f64>>()))
+    });
+    c.bench_function("sig-volatility-keltner", |b| {
+        b.iter(|| {
+            black_box(
+                volatility::keltner(&stats.high, &stats.low, &stats.close, 16)
+                    .collect::<Vec<(f64, f64, f64)>>(),
+            )
+        })
+    });
+    c.bench_function("sig-volatility-gri", |b| {
+        b.iter(|| black_box(volatility::gri(&stats.high, &stats.low, 16).collect::<Vec<f64>>()))
+    });
+    c.bench_function("sig-volatility-std_dev", |b| {
+        b.iter(|| black_box(volatility::std_dev(&stats.close, 16, None).collect::<Vec<f64>>()))
+    });
+    c.bench_function("sig-volatility-bbands", |b| {
+        b.iter(|| {
+            black_box(
+                volatility::bbands(&stats.close, 16, None, None).collect::<Vec<(f64, f64, f64)>>(),
+            )
+        })
+    });
+    c.bench_function("sig-volatility-donchian", |b| {
+        b.iter(|| {
+            black_box(
+                volatility::donchian(&stats.high, &stats.low, 16).collect::<Vec<(f64, f64, f64)>>(),
+            )
+        })
+    });
+    c.bench_function("sig-volatility-fbands", |b| {
+        b.iter(|| {
+            black_box(volatility::fbands(&stats.high, &stats.low).collect::<Vec<(f64, f64)>>())
+        })
+    });
+    c.bench_function("sig-volatility-hv", |b| {
+        b.iter(|| black_box(volatility::hv(&stats.close, 16, None).collect::<Vec<f64>>()))
+    });
+    c.bench_function("sig-volatility-starc", |b| {
+        b.iter(|| {
+            black_box(
+                volatility::starc(&stats.high, &stats.low, &stats.close, 16, 5, None)
+                    .collect::<Vec<(f64, f64)>>(),
+            )
+        })
+    });
+    c.bench_function("sig-volatility-tr", |b| {
+        b.iter(|| {
+            black_box(volatility::tr(&stats.high, &stats.low, &stats.close).collect::<Vec<f64>>())
+        })
+    });
+    c.bench_function("sig-volatility-atr", |b| {
+        b.iter(|| {
+            black_box(
+                volatility::atr(&stats.high, &stats.low, &stats.close, 16).collect::<Vec<f64>>(),
+            )
+        })
+    });
+    c.bench_function("sig-volatility-typical", |b| {
+        b.iter(|| {
+            black_box(
+                volatility::typical(&stats.high, &stats.low, &stats.close, 16)
+                    .collect::<Vec<f64>>(),
+            )
+        })
+    });
+    c.bench_function("sig-volatility-cvi", |b| {
+        b.iter(|| black_box(volatility::cvi(&stats.high, &stats.low, 16, 2).collect::<Vec<f64>>()))
+    });
+    c.bench_function("sig-volatility-relative_vol", |b| {
+        b.iter(|| black_box(volatility::relative_vol(&stats.close, 6, 10).collect::<Vec<f64>>()))
+    });
+    c.bench_function("sig-volatility-inertia", |b| {
+        b.iter(|| black_box(volatility::inertia(&stats.close, 6, 10).collect::<Vec<f64>>()))
+    });
+    c.bench_function("sig-volatility-chop", |b| {
+        b.iter(|| {
+            black_box(
+                volatility::chop(&stats.high, &stats.low, &stats.close, 16).collect::<Vec<f64>>(),
+            )
+        })
     });
     c.bench_function("ma-ewma", |b| {
         b.iter(|| black_box(smooth::ewma(&stats.close, 16).collect::<Vec<f64>>()))

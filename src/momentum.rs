@@ -9,7 +9,7 @@ use std::iter;
 use itertools::izip;
 
 use crate::smooth;
-use crate::trend::_true_range;
+use crate::volatility::_true_range;
 
 /// Relative strength index
 ///
@@ -171,48 +171,6 @@ pub fn elder_ray<'a>(
 /// williams alligator
 /// https://www.investopedia.com/articles/trading/072115/exploring-williams-alligator-indicator.asp
 pub fn alligator(_data: &[f64]) {}
-
-/// Chaikin volatility
-///
-/// Measures the volatility of a security's price action by comparing the spread between
-/// the high and low prices over a specified period.
-///
-/// # Source
-///
-/// https://www.tradingview.com/chart/AUDUSD/gjfxqWqW-What-Is-a-Chaikin-Volatility-Indicator-in-Trading/
-/// https://theforexgeek.com/chaikins-volatility-indicator/
-///
-/// # Examples
-///
-/// ```
-/// use traquer::momentum;
-///
-/// momentum::cvi(
-///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
-///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
-///     6, 3).collect::<Vec<f64>>();
-///
-/// ```
-pub fn cvi<'a>(
-    high: &'a [f64],
-    low: &'a [f64],
-    window: usize,
-    rate_of_change: usize,
-) -> impl Iterator<Item = f64> + 'a {
-    smooth::ewma(
-        &high
-            .iter()
-            .zip(low)
-            .map(|(h, l)| h - l)
-            .collect::<Vec<f64>>(),
-        window,
-    )
-    .collect::<Vec<f64>>()
-    .windows(rate_of_change + 1)
-    .map(|w| 100.0 * (w.last().unwrap() / w.first().unwrap() - 1.0))
-    .collect::<Vec<f64>>()
-    .into_iter()
-}
 
 /// Williams Percent Range
 ///
@@ -666,78 +624,6 @@ pub fn stc(
     .into_iter()
 }
 
-/// Inertia
-///
-/// An extension of Donald Dorsey’s Relative Volatility Index (RVI). The name “Inertia”
-/// reflects the concept that trends require more force to reverse than to continue
-/// in the same direction.
-///
-/// # Source
-///
-/// https://theforexgeek.com/inertia-indicator/
-///
-/// # Examples
-///
-/// ```
-/// use traquer::momentum;
-///
-/// momentum::inertia(
-///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
-///     3, 2).collect::<Vec<f64>>();
-///
-/// ```
-pub fn inertia(close: &[f64], window: usize, smoothing: usize) -> impl Iterator<Item = f64> + '_ {
-    smooth::lrf(
-        &relative_vol(close, window, window).collect::<Vec<f64>>(),
-        smoothing,
-    )
-    .collect::<Vec<f64>>()
-    .into_iter()
-}
-
-/// Relative Volatility
-///
-/// Measures the direction and magnitude of volatility in an asset’s price. Unlike the
-/// Relative Strength Index (RSI), which uses absolute prices, the RVI uses standard deviation.
-///
-/// # Source
-///
-/// https://www.tradingview.com/support/solutions/43000594684-relative-volatility-index/
-///
-/// # Examples
-///
-/// ```
-/// use traquer::momentum;
-///
-/// momentum::relative_vol(
-///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
-///     6, 2).collect::<Vec<f64>>();
-///
-/// ```
-pub fn relative_vol(
-    close: &[f64],
-    window: usize,
-    smoothing: usize,
-) -> impl Iterator<Item = f64> + '_ {
-    let (gain, loss): (Vec<f64>, Vec<f64>) = izip!(
-        smooth::std_dev(close, window),
-        &close[window - 1..],
-        &close[window - 2..close.len() - 1]
-    )
-    .map(|(std, curr, prev)| {
-        (
-            f64::max(0.0, (curr - prev).signum()) * std,
-            f64::max(0.0, (prev - curr).signum()) * std,
-        )
-    })
-    .unzip();
-    smooth::wilder(&gain, smoothing)
-        .zip(smooth::wilder(&loss, smoothing))
-        .map(|(g, l)| 100.0 * g / (g + l))
-        .collect::<Vec<f64>>()
-        .into_iter()
-}
-
 /// Relative Vigor
 ///
 /// Measures the strength of a trend by comparing a security’s closing price to its trading range
@@ -957,51 +843,6 @@ pub fn coppock(
 pub fn roc(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
     data.windows(window)
         .map(|w| 100.0 * (w[w.len() - 1] / w[0] - 1.0))
-}
-
-/// Choppiness Index
-///
-/// Aims to capture the true volatility and directionality of the market by taking
-/// into account the range between the highest high and the lowest low prices over
-/// a specified period.
-///
-/// # Source
-///
-/// https://www.tradingview.com/support/solutions/43000501980-choppiness-index-chop/
-///
-/// # Examples
-///
-/// ```
-/// use traquer::momentum;
-///
-/// momentum::chop(
-///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
-///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
-///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
-///     6).collect::<Vec<f64>>();
-///
-/// ```
-pub fn chop<'a>(
-    high: &'a [f64],
-    low: &'a [f64],
-    close: &'a [f64],
-    window: usize,
-) -> impl Iterator<Item = f64> + 'a {
-    izip!(
-        high[1..].windows(window),
-        low[1..].windows(window),
-        _true_range(high, low, close)
-            .collect::<Vec<f64>>()
-            .windows(window)
-    )
-    .map(|(h, l, tr)| {
-        let hh = h.iter().fold(f64::NAN, |state, &x| state.max(x));
-        let ll = l.iter().fold(f64::NAN, |state, &x| state.min(x));
-        let tr_sum = tr.iter().sum::<f64>();
-        100.0 * f64::ln(tr_sum / (hh - ll)) / f64::ln(window as f64)
-    })
-    .collect::<Vec<f64>>()
-    .into_iter()
 }
 
 /// Balance of Power

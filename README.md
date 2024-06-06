@@ -36,6 +36,12 @@ These thresholds may be: a signal line, zero lines, upper/lower value bounds, et
 Indicators where the direction may signify opportunities. The slope and trajectory of the
 indicator are more important than the actual value.
 
+### volatility
+Indicators that measure the price movement, regardless of direction. In essence, it is
+signaling whether there is a trend or not generally based on the delta between the
+highest and lowest prices in period. It may also be represented as channels for which
+it expects prices to fall within.
+
 ### volume
 Indicators that factor in how much an asset has been traded in a period of time. Depending on
 indicator, it may be a momentum indicator or trend indicator.
