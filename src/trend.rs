@@ -1,7 +1,8 @@
 //! Trend Indicators
 //!
 //! Indicators where the direction may signify opportunities. The slope and trajectory of the
-//! indicator are more important than the actual value.
+//! indicator are more important than the magnitude of the resulting value.
+//! In some cases, the strength of the trend can be derived.
 
 use std::iter;
 
@@ -11,46 +12,16 @@ use crate::momentum::_swing;
 use crate::smooth;
 use crate::volatility::_true_range;
 
-/// Quick stick
-///
-/// Measures buying and selling pressure, taking an average of the difference between
-/// closing and opening prices. When the price is closing lower than it opens, the
-/// indicator moves lower. When the price is closing higher than the open,
-/// the indicator moves up
-///
-/// # Source
-///
-/// https://www.investopedia.com/terms/q/qstick.asp
-///
-/// # Examples
-///
-/// ```
-/// use traquer::trend;
-///
-/// trend::qstick(
-///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
-///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
-///     6).collect::<Vec<f64>>();
-///
-/// ```
-pub fn qstick<'a>(
-    open: &'a [f64],
-    close: &'a [f64],
-    window: usize,
-) -> impl Iterator<Item = f64> + 'a {
-    let q = close
-        .iter()
-        .zip(open.iter())
-        .map(|(c, o)| c - o)
-        .collect::<Vec<f64>>();
-    smooth::ewma(&q, window).collect::<Vec<f64>>().into_iter()
-}
-
 /// Shinohara intensity ratio
 ///
 /// Measures trend intensity by plotting Strong Ratio (Strength) and Weak Ratio (Popularity) lines.
-/// The Strong Ratio is (high - prev close) / (prev close - low) and the weak ratio
+/// The Strong Ratio is (high - prev close) / (prev close - low) and the Weak Ratio
 /// is (high - close) / (close - low).
+///
+/// # Usage
+///
+/// When Strong Ratio is above the Weak, it suggests uptrend with greater intensity the greater,
+/// the delta.
 ///
 /// NOTE: Implementation differs from source where weak ratio uses close rather than open.
 ///
@@ -110,6 +81,10 @@ pub fn shinohara<'a>(
 /// Measures strength a trend, not the direction, by directional movement by comparing
 /// the difference between two consecutive lows with the difference between their
 /// respective highs.
+///
+/// # Usage
+///
+/// When +DMI is above -DMI, it suggests an uptrend. A higher ADX value suggest strength of trend
 ///
 /// # Source
 ///
@@ -176,41 +151,14 @@ pub fn adx<'a>(
     )
 }
 
-/// Centre of gravity
-///
-/// Calculates the midpoint of a security's price action over a specified period. Used in
-/// tandem with a signal line.
-///
-/// # Source
-///
-/// https://www.stockmaniacs.net/center-of-gravity-indicator/
-///
-/// # Examples
-///
-/// ```
-/// use traquer::trend;
-///
-/// trend::cog(
-///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
-///     6).collect::<Vec<f64>>();
-///
-/// ```
-pub fn cog(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
-    let weights: Vec<f64> = (1..=window).map(|x| x as f64).collect();
-    data.windows(window).map(move |w| {
-        -w.iter()
-            .rev()
-            .zip(weights.iter())
-            .map(|(e, i)| e * i)
-            .sum::<f64>()
-            / w.iter().sum::<f64>()
-    })
-}
-
 /// Vortex
 ///
 /// Calculates two lines: VI+ and VI-. The greater the distance between the low of a price bar and
 /// the subsequent bar's high, the greater the positive Vortex movement (VM+).
+///
+/// # Usage
+///
+/// When VI+ crosses above VI-, it suggests a uptrend.
 ///
 /// # Source
 ///
@@ -264,57 +212,13 @@ pub fn vortex<'a>(
     .into_iter()
 }
 
-/// Vertical horizontal filter
-///
-/// Measures the level of trend activity in a financial market by comparing the max price
-/// range over a specific period to the cumulative price movement within that period.
-///
-/// # Source
-///
-/// https://www.upcomingtrader.com/blog/the-vertical-horizontal-filter-a-traders-guide-to-market-phases/
-///
-/// # Examples
-///
-/// ```
-/// use traquer::trend;
-///
-/// trend::vhf(
-///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
-///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
-///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
-///     6).collect::<Vec<f64>>();
-///
-/// ```
-pub fn vhf<'a>(
-    high: &'a [f64],
-    low: &'a [f64],
-    close: &'a [f64],
-    window: usize,
-) -> impl Iterator<Item = f64> + 'a {
-    let diffs = close
-        .windows(2)
-        .map(|pair| {
-            let (prev, curr) = (pair[0], pair[1]);
-            (curr - prev).abs()
-        })
-        .collect::<Vec<f64>>();
-    izip!(
-        diffs.windows(window),
-        high.windows(window).skip(1),
-        low.windows(window).skip(1)
-    )
-    .map(|(diff, h, l)| {
-        (h.iter().fold(f64::NAN, |state, &x| state.max(x))
-            - l.iter().fold(f64::NAN, |state, &x| state.min(x)))
-            / diff.iter().sum::<f64>()
-    })
-    .collect::<Vec<f64>>()
-    .into_iter()
-}
-
 /// Accumulative Swing Index
 ///
 /// Cumulative sum of Swing Index
+///
+/// # Usage
+///
+/// An increasing value suggests an uptrend.
 ///
 /// # Source
 ///
@@ -353,6 +257,10 @@ pub fn asi<'a>(
 /// The index increases in value as the price moves farther away from a recent high
 /// and falls as the price rises to new highs.
 ///
+/// # Usage
+///
+/// Value decreases during uptrends.
+///
 /// # Source
 ///
 /// https://en.wikipedia.org/wiki/Ulcer_index
@@ -386,6 +294,10 @@ pub fn ulcer(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
 /// Supertrend
 ///
 /// Acts as a dynamic level of support or resistance.
+///
+/// # Usage
+///
+/// A value above close line suggests downtrend.
 ///
 /// # Source
 ///
@@ -450,6 +362,11 @@ pub fn supertrend<'a>(
 ///
 /// Compares a security's price movements to random movements to determine if it's in a trend.
 ///
+/// # Usage
+///
+/// When RWI High is above RWI Low, it suggests an uptrend and strength increases as it goes
+/// above 1.
+///
 /// NOTE: Window includes current price where other libraries use window strictly as lookback.
 /// You may need to add 1 to window for comparable behaviour.
 ///
@@ -500,44 +417,14 @@ pub fn rwi<'a>(
     .into_iter()
 }
 
-/// Psychological Line
-///
-/// Based on the presumption that people will resist paying more for a share than others,
-/// unless of course the share continues to move up. Conversely, people resist selling a
-/// share for less than the price others have been getting for it, except if it continues to
-/// decline.
-///
-/// Calculates a ratio based on the number of up bars (price higher than previous bar) over
-/// a specified number of bars.
-///
-/// # Source
-///
-/// https://tradingliteracy.com/psychological-line-indicator/
-///
-/// # Examples
-///
-/// ```
-/// use traquer::trend;
-///
-/// trend::psych(
-///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
-///     6).collect::<Vec<f64>>();
-///
-/// ```
-pub fn psych(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
-    data.windows(2)
-        .map(|pair| (pair[1] - pair[0]).signum().max(0.0))
-        .collect::<Vec<f64>>()
-        .windows(window)
-        .map(|w| w.iter().sum::<f64>() * 100.0 / window as f64)
-        .collect::<Vec<f64>>()
-        .into_iter()
-}
-
 /// Parabolic Stop and Reverse (SAR)
 ///
 /// Calculating the stop for each upcoming period. When the stop is hit you close the
 /// current trade and initiate a new trade in the opposite direction.
+///
+/// # Usage
+///
+/// A value above close line suggests downtrend.
 ///
 /// # Source
 ///
@@ -596,4 +483,94 @@ pub fn psar<'a>(
         result.push(sar);
     }
     result.into_iter()
+}
+
+/// Detrended Price Oscillator
+///
+/// Measure the difference between a security's price and its trend and attempts to identify
+/// cyclicality. It behaves closer to a momentum indicator
+///
+/// # Usage
+///
+/// Suggests uptrend when above zero or when value reaches prior low of oscillator.
+///
+/// # Examples
+///
+/// ```
+/// use traquer::{trend,smooth};
+///
+/// trend::dpo(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     6, Some(smooth::MaMode::SMA)).collect::<Vec<f64>>();
+///
+/// ```
+pub fn dpo(
+    data: &[f64],
+    window: usize,
+    mamode: Option<smooth::MaMode>,
+) -> impl Iterator<Item = f64> + '_ {
+    let ma = smooth::ma(data, window, mamode.unwrap_or(smooth::MaMode::SMA));
+    let lag = window / 2 + 1;
+    data[window - lag - 1..].iter().zip(ma).map(|(x, y)| x - y)
+}
+
+/// Aroon
+///
+/// Measures the trend strength and direction of an asset based on the time between highs and
+/// lows. Consists of two lines that show the time since a recent high or low.
+///
+/// # Usage
+///
+/// When up line is above the down, it suggests an uptrend.
+///
+/// # Source
+///
+/// https://www.tradingview.com/support/solutions/43000501801-aroon/
+///
+/// # Examples
+///
+/// ```
+/// use traquer::trend;
+///
+/// trend::aroon(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     3).collect::<Vec<(f64, f64)>>();
+///
+/// ```
+pub fn aroon<'a>(
+    high: &'a [f64],
+    low: &'a [f64],
+    window: usize,
+) -> impl Iterator<Item = (f64, f64)> + 'a {
+    high.windows(window + 1)
+        .zip(low.windows(window + 1))
+        .map(move |(h, l)| {
+            let (hh, _) =
+                h.iter().enumerate().fold(
+                    (0, h[0]),
+                    |state, (idx, x)| {
+                        if x >= &state.1 {
+                            (idx, *x)
+                        } else {
+                            state
+                        }
+                    },
+                );
+            let (ll, _) =
+                l.iter().enumerate().fold(
+                    (0, l[0]),
+                    |state, (idx, x)| {
+                        if x <= &state.1 {
+                            (idx, *x)
+                        } else {
+                            state
+                        }
+                    },
+                );
+            (
+                hh as f64 / window as f64 * 100.0,
+                ll as f64 / window as f64 * 100.0,
+            )
+        })
 }

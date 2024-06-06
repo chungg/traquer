@@ -2,7 +2,8 @@
 //!
 //! Provides technical indicators that measures the rate of change or speed of price
 //! movement of a security. In the context of this library, these indicators are typically
-//! range bound and used  alongside threshold(s) such as: zero lines, signal lines, etc...
+//! range bound and/or centred around zero. These often begin to show trend the larger the
+//! smoothing.
 
 use std::iter;
 
@@ -16,6 +17,10 @@ use crate::volatility::_true_range;
 /// Calculated by comparing the average gain of up days to the average loss of down days
 /// over a specified period. Shows the magnitude of recent price changes to determine
 /// overbought or oversold conditions.
+///
+/// # Usage
+///
+/// Usually, a value above 70 suggests overbought and a value below 30, oversold.
 ///
 /// # Source
 ///
@@ -50,6 +55,10 @@ pub fn rsi(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
 /// the strength and direction of the trend. When the MACD crosses above the signal line,
 /// it's a bullish signal, indicating a potential uptrend.
 ///
+/// # Usage
+///
+/// An increasing value suggests a stronger uptrend. Often paired with signal line to suggests buy/sell.
+///
 /// # Source
 ///
 /// https://www.investopedia.com/terms/m/macd.asp
@@ -78,6 +87,11 @@ pub fn macd(close: &[f64], short: usize, long: usize) -> impl Iterator<Item = f6
 /// period, then dividing the result by the sum of the absolute values of all price
 /// changes over the same period.
 ///
+/// # Usage
+///
+/// A reading above 50 indicates strong bullish momentum, while a reading below -50
+/// suggests strong bearish momentum.
+///
 /// # Source
 ///
 /// https://www.investopedia.com/terms/c/chandemomentumoscillator.asp
@@ -104,6 +118,10 @@ pub fn cmo(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
 ///
 /// The resulting value is then multiplied by 100 to create an oscillator that ranges
 /// from -100 to +100.
+///
+/// # Usage
+///
+/// A value greater than 0, suggests an uptrend.
 ///
 /// # Source
 ///
@@ -136,6 +154,10 @@ pub fn cfo(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
 /// Bear Power
 ///   - This measures the ability of sellers to push the price down.
 ///   -  It's calculated by subtracting the EWMA from the low price.
+///
+/// # Usage
+///
+/// Increasing bull and bear values above 0 suggest a stronger uptrend.
 ///
 /// # Source
 ///
@@ -179,6 +201,10 @@ pub fn alligator(_data: &[f64]) {}
 ///
 /// W%R = (Highest High - Close) / (Highest High - Lowest Low) * -100
 ///
+/// # Usage
+///
+/// Typically, a value above -20 suggests overbought and below -80, oversold.
+///
 /// # Source
 /// https://www.investopedia.com/terms/w/williamsr.asp
 ///
@@ -217,6 +243,10 @@ pub fn wpr<'a>(
 /// Measure the difference between two moving averages as a percentage of the larger
 /// moving average.
 ///
+/// # Usage
+///
+/// A value above zero suggests an uptrend
+///
 /// # Examples
 ///
 /// ```
@@ -240,6 +270,10 @@ pub fn ppo(data: &[f64], short: usize, long: usize) -> impl Iterator<Item = f64>
 ///
 /// Measure the difference between two moving averages.
 ///
+/// # Usage
+///
+/// A value above zero suggests an uptrend.
+///
 /// # Source
 ///
 /// https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/apo
@@ -260,34 +294,14 @@ pub fn apo(data: &[f64], short: usize, long: usize) -> impl Iterator<Item = f64>
     short_ma.skip(long - short).zip(long_ma).map(|(x, y)| x - y)
 }
 
-/// Detrended Price Oscillator
-///
-/// Measure the difference between a security's price and its trend.
-///
-/// # Examples
-///
-/// ```
-/// use traquer::{momentum,smooth};
-///
-/// momentum::dpo(
-///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
-///     6, Some(smooth::MaMode::SMA)).collect::<Vec<f64>>();
-///
-/// ```
-pub fn dpo(
-    data: &[f64],
-    window: usize,
-    mamode: Option<smooth::MaMode>,
-) -> impl Iterator<Item = f64> + '_ {
-    let ma = smooth::ma(data, window, mamode.unwrap_or(smooth::MaMode::SMA));
-    let lag = window / 2 + 1;
-    data[window - lag - 1..].iter().zip(ma).map(|(x, y)| x - y)
-}
-
 /// Ultimate oscillator
 ///
 /// A technical indicator that uses the weighted average of three different time periods
 /// to reduce the volatility and false transaction signals.
+///
+/// # Usage
+///
+/// Typically, a value above 70 suggests overbought and a value below 30, oversold.
 ///
 /// # Source
 ///
@@ -351,6 +365,10 @@ pub fn ultimate<'a>(
 ///
 /// Combines moving averages and the Average True Range (ATR) to create an oscillator
 /// that oscillates around a centerline
+///
+/// # Usage
+///
+/// Typically, a value above 3 suggests overbought and a value below -3, oversold.
 ///
 /// # Source
 ///
@@ -421,6 +439,10 @@ pub(crate) fn _swing<'a>(
 ///
 /// Calculates the strength of price movement and predicts potential trend reversal.
 ///
+/// # Usage
+///
+/// A value above 0 suggests an uptrend.
+///
 /// # Source
 ///
 /// https://www.investopedia.com/terms/a/asi.asp
@@ -454,6 +476,10 @@ pub fn si<'a>(
 /// Indicator to show the percentage change in a moving average that has been smoothed
 /// exponentially three times.
 ///
+/// # Usage
+///
+/// A value above 0 suggests an uptrend.
+///
 /// # Source
 ///
 /// https://www.investopedia.com/terms/t/trix.asp
@@ -486,6 +512,10 @@ pub fn trix(close: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
 /// Trend intensity index
 ///
 /// Uses RSI principles but applies them to closing price deviations instead of the closing prices
+///
+/// # Usage
+///
+/// Typically, a value above 80 suggests overbought and a value below 20, oversold.
 ///
 /// # Source
 ///
@@ -527,6 +557,10 @@ pub fn tii(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
 ///
 /// Compares a security’s closing price to a range of its highest highs and lowest lows
 /// over a specific time period.
+///
+/// # Usage
+///
+/// Typically, a value above 80 suggests overbought and a value below 20, oversold.
 ///
 /// # Source
 ///
@@ -594,6 +628,10 @@ fn _stc(series: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
 /// A modified version of the Moving Average Convergence Divergence. It aims to improve
 /// upon traditional moving averages (MAs) by incorporating cycle analysis.
 ///
+/// # Usage
+///
+/// Typically a value above 75 suggests overbought and a value below 25, oversold.
+///
 /// # Source
 ///
 /// https://www.investopedia.com/articles/forex/10/schaff-trend-cycle-indicator.asp
@@ -628,6 +666,10 @@ pub fn stc(
 ///
 /// Measures the strength of a trend by comparing a security’s closing price to its trading range
 /// while smoothing the results using a simple moving average.
+///
+/// # Usage
+///
+/// A value above 0 suggests an uptrend.
 ///
 /// # Source
 ///
@@ -684,6 +726,10 @@ pub fn relative_vigor<'a>(
 /// Converts price data into a Gaussian normal distribution.
 /// Extreme readings (above +1 or below -1) may signal potential price reversals.
 ///
+/// # Usage
+///
+/// A value above 0 suggests an uptrend.
+///
 /// # Source
 ///
 /// https://www.investopedia.com/terms/f/fisher-transform.asp
@@ -734,6 +780,10 @@ pub fn fisher<'a>(
 ///
 /// Based on multiple simple moving averages (SMAs). The highest high and lowest low
 /// of these SMAs create high and low oscillator curves.
+///
+/// # Usage
+///
+/// An oscillator value above 0 suggests an uptrend. A higher band value suggests instability.
 ///
 /// # Source
 ///
@@ -791,6 +841,10 @@ pub fn rainbow(
 ///
 /// Calculated as a weighted moving average of the sum of two rate of change periods
 ///
+/// # Usage
+///
+/// A value above 0 suggests an uptrend.
+///
 /// # Source
 ///
 /// https://www.investopedia.com/terms/c/coppockcurve.asp
@@ -826,6 +880,10 @@ pub fn coppock(
 /// Measures the percentage change in price between the current price
 /// and the price a certain number of periods prior.
 ///
+/// # Usage
+///
+/// A value above 0 suggests an uptrend.
+///
 /// # Source
 ///
 /// https://www.investopedia.com/terms/p/pricerateofchange.asp.
@@ -848,6 +906,10 @@ pub fn roc(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
 /// Balance of Power
 ///
 /// An oscillator that measures the strength of buying and selling pressure
+///
+/// # Usage
+///
+/// A value above 0 suggests an uptrend.
 ///
 /// # Source
 ///
@@ -888,6 +950,10 @@ pub fn bal_power<'a>(
 /// Measures the relative position of the most recent closing price to a selected
 /// moving average as a percentage.
 ///
+/// # Usage
+///
+/// A value above 0 suggests an uptrend.
+///
 /// # Source
 ///
 /// https://www.investopedia.com/terms/d/disparityindex.asp
@@ -909,59 +975,114 @@ pub fn disparity(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ 
         .map(|(x, ma)| 100.0 * (x - ma) / ma)
 }
 
-/// Aroon
+/// Quick stick
 ///
-/// Measures the trend strength and direction of an asset based on the time between highs and
-/// lows. Consists of two lines that show the time since a recent high or low.
+/// Measures buying and selling pressure, taking an average of the difference between
+/// closing and opening prices. When the price is closing lower than it opens, the
+/// indicator moves lower. When the price is closing higher than the open,
+/// the indicator moves up
+///
+/// # Usage
+///
+/// A value greater than zero means that the majority of datapoints in period have been up,
+/// indicating that buying pressure has been increasing.
 ///
 /// # Source
 ///
-/// https://www.tradingview.com/support/solutions/43000501801-aroon/
+/// https://www.investopedia.com/terms/q/qstick.asp
 ///
 /// # Examples
 ///
 /// ```
 /// use traquer::momentum;
 ///
-/// momentum::aroon(
+/// momentum::qstick(
 ///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
 ///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
-///     3).collect::<Vec<(f64, f64)>>();
+///     6).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn aroon<'a>(
-    high: &'a [f64],
-    low: &'a [f64],
+pub fn qstick<'a>(
+    open: &'a [f64],
+    close: &'a [f64],
     window: usize,
-) -> impl Iterator<Item = (f64, f64)> + 'a {
-    high.windows(window + 1)
-        .zip(low.windows(window + 1))
-        .map(move |(h, l)| {
-            let (hh, _) =
-                h.iter().enumerate().fold(
-                    (0, h[0]),
-                    |state, (idx, x)| {
-                        if x >= &state.1 {
-                            (idx, *x)
-                        } else {
-                            state
-                        }
-                    },
-                );
-            let (ll, _) =
-                l.iter().enumerate().fold(
-                    (0, l[0]),
-                    |state, (idx, x)| {
-                        if x <= &state.1 {
-                            (idx, *x)
-                        } else {
-                            state
-                        }
-                    },
-                );
-            (
-                hh as f64 / window as f64 * 100.0,
-                ll as f64 / window as f64 * 100.0,
-            )
-        })
+) -> impl Iterator<Item = f64> + 'a {
+    let q = close
+        .iter()
+        .zip(open.iter())
+        .map(|(c, o)| c - o)
+        .collect::<Vec<f64>>();
+    smooth::ewma(&q, window).collect::<Vec<f64>>().into_iter()
+}
+
+/// Centre of gravity
+///
+/// Calculates the midpoint of a security's price action over a specified period.
+///
+/// # Usage
+///
+/// Troughs suggest buy signal and peaks, sell.
+///
+/// # Source
+///
+/// http://www.mesasoftware.com/papers/TheCGOscillator.pdf
+///
+/// # Examples
+///
+/// ```
+/// use traquer::momentum;
+///
+/// momentum::cog(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     6).collect::<Vec<f64>>();
+///
+/// ```
+pub fn cog(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
+    let weights: Vec<f64> = (1..=window).map(|x| x as f64).collect();
+    data.windows(window).map(move |w| {
+        -w.iter()
+            .rev()
+            .zip(weights.iter())
+            .map(|(e, i)| e * i)
+            .sum::<f64>()
+            / w.iter().sum::<f64>()
+    })
+}
+
+/// Psychological Line
+///
+/// Based on the presumption that people will resist paying more for a share than others,
+/// unless of course the share continues to move up. Conversely, people resist selling a
+/// share for less than the price others have been getting for it, except if it continues to
+/// decline.
+///
+/// Calculates a ratio based on the number of up bars (price higher than previous bar) over
+/// a specified number of bars.
+///
+/// # Usage
+///
+/// An increasing line suggests a stronger uptrend.
+///
+/// # Source
+///
+/// https://tradingliteracy.com/psychological-line-indicator/
+///
+/// # Examples
+///
+/// ```
+/// use traquer::momentum;
+///
+/// momentum::psych(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     6).collect::<Vec<f64>>();
+///
+/// ```
+pub fn psych(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
+    data.windows(2)
+        .map(|pair| (pair[1] - pair[0]).signum().max(0.0))
+        .collect::<Vec<f64>>()
+        .windows(window)
+        .map(|w| w.iter().sum::<f64>() * 100.0 / window as f64)
+        .collect::<Vec<f64>>()
+        .into_iter()
 }
