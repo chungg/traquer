@@ -294,6 +294,44 @@ pub fn apo(data: &[f64], short: usize, long: usize) -> impl Iterator<Item = f64>
     short_ma.skip(long - short).zip(long_ma).map(|(x, y)| x - y)
 }
 
+/// Price Momentum Oscillator
+///
+/// A double smoothed version of ROC designed to track changes in a trend strength
+///
+/// # Usage
+///
+/// A value above zero suggests an uptrend.
+///
+/// # Source
+///
+/// https://www.marketvolume.com/technicalanalysis/pmo.asp
+///
+/// # Examples
+///
+/// ```
+/// use traquer::momentum;
+///
+/// momentum::pmo(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     6, 3).collect::<Vec<f64>>();
+///
+/// ```
+pub fn pmo(data: &[f64], win1: usize, win2: usize) -> impl Iterator<Item = f64> + '_ {
+    smooth::ewma(
+        &smooth::ewma(
+            &data
+                .windows(2)
+                .map(|pair| 1000.0 * (pair[1] / pair[0] - 1.0))
+                .collect::<Vec<f64>>(),
+            win1,
+        )
+        .collect::<Vec<f64>>(),
+        win2,
+    )
+    .collect::<Vec<f64>>()
+    .into_iter()
+}
+
 /// Ultimate oscillator
 ///
 /// A technical indicator that uses the weighted average of three different time periods
