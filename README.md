@@ -1,7 +1,5 @@
 # traquer
 
-WIP - api is not stable.
-
 Technical analysis library that gives you false hope that you can beat the market.
 
 ## installation
@@ -28,13 +26,19 @@ encouraged.
 - cargo bench
 
 ## types of indicators
+
+Indicators often behave quite similarly depending on window size and classfication/api may
+change (if egregiously wrong).
+
 ### momentum
-Indicators where crossing a threshold (zero line, signal line, etc...) may signify opportunities.
-These thresholds may be: a signal line, zero lines, upper/lower value bounds, etc...
+Provides technical indicators that measures the rate of change or speed of price
+movement of a security. In the context of this library, these indicators are typically
+range bound and/or centred around zero. These often begin to show trend the larger the
+smoothing.
 
 ### trend
 Indicators where the direction may signify opportunities. The slope and trajectory of the
-indicator are more important than the actual value.
+indicator are more important than the magnitude of the resulting value.
 
 ### volatility
 Indicators that measure the price movement, regardless of direction. In essence, it is
@@ -44,7 +48,7 @@ it expects prices to fall within.
 
 ### volume
 Indicators that factor in how much an asset has been traded in a period of time. Depending on
-indicator, it may be a momentum indicator or trend indicator.
+the indicator, it may be a momentum indicator or trend indicator.
 
 ### smooth
 Provides moving average functions. Often used to track trend, levels of support, breakouts, etc...
@@ -52,7 +56,6 @@ The results are in the same scale as input data and is often used as a signal li
 
 
 ## TODO
-- classify indicators better
 - simplify reqs
 - handle div by zero scenarios
 - pad results with nan to match len of inputs

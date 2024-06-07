@@ -2,6 +2,7 @@
 //!
 //! Provides technical indicators that measures the efficiency of price movement
 //! by analyzing the relationship between price changes and trading volume.
+//! Depending on the indicator, it may be a momentum indicator or trend indicator.
 
 use itertools::izip;
 
@@ -30,6 +31,10 @@ fn vforce<'a>(
 ///
 /// Note: This is different from formula defined in source. The vforce value is simply
 /// volume * trend
+///
+/// # Usage
+///
+/// When the value is above its signal line and/or it crosses above 0, it suggests an uptrend.
 ///
 /// # Source
 /// https://www.investopedia.com/terms/k/klingeroscillator.asp
@@ -80,6 +85,10 @@ fn wilder_sum(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
 /// Developed by Colin Twiggs that measures the flow of money into and out of a security.
 /// It's similar to the Accumulation/Distribution Line. A rising TMF indicates buying pressure,
 /// as more money is flowing into the security.
+///
+/// # Usage
+///
+/// A value above 0 suggests an uptrend.
 ///
 /// # Source
 ///
@@ -134,6 +143,10 @@ pub fn twiggs<'a>(
 /// Calculated by multiplying the money flow multiplier (which is based on the security's
 /// price and volume) by the money flow volume (which is the volume at the current price level).
 /// This function supports alternate logic to consider prior close like yahoo
+///
+/// # Usage
+///
+/// An increasing value suggests an uptrend.
 ///
 /// # Source
 ///
@@ -196,6 +209,10 @@ pub fn ad<'a>(
 /// A high EFI value indicates a strong price move with high volume, which can be a sign of
 /// a strong trend
 ///
+/// # Usage
+///
+/// A value above 0 suggests an uptrend.
+///
 /// # Source
 ///
 /// https://www.investopedia.com/articles/trading/03/031203.asp
@@ -231,6 +248,10 @@ pub fn elder_force<'a>(
 /// Calculated by using the typical price and the volume traded during that period.
 /// A high MFI value (above 80) indicates that the security is overbought, and a
 /// correction may be due.
+///
+/// # Usage
+///
+/// Typically, a value above 80 suggests overbought and a value below 20, oversold.
 ///
 /// # Source
 ///
@@ -286,6 +307,10 @@ pub fn mfi<'a>(
 /// the current price level). A positive CMF value indicates that money is flowing into
 /// the security, which can be a sign of buying pressure.
 ///
+/// # Usage
+///
+/// A value above 0 suggests an uptrend.
+///
 /// # Source
 ///
 /// https://corporatefinanceinstitute.com/resources/equities/chaikin-money-flow-cmf/
@@ -324,6 +349,10 @@ pub fn cmf<'a>(
 ///
 /// Measures the flow of money into and out of a security by analyzing the trading volume at
 /// different price levels.
+///
+/// # Usage
+///
+/// An increasing value suggests an uptrend.
 ///
 /// # Source
 ///
@@ -368,6 +397,10 @@ pub fn tvi<'a>(
 /// A high Ease value indicates that prices can move easily with low volume, while a
 /// low Ease value indicates that prices are difficult to move and require high volume.
 ///
+/// # Usage
+///
+/// A value above 0 suggests an uptrend.
+///
 /// # Source
 /// https://www.investopedia.com/terms/e/easeofmovement.asp
 ///
@@ -408,6 +441,10 @@ pub fn ease<'a>(
 /// Shows the cumulative total of volume traded on up days minus the cumulative total of
 /// volume traded on down days.
 ///
+/// # Usage
+///
+/// An increasing value suggests an uptrend.
+///
 /// # Source
 ///
 /// https://www.investopedia.com/terms/o/onbalancevolume.asp
@@ -434,6 +471,10 @@ pub fn obv<'a>(close: &'a [f64], volume: &'a [f64]) -> impl Iterator<Item = f64>
 /// Shows the amount of price change per unit of volume traded. A high BW MFI value
 /// indicates that prices are moving efficiently with low volume, while a low BW MFI
 /// value indicates that prices are moving inefficiently with high volume.
+///
+/// # Usage
+///
+/// If both value and volume increases, suggests uptrend.
 ///
 /// # Source
 ///

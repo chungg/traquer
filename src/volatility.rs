@@ -16,6 +16,8 @@ use crate::smooth;
 /// Measures the volatility of stock prices by calculating a ratio of two exponential
 /// moving averages of the high-low differential.
 ///
+/// # Usage
+///
 /// A high value suggests a potential reversal in trend.
 ///
 /// # Source
@@ -95,6 +97,8 @@ pub fn keltner<'a>(
 ///
 /// Calculates the range of a security's price action over a specified period,
 /// providing insights into the volatility
+///
+/// # Usage
 ///
 /// A high value suggests a strong trend while a low value suggests sideways movement.
 ///
@@ -364,6 +368,10 @@ pub fn fbands<'a>(high: &'a [f64], low: &'a [f64]) -> impl Iterator<Item = (f64,
 ///
 /// Measures the standard deviation of returns, annualised.
 ///
+/// # Usage
+///
+/// A higher value suggests higher risk.
+///
 /// # Source
 ///
 /// https://www.macroption.com/historical-volatility-calculation/
@@ -434,6 +442,8 @@ pub fn starc<'a>(
 /// Measures the volatility of a security's price action by comparing the spread between
 /// the high and low prices over a specified period.
 ///
+/// # Usage
+///
 /// A high value suggests high volatility.
 ///
 /// # Source
@@ -477,6 +487,8 @@ pub fn cvi<'a>(
 ///
 /// Measures the direction and magnitude of volatility in an asset’s price. Unlike the
 /// Relative Strength Index (RSI), which uses absolute prices, the RVI uses standard deviation.
+///
+/// # Usage
 ///
 /// A high value suggests higher volatility.
 ///
@@ -524,6 +536,8 @@ pub fn relative_vol(
 /// reflects the concept that trends require more force to reverse than to continue
 /// in the same direction.
 ///
+/// # Usage
+///
 /// A high value suggests higher volatility.
 ///
 /// # Source
@@ -555,6 +569,8 @@ pub fn inertia(close: &[f64], window: usize, smoothing: usize) -> impl Iterator<
 /// Aims to capture the true volatility and directionality of the market by taking
 /// into account the range between the highest high and the lowest low prices over
 /// a specified period.
+///
+/// # Usage
 ///
 /// A high value suggests a strong trend while a low value suggests sideways movement.
 ///
@@ -592,6 +608,58 @@ pub fn chop<'a>(
         let ll = l.iter().fold(f64::NAN, |state, &x| state.min(x));
         let tr_sum = tr.iter().sum::<f64>();
         100.0 * f64::ln(tr_sum / (hh - ll)) / f64::ln(window as f64)
+    })
+    .collect::<Vec<f64>>()
+    .into_iter()
+}
+
+/// Vertical horizontal filter
+///
+/// Measures the level of trend activity in a financial market by comparing the max price
+/// range over a specific period to the cumulative price movement within that period.
+///
+/// # Usage
+///
+/// A higher VHF value indicates a trending market, while lower VHF suggests consolidation.
+///
+/// # Source
+///
+/// https://www.upcomingtrader.com/blog/the-vertical-horizontal-filter-a-traders-guide-to-market-phases/
+///
+/// # Examples
+///
+/// ```
+/// use traquer::volatility;
+///
+/// volatility::vhf(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     6).collect::<Vec<f64>>();
+///
+/// ```
+pub fn vhf<'a>(
+    high: &'a [f64],
+    low: &'a [f64],
+    close: &'a [f64],
+    window: usize,
+) -> impl Iterator<Item = f64> + 'a {
+    let diffs = close
+        .windows(2)
+        .map(|pair| {
+            let (prev, curr) = (pair[0], pair[1]);
+            (curr - prev).abs()
+        })
+        .collect::<Vec<f64>>();
+    izip!(
+        diffs.windows(window),
+        high.windows(window).skip(1),
+        low.windows(window).skip(1)
+    )
+    .map(|(diff, h, l)| {
+        (h.iter().fold(f64::NAN, |state, &x| state.max(x))
+            - l.iter().fold(f64::NAN, |state, &x| state.min(x)))
+            / diff.iter().sum::<f64>()
     })
     .collect::<Vec<f64>>()
     .into_iter()
