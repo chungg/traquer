@@ -10,7 +10,7 @@ use itertools::{izip, multiunzip};
 
 use crate::momentum::_swing;
 use crate::smooth;
-use crate::volatility::_true_range;
+use crate::volatility::{_true_range, atr};
 
 /// Shinohara intensity ratio
 ///
@@ -324,8 +324,7 @@ pub fn supertrend<'a>(
     multiplier: f64,
 ) -> impl Iterator<Item = f64> + 'a {
     // TODO: needs a test for when it actually flips to use upper band line
-    let tr = _true_range(high, low, close).collect::<Vec<f64>>();
-    let atr = smooth::wilder(&tr, window);
+    let atr = atr(high, low, close, window);
     izip!(&high[window..], &low[window..], &close[window..], atr)
         .scan(
             (f64::NAN, f64::NAN, f64::MIN_POSITIVE, 1),
@@ -573,4 +572,224 @@ pub fn aroon<'a>(
                 ll as f64 / window as f64 * 100.0,
             )
         })
+}
+
+/// Chandelier Exit
+///
+/// A stop-loss strategy (trailing stop) that is based on the volatility measured by
+/// the Average True Range (ATR) indicator. The Chandelier Exit consists of two lines:
+/// one line (Chandelier Exit Long) is used to close long position and the other
+/// (Chandelier Exit Short) is used to close short position.
+///
+/// # Usage
+///
+/// Close long position when price drops below Exit Long line.
+///
+/// # Source
+///
+/// https://www.marketvolume.com/technicalanalysis/chandelierexit.asp
+///
+/// # Examples
+///
+/// ```
+/// use traquer::trend;
+///
+/// trend::chandelier(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     3, Some(3.0)).collect::<Vec<(f64, f64)>>();
+///
+/// ```
+pub fn chandelier<'a>(
+    high: &'a [f64],
+    low: &'a [f64],
+    close: &'a [f64],
+    window: usize,
+    multiplier: Option<f64>,
+) -> impl Iterator<Item = (f64, f64)> + 'a {
+    let multiplier = multiplier.unwrap_or(3.0);
+    izip!(
+        high.windows(window),
+        low.windows(window),
+        atr(high, low, close, window)
+    )
+    .map(move |(h, l, atr)| {
+        let hh = h.iter().fold(f64::NAN, |state, &x| state.max(x));
+        let ll = l.iter().fold(f64::NAN, |state, &x| state.min(x));
+        (hh - multiplier * atr, ll + multiplier * atr)
+    })
+}
+
+/// ZigZag Indicator
+///
+/// A series of trend lines that connect significant peaks and valleys.
+///
+/// # Usage
+///
+/// Used in conjuction with Elliot Wave Theory. Can be used to identify support/resistence
+/// but need keep in mind it (may) redraw last trendline as new data comes in.
+///
+/// # Source
+///
+/// https://www.marketvolume.com/technicalanalysis/zig_zag.asp
+///
+/// # Examples
+///
+/// ```
+/// use traquer::trend;
+///
+/// trend::zigzag(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     Some(3.0)).collect::<Vec<f64>>();
+///
+/// ```
+pub fn zigzag<'a>(
+    high: &'a [f64],
+    low: &'a [f64],
+    distance: Option<f64>,
+) -> impl Iterator<Item = f64> + 'a {
+    let distance = distance.unwrap_or(5.0);
+    let mut result: Vec<f64> = vec![f64::NAN; high.len()];
+
+    let mut startxy: (usize, f64) = (0, low[0]);
+    let mut endxy: (usize, f64) = (high.len() - 1, *high.last().unwrap());
+
+    // get initial trend
+    result[0] = low[0];
+    for idx in 1..high.len() {
+        if (high[0] - low[idx]) / high[0] * 100.0 >= distance {
+            result[0] = high[0];
+            startxy = (0, high[0]);
+            endxy = (idx, low[idx]);
+            break;
+        } else if (high[idx] - low[0]) / low[0] * 100.0 >= distance {
+            result[0] = low[0];
+            startxy = (0, low[0]);
+            endxy = (idx, high[idx]);
+            break;
+        }
+    }
+
+    // handle remaining data
+    if endxy.0 < high.len() - 1 {
+        for i in endxy.0..high.len() {
+            if endxy.1 > startxy.1 && high[i] > endxy.1 {
+                // same trend but greater distance, extend trend.
+                endxy = (i, high[i]);
+            } else if endxy.1 < startxy.1 && (high[i] - endxy.1) / high[i] * 100.0 >= distance {
+                // opposite trend and significant distance, capture pivot and start new trend.
+                result[endxy.0] = endxy.1;
+                startxy = endxy;
+                endxy = (i, high[i]);
+            } else if endxy.1 < startxy.1 && low[i] < endxy.1 {
+                endxy = (i, low[i]);
+            } else if endxy.1 > startxy.1 && (endxy.1 - low[i]) / low[i] * 100.0 >= distance {
+                result[endxy.0] = endxy.1;
+                startxy = endxy;
+                endxy = (i, low[i]);
+            }
+        }
+    }
+
+    // handle last trend
+    if result.last().unwrap().is_nan() {
+        let result_size = result.len();
+        if startxy.1 > endxy.1 {
+            result[result_size - 1] = *high.last().unwrap();
+        } else {
+            result[result_size - 1] = *low.last().unwrap();
+        }
+    }
+    result.into_iter()
+}
+
+/// Decay
+///
+/// Propagates signals from the past into the future. Minimises lower prices.
+///
+/// # Usage
+///
+/// ¯\_(ツ)_/¯
+///
+/// # Source
+///
+/// https://tulipindicators.org/decay
+///
+/// # Examples
+///
+/// ```
+/// use traquer::trend;
+///
+/// trend::decay(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     3).collect::<Vec<f64>>();
+///
+/// ```
+pub fn decay(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
+    data.iter().scan(0.0, move |state, &x| {
+        *state = (*state - 1.0 / window as f64).max(x).max(0.0);
+        Some(*state)
+    })
+}
+
+/// Chande Kroll Stop
+///
+/// Calculated using a combination of the highest high and lowest low prices over a specific
+/// lookback period and the instrument’s ATR. Produces two stop-loss levels.
+///
+/// # Usage
+///
+/// Buy signal when price crosses above the long and short lines.
+///
+/// # Source
+///
+/// https://blog.xcaldata.com/chande-kroll-stop-for-mastering-risk-management-in-stock-market/
+///
+/// # Examples
+///
+/// ```
+/// use traquer::trend;
+///
+/// trend::cks(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     5, 3, Some(1.0)).collect::<Vec<(f64, f64)>>();
+///
+/// ```
+pub fn cks<'a>(
+    high: &'a [f64],
+    low: &'a [f64],
+    close: &'a [f64],
+    win1: usize,
+    win2: usize,
+    multiplier: Option<f64>,
+) -> impl Iterator<Item = (f64, f64)> + 'a {
+    let multiplier = multiplier.unwrap_or(1.0);
+    izip!(
+        high[1..].windows(win1),
+        low[1..].windows(win1),
+        atr(high, low, close, win1)
+    )
+    .map(|(h, l, tr)| {
+        (
+            h.iter().fold(f64::NAN, |state, &x| state.max(x)) - multiplier * tr,
+            l.iter().fold(f64::NAN, |state, &x| state.min(x)) + multiplier * tr,
+        )
+    })
+    .collect::<Vec<(f64, f64)>>()
+    .windows(win2)
+    .map(|w| {
+        let mut hh: f64 = 0.0;
+        let mut ll: f64 = f64::MAX;
+        for (h, l) in w {
+            hh = hh.max(*h);
+            ll = ll.min(*l);
+        }
+        (hh, ll)
+    })
+    .collect::<Vec<(f64, f64)>>()
+    .into_iter()
 }

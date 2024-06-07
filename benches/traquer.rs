@@ -265,6 +265,30 @@ fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("sig-trend-psar", |b| {
         b.iter(|| black_box(trend::psar(&stats.high, &stats.low, None, None).collect::<Vec<f64>>()))
     });
+    c.bench_function("sig-trend-zigzag", |b| {
+        b.iter(|| {
+            black_box(trend::zigzag(&stats.close, &stats.close, Some(10.0)).collect::<Vec<f64>>())
+        })
+    });
+    c.bench_function("sig-trend-chandelier", |b| {
+        b.iter(|| {
+            black_box(
+                trend::chandelier(&stats.high, &stats.low, &stats.close, 16, None)
+                    .collect::<Vec<(f64, f64)>>(),
+            )
+        })
+    });
+    c.bench_function("sig-trend-decay", |b| {
+        b.iter(|| black_box(trend::decay(&stats.close, 6).collect::<Vec<f64>>()))
+    });
+    c.bench_function("sig-trend-cks", |b| {
+        b.iter(|| {
+            black_box(
+                trend::cks(&stats.high, &stats.low, &stats.close, 10, 6, None)
+                    .collect::<Vec<(f64, f64)>>(),
+            )
+        })
+    });
     c.bench_function("sig-volume-bw_mfi", |b| {
         b.iter(|| {
             black_box(volume::bw_mfi(&stats.high, &stats.low, &stats.volume).collect::<Vec<f64>>())
@@ -403,7 +427,13 @@ fn criterion_benchmark(c: &mut Criterion) {
         b.iter(|| black_box(smooth::pwma(&stats.close, 16).collect::<Vec<f64>>()))
     });
     c.bench_function("ma-kernel", |b| {
-        b.iter(|| black_box(smooth::kernel(&stats.close, 16).collect::<Vec<f64>>()))
+        b.iter(|| black_box(smooth::kernel(&stats.close, 16.0).collect::<Vec<f64>>()))
+    });
+    c.bench_function("ma-kama", |b| {
+        b.iter(|| black_box(smooth::kama(&stats.close, 10, None, None).collect::<Vec<f64>>()))
+    });
+    c.bench_function("ma-alma", |b| {
+        b.iter(|| black_box(smooth::alma(&stats.close, 10, 6.0, None).collect::<Vec<f64>>()))
     });
 }
 
