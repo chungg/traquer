@@ -460,10 +460,10 @@ pub fn zlma(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
 /// ```
 /// use traquer::smooth;
 ///
-/// smooth::kernel(&vec![1.0, 2.0, 3.0, 4.0, 5.0], 3).collect::<Vec<f64>>();
+/// smooth::kernel(&vec![1.0, 2.0, 3.0, 4.0, 5.0], 3.0).collect::<Vec<f64>>();
 /// ```
-pub fn kernel(data: &[f64], sigma: usize) -> impl Iterator<Item = f64> + '_ {
-    let beta = 1.0 / (2 * sigma.pow(2)) as f64;
+pub fn kernel(data: &[f64], sigma: f64) -> impl Iterator<Item = f64> + '_ {
+    let beta = 1.0 / (2.0 * sigma.powi(2));
     let window = 255;
     let weights = (0..=window)
         .map(|x| (-beta * (x as f64).powi(2)).exp())
@@ -479,6 +479,78 @@ pub fn kernel(data: &[f64], sigma: usize) -> impl Iterator<Item = f64> + '_ {
             .zip(data[..=i].iter().rev().take(std::cmp::min(i + 1, window)))
         {
             sum += w * val;
+            sumw += w;
+        }
+        sum / sumw
+    })
+}
+
+/// Kaufman Adaptive (KAMA)
+///
+/// Similar to VIDYA, in that it uses two smoothing constants. Computes an Efficiency Ratio to
+/// adapt the moving average to price trends.
+///
+/// # Source
+///
+/// https://www.marketvolume.com/technicalanalysis/kama.asp
+///
+/// # Examples
+///
+/// ```
+/// use traquer::smooth;
+///
+/// smooth::kama(&vec![1.0, 2.0, 3.0, 4.0, 5.0], 3, Some(2), Some(30)).collect::<Vec<f64>>();
+/// ```
+pub fn kama(
+    data: &[f64],
+    window: usize,
+    short: Option<usize>,
+    long: Option<usize>,
+) -> impl Iterator<Item = f64> + '_ {
+    let short = 2.0 / (short.unwrap_or(2) + 1) as f64;
+    let long = 2.0 / (long.unwrap_or(30) + 1) as f64;
+
+    data.windows(window).scan(0.0, move |state, x| {
+        let er = (x[x.len() - 1] - x[0]).abs()
+            / (x.windows(2)
+                .fold(0.0, |acc, pair| acc + (pair[0] - pair[1]).abs()));
+        let alpha = (er * (short - long) + long).powi(2);
+        *state = *state + alpha * (x[x.len() - 1] - *state);
+        Some(*state)
+    })
+}
+
+/// Arnaud Legoux (ALMA)
+///
+/// Design to use Gaussian distribution that is shifted with a calculated offset in order
+/// for the average to be biased towards more recent days
+///
+/// # Source
+///
+/// https://www.tradingview.com/support/solutions/43000594683-arnaud-legoux-moving-average/
+///
+/// # Examples
+///
+/// ```
+/// use traquer::smooth;
+///
+/// smooth::alma(&vec![1.0, 2.0, 3.0, 4.0, 5.0], 3, 2.0, Some(0.5)).collect::<Vec<f64>>();
+/// ```
+pub fn alma(
+    data: &[f64],
+    window: usize,
+    sigma: f64,
+    mu: Option<f64>,
+) -> impl Iterator<Item = f64> + '_ {
+    let mu = mu.unwrap_or(0.85) * (window - 1) as f64;
+    let weights = (0..window)
+        .map(|x| (-1.0 * (x as f64 - mu).powi(2) / (2.0 * (window as f64 / sigma).powi(2))).exp())
+        .collect::<Vec<f64>>();
+    (window..data.len()).map(move |i| {
+        let mut sum: f64 = 0.0;
+        let mut sumw: f64 = 0.0;
+        for (idx, w) in weights.iter().enumerate() {
+            sum += w * data[i - idx];
             sumw += w;
         }
         sum / sumw
