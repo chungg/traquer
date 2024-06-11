@@ -50,16 +50,17 @@ pub fn mass<'a>(
         short,
     )
     .collect::<Vec<f64>>();
-    let ma2 = smooth::ewma(&ma1, short);
-    ma1.iter()
-        .skip(short - 1)
-        .zip(ma2)
-        .map(|(num, denom)| num / denom)
-        .collect::<Vec<f64>>()
-        .windows(long)
-        .map(|w| w.iter().sum::<f64>())
-        .collect::<Vec<f64>>()
-        .into_iter()
+    let ma2 = smooth::ewma(&ma1[short - 1..], short);
+    iter::repeat(f64::NAN).take((long - 1) + (short - 1)).chain(
+        ma1.iter()
+            .skip(short - 1)
+            .zip(ma2)
+            .map(|(num, denom)| num / denom)
+            .collect::<Vec<f64>>()
+            .windows(long)
+            .map(|w| w.iter().sum::<f64>())
+            .collect::<Vec<f64>>(),
+    )
 }
 
 /// Keltner Channel
@@ -89,7 +90,7 @@ pub fn keltner<'a>(
     window: usize,
 ) -> impl Iterator<Item = (f64, f64, f64)> + 'a {
     smooth::ewma(close, window)
-        .zip(iter::once(f64::NAN).chain(atr(high, low, close, window)))
+        .zip(atr(high, low, close, window))
         .map(|(middle, atr)| (middle, middle + 2.0 * atr, middle - 2.0 * atr))
 }
 
@@ -160,7 +161,7 @@ pub(crate) fn _true_range<'a>(
 ///
 /// ```
 pub fn tr<'a>(high: &'a [f64], low: &'a [f64], close: &'a [f64]) -> impl Iterator<Item = f64> + 'a {
-    _true_range(high, low, close)
+    iter::once(f64::NAN).chain(_true_range(high, low, close))
 }
 
 /// Average true range
@@ -187,9 +188,10 @@ pub fn atr<'a>(
     close: &'a [f64],
     window: usize,
 ) -> impl Iterator<Item = f64> + 'a {
-    smooth::wilder(&_true_range(high, low, close).collect::<Vec<f64>>(), window)
-        .collect::<Vec<f64>>()
-        .into_iter()
+    iter::once(f64::NAN).chain(
+        smooth::wilder(&_true_range(high, low, close).collect::<Vec<f64>>(), window)
+            .collect::<Vec<f64>>(),
+    )
 }
 
 /// Typical price
@@ -248,7 +250,9 @@ pub fn std_dev(
     deviations: Option<f64>,
 ) -> impl Iterator<Item = f64> + '_ {
     let devs = deviations.unwrap_or(2.0);
-    smooth::std_dev(data, window).map(move |x| x * devs)
+    iter::repeat(f64::NAN)
+        .take(window - 1)
+        .chain(smooth::std_dev(data, window).map(move |x| x * devs))
 }
 
 /// Bollinger Bands
@@ -429,11 +433,7 @@ pub fn starc<'a>(
 ) -> impl Iterator<Item = (f64, f64)> + 'a {
     let multiplier = multiplier.unwrap_or(1.2);
     atr(high, low, close, window)
-        .skip(std::cmp::max(0_i32, (ma_window - 1) as i32 - window as i32) as usize)
-        .zip(
-            smooth::sma(close, ma_window)
-                .skip(std::cmp::max(0_i32, window as i32 - (ma_window - 1) as i32) as usize),
-        )
+        .zip(smooth::sma(close, ma_window))
         .map(move |(atr, ma)| (ma + multiplier * atr, ma - multiplier * atr))
 }
 
@@ -468,19 +468,20 @@ pub fn cvi<'a>(
     window: usize,
     rate_of_change: usize,
 ) -> impl Iterator<Item = f64> + 'a {
-    smooth::ewma(
-        &high
-            .iter()
-            .zip(low)
-            .map(|(h, l)| h - l)
-            .collect::<Vec<f64>>(),
-        window,
+    iter::repeat(f64::NAN).take(rate_of_change).chain(
+        smooth::ewma(
+            &high
+                .iter()
+                .zip(low)
+                .map(|(h, l)| h - l)
+                .collect::<Vec<f64>>(),
+            window,
+        )
+        .collect::<Vec<f64>>()
+        .windows(rate_of_change + 1)
+        .map(|w| 100.0 * (w.last().unwrap() / w.first().unwrap() - 1.0))
+        .collect::<Vec<f64>>(),
     )
-    .collect::<Vec<f64>>()
-    .windows(rate_of_change + 1)
-    .map(|w| 100.0 * (w.last().unwrap() / w.first().unwrap() - 1.0))
-    .collect::<Vec<f64>>()
-    .into_iter()
 }
 
 /// Relative Volatility
@@ -523,11 +524,12 @@ pub fn relative_vol(
         )
     })
     .unzip();
-    smooth::wilder(&gain, smoothing)
-        .zip(smooth::wilder(&loss, smoothing))
-        .map(|(g, l)| 100.0 * g / (g + l))
-        .collect::<Vec<f64>>()
-        .into_iter()
+    iter::repeat(f64::NAN).take(window - 1).chain(
+        smooth::wilder(&gain, smoothing)
+            .zip(smooth::wilder(&loss, smoothing))
+            .map(|(g, l)| 100.0 * g / (g + l))
+            .collect::<Vec<f64>>(),
+    )
 }
 
 /// Inertia

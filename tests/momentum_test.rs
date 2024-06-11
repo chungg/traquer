@@ -5,9 +5,26 @@ mod common;
 #[test]
 fn test_rsi() {
     let stats = common::test_data();
-    let result = momentum::rsi(&stats.close, 16);
-    assert_eq!(
-        vec![
+    let result = momentum::rsi(&stats.close, 16).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
+    assert!(common::vec_eq(
+        &vec![
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
             46.128106720103226,
             44.63367886613521,
             47.00425158432756,
@@ -27,16 +44,42 @@ fn test_rsi() {
             58.06858163571402,
             54.77626809114967
         ],
-        result.collect::<Vec<f64>>()
-    );
+        &result
+    ));
 }
 
 #[test]
 fn test_macd() {
     let stats = common::test_data();
-    let result = momentum::macd(&stats.close, 12, 26);
-    assert_eq!(
-        vec![
+    let result = momentum::macd(&stats.close, 12, 26).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
+    assert!(common::vec_eq(
+        &vec![
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
             -2.217893848328025,
             -2.012936386965073,
             -1.7145457437113834,
@@ -47,8 +90,8 @@ fn test_macd() {
             0.06315775884193187,
             0.24329207900761673,
         ],
-        result.collect::<Vec<f64>>()
-    );
+        &result
+    ));
 }
 
 #[test]
@@ -83,9 +126,25 @@ fn test_cmo() {
 #[test]
 fn test_cfo() {
     let stats = common::test_data();
-    let result = momentum::cfo(&stats.close, 16);
-    assert_eq!(
-        vec![
+    let result = momentum::cfo(&stats.close, 16).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
+    assert!(common::vec_eq(
+        &vec![
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
             -1.0827212473925485,
             6.489853839461397,
             3.26724075507739,
@@ -106,8 +165,8 @@ fn test_cfo() {
             2.8509113301892537,
             -1.9095010899369487
         ],
-        result.collect::<Vec<f64>>()
-    );
+        &result
+    ));
 }
 
 #[test]
@@ -115,8 +174,24 @@ fn test_elder_ray() {
     let stats = common::test_data();
     let results: (Vec<f64>, Vec<f64>) =
         momentum::elder_ray(&stats.high, &stats.low, &stats.close, 16).unzip();
-    assert_eq!(
-        vec![
+    assert_eq!(stats.close.len(), results.1.len());
+    assert!(common::vec_eq(
+        &vec![
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
             -6.323126792907715,
             -5.426287538865033,
             -5.97348870868089,
@@ -137,10 +212,25 @@ fn test_elder_ray() {
             8.442607464131385,
             4.079358351350422,
         ],
-        results.0
-    );
-    assert_eq!(
-        vec![
+        &results.0
+    ));
+    assert!(common::vec_eq(
+        &vec![
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
             -8.743124961853027,
             -8.246287233689252,
             -7.878487487977765,
@@ -161,8 +251,8 @@ fn test_elder_ray() {
             2.9826083796587284,
             1.229359877229328,
         ],
-        results.1
-    );
+        &results.1
+    ));
 }
 
 #[test]
@@ -198,9 +288,25 @@ fn test_wpr() {
 #[test]
 fn test_ppo() {
     let stats = common::test_data();
-    let result = momentum::ppo(&stats.volume, 10, 16);
-    assert_eq!(
-        vec![
+    let result = momentum::ppo(&stats.volume, 10, 16).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
+    assert!(common::vec_eq(
+        &vec![
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
             -35.378723807894985,
             -37.993168058882375,
             -39.524346350340444,
@@ -221,16 +327,32 @@ fn test_ppo() {
             2.308566455542005,
             -0.92080395315155,
         ],
-        result.collect::<Vec<f64>>()
-    );
+        &result
+    ));
 }
 
 #[test]
 fn test_apo() {
     let stats = common::test_data();
-    let result = momentum::apo(&stats.close, 10, 16);
-    assert_eq!(
-        vec![
+    let result = momentum::apo(&stats.close, 10, 16).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
+    assert!(common::vec_eq(
+        &vec![
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
             -3.066861454520314,
             -2.976616647434078,
             -2.974212899316754,
@@ -251,16 +373,32 @@ fn test_apo() {
             0.6097419848129704,
             0.6642876636596782,
         ],
-        result.collect::<Vec<f64>>()
-    );
+        &result
+    ));
 }
 
 #[test]
 fn test_pmo() {
     let stats = common::test_data();
-    let result = momentum::pmo(&stats.close, 10, 6);
-    assert_eq!(
-        vec![
+    let result = momentum::pmo(&stats.close, 10, 6).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
+    assert!(common::vec_eq(
+        &vec![
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
             -3.8697582054697164,
             -5.025517442390475,
             -7.927443373077454,
@@ -281,8 +419,8 @@ fn test_pmo() {
             14.115021635278136,
             12.569334850393318,
         ],
-        result.collect::<Vec<f64>>()
-    );
+        &result
+    ));
 }
 
 #[test]
@@ -309,9 +447,26 @@ fn test_ultimate() {
 #[test]
 fn test_pgo() {
     let stats = common::test_data();
-    let result = momentum::pgo(&stats.high, &stats.low, &stats.close, 16);
-    assert_eq!(
-        vec![
+    let result = momentum::pgo(&stats.high, &stats.low, &stats.close, 16).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
+    assert!(common::vec_eq(
+        &vec![
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
             -1.1728195008646218,
             -1.3831996312942632,
             -0.669537387649706,
@@ -331,8 +486,8 @@ fn test_pgo() {
             1.7570721475194715,
             1.0410621667725752,
         ],
-        result.collect::<Vec<f64>>()
-    );
+        &result
+    ));
 }
 
 #[test]
@@ -382,9 +537,29 @@ fn test_si() {
 #[test]
 fn test_trix() {
     let stats = common::test_data();
-    let result = momentum::trix(&stats.close, 7);
-    assert_eq!(
-        vec![
+    let result = momentum::trix(&stats.close, 7).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
+    assert!(common::vec_eq(
+        &vec![
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
             -1.7609812348121436,
             -1.58700358125189,
             -1.3595873824994853,
@@ -401,16 +576,39 @@ fn test_trix() {
             0.9560958810856369,
             1.0335513961870586,
         ],
-        result.collect::<Vec<f64>>()
-    );
+        &result
+    ));
 }
 
 #[test]
 fn test_tii_even() {
     let stats = common::test_data();
-    let result = momentum::tii(&stats.close, 16);
-    assert_eq!(
-        vec![
+    let result = momentum::tii(&stats.close, 16).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
+    assert!(common::vec_eq(
+        &vec![
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
             0.0,
             0.0,
             12.365592243625398,
@@ -424,16 +622,38 @@ fn test_tii_even() {
             100.0,
             100.0,
         ],
-        result.collect::<Vec<f64>>()
-    );
+        &result
+    ));
 }
 
 #[test]
 fn test_tii_odd() {
     let stats = common::test_data();
-    let result = momentum::tii(&stats.close, 15);
-    assert_eq!(
-        vec![
+    let result = momentum::tii(&stats.close, 15).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
+    assert!(common::vec_eq(
+        &vec![
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
             0.0,
             0.6686354433953655,
             0.9316341618307428,
@@ -448,8 +668,8 @@ fn test_tii_odd() {
             100.0,
             100.0,
         ],
-        result.collect::<Vec<f64>>()
-    );
+        &result
+    ));
 }
 
 #[test]
@@ -457,8 +677,26 @@ fn test_stochastic() {
     let stats = common::test_data();
     let results: (Vec<f64>, Vec<f64>) =
         momentum::stochastic(&stats.high, &stats.low, &stats.close, 16).unzip();
-    assert_eq!(
-        vec![
+    assert_eq!(stats.close.len(), results.0.len());
+    assert!(common::vec_eq(
+        &vec![
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
             2.4407137600029882,
             7.653446863271012,
             12.503620070189761,
@@ -477,10 +715,29 @@ fn test_stochastic() {
             86.31462216118678,
             79.59748732796943,
         ],
-        results.0
-    );
-    assert_eq!(
-        vec![
+        &results.0
+    ));
+    assert!(common::vec_eq(
+        &vec![
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
             7.532593564487921,
             14.464860344580464,
             22.162289890853273,
@@ -497,16 +754,34 @@ fn test_stochastic() {
             84.62596744261917,
             83.70977542628769,
         ],
-        results.1[2..]
-    );
+        &results.1
+    ));
 }
 
 #[test]
 fn test_stc() {
     let stats = common::test_data();
-    let result = momentum::stc(&stats.close, 3, 6, 12);
-    assert_eq!(
-        vec![
+    let result = momentum::stc(&stats.close, 3, 6, 12).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
+    assert!(common::vec_eq(
+        &vec![
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
             75.0,
             87.5,
             93.75,
@@ -525,16 +800,36 @@ fn test_stc() {
             99.99923706054688,
             49.99961853027344,
         ],
-        result.collect::<Vec<f64>>()
-    );
+        &result
+    ));
 }
 
 #[test]
 fn test_relative_vigor() {
     let stats = common::test_data();
-    let result = momentum::relative_vigor(&stats.open, &stats.high, &stats.low, &stats.close, 16);
-    assert_eq!(
-        vec![
+    let result = momentum::relative_vigor(&stats.open, &stats.high, &stats.low, &stats.close, 16)
+        .collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
+    assert!(common::vec_eq(
+        &vec![
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
             -0.153337143981914,
             -0.18751486156482663,
             -0.1655477409598533,
@@ -552,8 +847,8 @@ fn test_relative_vigor() {
             0.17222662984562823,
             0.1687163540078826,
         ],
-        result.collect::<Vec<f64>>()
-    );
+        &result
+    ));
 }
 
 #[test]
@@ -589,7 +884,8 @@ fn test_fisher() {
 #[test]
 fn test_rainbow() {
     let stats = common::test_data();
-    let result = momentum::rainbow(&stats.close, 3, 6);
+    let result = momentum::rainbow(&stats.close, 3, 6).collect::<Vec<(f64, f64)>>();
+    assert_eq!(stats.close.len(), result.len());
     assert_eq!(
         vec![
             (-15.581553207931039, 167.79131131051022),
@@ -607,16 +903,40 @@ fn test_rainbow() {
             (96.19784933644493, 117.51887397606791),
             (53.817510802467865, 130.69353809849056),
         ],
-        result.collect::<Vec<(f64, f64)>>()
+        result[(3 - 1) * 10..]
     );
 }
 
 #[test]
 fn test_coppock() {
     let stats = common::test_data();
-    let result = momentum::coppock(&stats.close, 10, 11, 14);
-    assert_eq!(
-        vec![
+    let result = momentum::coppock(&stats.close, 10, 11, 14).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
+    assert!(common::vec_eq(
+        &vec![
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
             -23.219023231862437,
             -17.657274623448355,
             -10.580507093014912,
@@ -629,8 +949,8 @@ fn test_coppock() {
             30.587155565412456,
             32.92949971385037,
         ],
-        result.collect::<Vec<f64>>()
-    );
+        &result
+    ));
 }
 
 #[test]
@@ -666,9 +986,26 @@ fn test_roc() {
 #[test]
 fn test_bal_power() {
     let stats = common::test_data();
-    let result = momentum::bal_power(&stats.open, &stats.high, &stats.low, &stats.close, 16);
-    assert_eq!(
-        vec![
+    let result = momentum::bal_power(&stats.open, &stats.high, &stats.low, &stats.close, 16)
+        .collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
+    assert!(common::vec_eq(
+        &vec![
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
             -0.26684921210684515,
             -0.20875516800799515,
             -0.2601570855656015,
@@ -689,16 +1026,32 @@ fn test_bal_power() {
             0.03940688314737367,
             -0.04551836629903973
         ],
-        result.collect::<Vec<f64>>()
-    );
+        &result
+    ));
 }
 
 #[test]
 fn test_disparity() {
     let stats = common::test_data();
-    let result = momentum::disparity(&stats.close, 16);
-    assert_eq!(
-        vec![
+    let result = momentum::disparity(&stats.close, 16).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
+    assert!(common::vec_eq(
+        &vec![
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
             -17.394840214421464,
             -13.51017275854007,
             -15.905389719955151,
@@ -719,16 +1072,24 @@ fn test_disparity() {
             10.023267360859805,
             4.836935524987116
         ],
-        result.collect::<Vec<f64>>()
-    );
+        &result
+    ));
 }
 
 #[test]
 fn test_qstick() {
     let stats = common::test_data();
-    let result = momentum::qstick(&stats.open, &stats.close, 8);
-    assert_eq!(
-        vec![
+    let result = momentum::qstick(&stats.open, &stats.close, 8).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
+    assert!(common::vec_eq(
+        &vec![
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
             -0.5343747138977051,
             -0.6200696627298992,
             -0.06449838920875839,
@@ -757,8 +1118,8 @@ fn test_qstick() {
             -0.2854447322330791,
             -0.6542355716305024,
         ],
-        result.collect::<Vec<f64>>()
-    );
+        &result
+    ));
 }
 
 #[test]

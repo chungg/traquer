@@ -5,7 +5,8 @@ mod common;
 #[test]
 fn test_mass() {
     let stats = common::test_data();
-    let result = volatility::mass(&stats.high, &stats.low, 9, 6);
+    let result = volatility::mass(&stats.high, &stats.low, 9, 6).collect::<Vec<_>>();
+    assert_eq!(stats.high.len(), result.len());
     assert_eq!(
         vec![
             4.520707218752633,
@@ -22,14 +23,15 @@ fn test_mass() {
             5.942103734664013,
             6.0808751147235265,
         ],
-        result.collect::<Vec<f64>>()
+        result[16 + 5..]
     );
 }
 
 #[test]
 fn test_keltner() {
     let stats = common::test_data();
-    let result = volatility::keltner(&stats.high, &stats.low, &stats.close, 16);
+    let result = volatility::keltner(&stats.high, &stats.low, &stats.close, 16).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
     assert_eq!(
         vec![
             //(48.42312526702881, f64::NAN, f64::NAN,),
@@ -52,7 +54,7 @@ fn test_keltner() {
             (46.717392383280725, 55.14800620035773, 38.28677856620372,),
             (47.02064012277067, 55.31809076701522, 38.72318947852612,),
         ],
-        result.collect::<Vec<(f64, f64, f64)>>()[1..]
+        result[16..]
     );
 }
 
@@ -89,7 +91,8 @@ fn test_gri() {
 #[test]
 fn test_tr() {
     let stats = common::test_data();
-    let result = volatility::tr(&stats.high, &stats.low, &stats.close);
+    let result = volatility::tr(&stats.high, &stats.low, &stats.close).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
     assert_eq!(
         vec![
             15.939998626708984,
@@ -126,14 +129,15 @@ fn test_tr() {
             5.759998321533203,
             3.1500015258789063,
         ],
-        result.collect::<Vec<f64>>()
+        result[1..]
     );
 }
 
 #[test]
 fn test_atr() {
     let stats = common::test_data();
-    let result = volatility::atr(&stats.high, &stats.low, &stats.close, 16);
+    let result = volatility::atr(&stats.high, &stats.low, &stats.close, 16).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
     assert_eq!(
         vec![
             5.950937747955322,
@@ -155,14 +159,15 @@ fn test_atr() {
             4.215306908538501,
             4.148725322122276,
         ],
-        result.collect::<Vec<f64>>()
+        result[16..]
     );
 }
 
 #[test]
 fn test_typical() {
     let stats = common::test_data();
-    let result = volatility::typical(&stats.high, &stats.low, &stats.close, 16);
+    let result = volatility::typical(&stats.high, &stats.low, &stats.close, 16).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
     assert_eq!(
         vec![
             48.82131250699361,
@@ -185,14 +190,15 @@ fn test_typical() {
             44.90875029563905,
             45.53729192415874,
         ],
-        result.collect::<Vec<f64>>()
+        result[15..]
     );
 }
 
 #[test]
 fn test_std_dev() {
     let stats = common::test_data();
-    let result = volatility::std_dev(&stats.close, 16, None);
+    let result = volatility::std_dev(&stats.close, 16, None).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
     assert_eq!(
         vec![
             13.25162572657857,
@@ -215,14 +221,15 @@ fn test_std_dev() {
             6.494713715395781,
             6.118108066427051,
         ],
-        result.collect::<Vec<f64>>()
+        result[15..]
     );
 }
 
 #[test]
 fn test_bbands() {
     let stats = common::test_data();
-    let result = volatility::bbands(&stats.close, 16, None, None);
+    let result = volatility::bbands(&stats.close, 16, None, None).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
     assert_eq!(
         vec![
             (61.674750993607375, 48.42312526702881, 35.17149954045024),
@@ -245,7 +252,7 @@ fn test_bbands() {
             (53.21210609867651, 46.717392383280725, 40.22267866788494),
             (53.13874818919772, 47.02064012277067, 40.902532056343624)
         ],
-        result.collect::<Vec<(f64, f64, f64)>>()
+        result[15..]
     );
 }
 
@@ -352,7 +359,9 @@ fn test_hv() {
 #[test]
 fn test_starc() {
     let stats = common::test_data();
-    let result = volatility::starc(&stats.high, &stats.low, &stats.close, 16, 5, None);
+    let result =
+        volatility::starc(&stats.high, &stats.low, &stats.close, 16, 5, None).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
     assert_eq!(
         vec![
             (49.147125053405766, 34.86487445831299,),
@@ -374,14 +383,15 @@ fn test_starc() {
             (53.74036902266808, 43.623632442175676,),
             (53.979470600169776, 44.02252982707631,),
         ],
-        result.collect::<Vec<(f64, f64)>>()
+        result[16..]
     );
 }
 
 #[test]
 fn test_cvi() {
     let stats = common::test_data();
-    let result = volatility::cvi(&stats.high, &stats.low, 16, 2);
+    let result = volatility::cvi(&stats.high, &stats.low, 16, 2).collect::<Vec<_>>();
+    assert_eq!(stats.high.len(), result.len());
     assert_eq!(
         vec![
             -12.903778070881856,
@@ -402,14 +412,15 @@ fn test_cvi() {
             6.497958034939444,
             5.52228653707274,
         ],
-        result.collect::<Vec<f64>>()
+        result[15 + 2..]
     );
 }
 
 #[test]
 fn test_relative_vol() {
     let stats = common::test_data();
-    let result = volatility::relative_vol(&stats.close, 6, 10);
+    let result = volatility::relative_vol(&stats.close, 6, 10).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
     // NOTE: this won't match yahoo as wilder ma is n+1 and we wait for full window while yahoo
     // doesn't. over larger datasets it matches.
     assert_eq!(
@@ -435,14 +446,15 @@ fn test_relative_vol() {
             62.43245885296475,
             56.96821515395683,
         ],
-        result.collect::<Vec<f64>>()
+        result[5 + 9..]
     );
 }
 
 #[test]
 fn test_inertia() {
     let stats = common::test_data();
-    let result = volatility::inertia(&stats.close, 6, 10);
+    let result = volatility::inertia(&stats.close, 6, 10).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
     assert_eq!(
         vec![
             33.846695422163236,
@@ -461,7 +473,7 @@ fn test_inertia() {
             73.87374050904741,
             71.82880194892938,
         ],
-        result.collect::<Vec<f64>>()
+        result[10 + 9..]
     );
 }
 

@@ -16,7 +16,7 @@ fn main() {
     let data = fs::read_to_string("./tests/rddt.input").expect("Unable to read file");
     let stats: SecStats = serde_json::from_str(&data).expect("JSON does not have correct format.");
 
-    //dbg!(trend::decay(&stats.close, 6).collect::<Vec<f64>>());
+    dbg!(trend::adx(&stats.high, &stats.low, &stats.close, 14, 14).collect::<Vec<_>>());
     //dbg!(momentum::inertia(&stats.close, 6, 10).collect::<Vec<f64>>());
-    dbg!(smooth::alma(&stats.close, 10, 6.0, None).collect::<Vec<f64>>());
+    //dbg!(smooth::alma(&stats.close, 10, 6.0, None).collect::<Vec<f64>>());
 }

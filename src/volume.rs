@@ -3,6 +3,7 @@
 //! Provides technical indicators that measures the efficiency of price movement
 //! by analyzing the relationship between price changes and trading volume.
 //! Depending on the indicator, it may be a momentum indicator or trend indicator.
+use std::iter;
 
 use itertools::izip;
 
@@ -63,12 +64,12 @@ pub fn kvo<'a>(
     let vf = vforce(high, low, close, volume).collect::<Vec<f64>>();
     let short_ma = smooth::ewma(&vf, short);
     let long_ma = smooth::ewma(&vf, long);
-    short_ma
-        .skip(long - short)
-        .zip(long_ma)
-        .map(|(x, y)| x - y)
-        .collect::<Vec<f64>>()
-        .into_iter()
+    iter::once(f64::NAN).chain(
+        short_ma
+            .zip(long_ma)
+            .map(|(x, y)| x - y)
+            .collect::<Vec<f64>>(),
+    )
 }
 
 fn wilder_sum(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
@@ -233,14 +234,15 @@ pub fn elder_force<'a>(
     volume: &'a [f64],
     window: usize,
 ) -> impl Iterator<Item = f64> + 'a {
-    smooth::ewma(
-        &izip!(&close[..close.len() - 1], &close[1..], &volume[1..])
-            .map(|(prev, curr, vol)| (curr - prev) * vol)
-            .collect::<Vec<f64>>(),
-        window,
+    iter::once(f64::NAN).chain(
+        smooth::ewma(
+            &izip!(&close[..close.len() - 1], &close[1..], &volume[1..])
+                .map(|(prev, curr, vol)| (curr - prev) * vol)
+                .collect::<Vec<f64>>(),
+            window,
+        )
+        .collect::<Vec<f64>>(),
     )
-    .collect::<Vec<f64>>()
-    .into_iter()
 }
 
 /// Money flow index
@@ -422,18 +424,19 @@ pub fn ease<'a>(
     volume: &'a [f64],
     window: usize,
 ) -> impl Iterator<Item = f64> + 'a {
-    smooth::sma(
-        &(1..high.len())
-            .map(|i| {
-                (high[i] + low[i] - high[i - 1] - low[i - 1])
-                    / 2.0
-                    / (volume[i] / 100000000.0 / (high[i] - low[i]))
-            })
-            .collect::<Vec<f64>>(),
-        window,
+    iter::once(f64::NAN).chain(
+        smooth::sma(
+            &(1..high.len())
+                .map(|i| {
+                    (high[i] + low[i] - high[i - 1] - low[i - 1])
+                        / 2.0
+                        / (volume[i] / 100000000.0 / (high[i] - low[i]))
+                })
+                .collect::<Vec<f64>>(),
+            window,
+        )
+        .collect::<Vec<f64>>(),
     )
-    .collect::<Vec<f64>>()
-    .into_iter()
 }
 
 /// On-Balance Volume

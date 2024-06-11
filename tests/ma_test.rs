@@ -5,26 +5,42 @@ mod common;
 #[test]
 fn test_ma() {
     let stats = common::test_data();
-    assert_eq!(
-        smooth::ewma(&stats.close, 16).collect::<Vec<f64>>(),
-        smooth::ma(&stats.close, 16, smooth::MaMode::EWMA).collect::<Vec<f64>>()
-    );
-    assert_eq!(
-        smooth::wilder(&stats.close, 16).collect::<Vec<f64>>(),
-        smooth::ma(&stats.close, 16, smooth::MaMode::Wilder).collect::<Vec<f64>>()
-    );
-    assert_eq!(
-        smooth::pwma(&stats.close, 16).collect::<Vec<f64>>(),
-        smooth::ma(&stats.close, 16, smooth::MaMode::Pascal).collect::<Vec<f64>>()
-    );
+    assert!(common::vec_eq(
+        &smooth::ewma(&stats.close, 16).collect::<Vec<f64>>(),
+        &smooth::ma(&stats.close, 16, smooth::MaMode::EWMA).collect::<Vec<f64>>()
+    ));
+    assert!(common::vec_eq(
+        &smooth::wilder(&stats.close, 16).collect::<Vec<f64>>(),
+        &smooth::ma(&stats.close, 16, smooth::MaMode::Wilder).collect::<Vec<f64>>()
+    ));
+    assert!(common::vec_eq(
+        &smooth::pwma(&stats.close, 16).collect::<Vec<f64>>(),
+        &smooth::ma(&stats.close, 16, smooth::MaMode::Pascal).collect::<Vec<f64>>()
+    ));
 }
 
 #[test]
 fn test_ewma_even() {
     let stats = common::test_data();
-    let results = smooth::ewma(&stats.close, 16);
-    assert_eq!(
-        vec![
+    let result = smooth::ewma(&stats.close, 16).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
+    assert!(common::vec_eq(
+        &vec![
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
             48.42312526702881,
             47.56628692851347,
             46.57848825091722,
@@ -45,16 +61,31 @@ fn test_ewma_even() {
             46.717392383280725,
             47.02064012277067,
         ],
-        results.collect::<Vec<_>>()
-    );
+        &result
+    ));
 }
 
 #[test]
 fn test_ewma_odd() {
     let stats = common::test_data();
-    let results = smooth::ewma(&stats.close, 15);
-    assert_eq!(
-        vec![
+    let result = smooth::ewma(&stats.close, 15).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
+    assert!(common::vec_eq(
+        &vec![
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
             48.984666951497395,
             47.86158358256022,
             47.02138555844625,
@@ -76,16 +107,32 @@ fn test_ewma_odd() {
             46.72808855464295,
             47.048952256430745,
         ],
-        results.collect::<Vec<_>>()
-    );
+        &result
+    ));
 }
 
 #[test]
 fn test_sma_even() {
     let stats = common::test_data();
-    let results = smooth::sma(&stats.close, 16);
-    assert_eq!(
-        vec![
+    let result = smooth::sma(&stats.close, 16).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
+    assert!(common::vec_eq(
+        &vec![
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
             48.42312526702881,
             48.119375228881836,
             46.830000162124634,
@@ -106,16 +153,31 @@ fn test_sma_even() {
             44.85437536239624,
             45.48718786239624,
         ],
-        results.collect::<Vec<_>>()
-    );
+        &result
+    ));
 }
 
 #[test]
 fn test_sma_odd() {
     let stats = common::test_data();
-    let results = smooth::sma(&stats.close, 15);
-    assert_eq!(
-        vec![
+    let result = smooth::sma(&stats.close, 15).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
+    assert!(common::vec_eq(
+        &vec![
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
             48.984666951497395,
             48.5846669514974,
             47.340666961669925,
@@ -137,16 +199,40 @@ fn test_sma_odd() {
             45.233333841959634,
             45.73833363850911,
         ],
-        results.collect::<Vec<_>>()
-    );
+        &result
+    ));
 }
 
 #[test]
 fn test_vidya_even() {
     let stats = common::test_data();
-    let results = smooth::vidya(&stats.close, 16);
-    assert_eq!(
-        vec![
+    let result = smooth::vidya(&stats.close, 16).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
+    assert!(common::vec_eq(
+        &vec![
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
             1.658577313274186,
             4.595364682787511,
             8.76102481381672,
@@ -159,16 +245,40 @@ fn test_vidya_even() {
             31.240918773298006,
             33.780320050418,
         ],
-        results.collect::<Vec<_>>()
-    );
+        &result
+    ));
 }
 
 #[test]
 fn test_vidya_odd() {
     let stats = common::test_data();
-    let results = smooth::vidya(&stats.close, 15);
-    assert_eq!(
-        vec![
+    let result = smooth::vidya(&stats.close, 15).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
+    assert!(common::vec_eq(
+        &vec![
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
             1.7622383953538225,
             4.87518528044527,
             9.271488225125937,
@@ -181,16 +291,32 @@ fn test_vidya_odd() {
             32.40359132105506,
             34.92794816477713,
         ],
-        results.collect::<Vec<_>>()
-    );
+        &result
+    ));
 }
 
 #[test]
 fn test_wma_even() {
     let stats = common::test_data();
-    let results = smooth::wma(&stats.close, 16);
-    assert_eq!(
-        vec![
+    let result = smooth::wma(&stats.close, 16).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
+    assert!(common::vec_eq(
+        &vec![
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
             45.759779677671546,
             44.902941339156214,
             43.85007344975192,
@@ -211,16 +337,31 @@ fn test_wma_even() {
             46.547794594484216,
             47.0702208070194
         ],
-        results.collect::<Vec<_>>()
-    );
+        &result
+    ));
 }
 
 #[test]
 fn test_wma_odd() {
     let stats = common::test_data();
-    let results = smooth::wma(&stats.close, 15);
-    assert_eq!(
-        vec![
+    let result = smooth::wma(&stats.close, 15).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
+    assert!(common::vec_eq(
+        &vec![
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
             46.527750301361095,
             45.404666932423915,
             44.474083487192786,
@@ -242,16 +383,33 @@ fn test_wma_odd() {
             46.773583825429284,
             47.281291866302496
         ],
-        results.collect::<Vec<_>>()
-    );
+        &result
+    ));
 }
 
 #[test]
 fn test_vma_even() {
     let stats = common::test_data();
-    let results = smooth::vma(&stats.close, 16);
-    assert_eq!(
-        vec![
+    let result = smooth::vma(&stats.close, 16).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
+    assert!(common::vec_eq(
+        &vec![
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
             12.559081048015681,
             13.753189597123288,
             14.814783120008226,
@@ -271,16 +429,32 @@ fn test_vma_even() {
             29.00800914486834,
             29.672845402427125,
         ],
-        results.collect::<Vec<_>>()
-    );
+        &result
+    ));
 }
 
 #[test]
 fn test_vma_odd() {
     let stats = common::test_data();
-    let results = smooth::vma(&stats.close, 15);
-    assert_eq!(
-        vec![
+    let result = smooth::vma(&stats.close, 15).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
+    assert!(common::vec_eq(
+        &vec![
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
             11.935543349426927,
             13.224364249350236,
             14.461385584636243,
@@ -301,16 +475,26 @@ fn test_vma_odd() {
             30.086715436149444,
             30.75554364251794,
         ],
-        results.collect::<Vec<_>>()
-    );
+        &result
+    ));
 }
 
 #[test]
 fn test_vma_small_window() {
     let stats = common::test_data();
-    let results = smooth::vma(&stats.close, 7);
-    assert_eq!(
-        vec![
+    let result = smooth::vma(&stats.close, 7).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
+    assert!(common::vec_eq(
+        &vec![
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
             0.37715362566468247,
             4.622867058251505,
             10.844013599747367,
@@ -337,16 +521,35 @@ fn test_vma_small_window() {
             41.49233065069245,
             42.03570500577861,
         ],
-        results.collect::<Vec<_>>()
-    );
+        &result
+    ));
 }
 
 #[test]
 fn test_hull_even() {
     let stats = common::test_data();
-    let results = smooth::hull(&stats.close, 16);
-    assert_eq!(
-        vec![
+    let result = smooth::hull(&stats.close, 16).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
+    assert!(common::vec_eq(
+        &vec![
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
             39.52407458124597,
             39.376835387049155,
             39.550428849887226,
@@ -364,16 +567,33 @@ fn test_hull_even() {
             49.23747921675638,
             49.964879527123145
         ],
-        results.collect::<Vec<_>>()
-    );
+        &result
+    ));
 }
 
 #[test]
 fn test_hull_odd() {
     let stats = common::test_data();
-    let results = smooth::hull(&stats.close, 15);
-    assert_eq!(
-        vec![
+    let result = smooth::hull(&stats.close, 15).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
+    assert!(common::vec_eq(
+        &vec![
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
             40.84390720438073,
             40.046115124667125,
             39.721994749705,
@@ -393,16 +613,43 @@ fn test_hull_odd() {
             49.34222279301395,
             50.0292250280027
         ],
-        results.collect::<Vec<_>>()
-    );
+        &result
+    ));
 }
 
 #[test]
 fn test_dema_even() {
     let stats = common::test_data();
-    let results = smooth::dema(&stats.close, 14);
-    assert_eq!(
-        vec![
+    let result = smooth::dema(&stats.close, 14).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
+    assert!(common::vec_eq(
+        &vec![
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
             43.15529547948386,
             43.705869121555104,
             44.611040038028165,
@@ -412,16 +659,41 @@ fn test_dema_even() {
             48.0159797504427,
             48.477344590672004,
         ],
-        results.collect::<Vec<_>>()
-    );
+        &result
+    ));
 }
 
 #[test]
 fn test_dema_odd() {
     let stats = common::test_data();
-    let results = smooth::dema(&stats.close, 13);
-    assert_eq!(
-        vec![
+    let result = smooth::dema(&stats.close, 13).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
+    assert!(common::vec_eq(
+        &vec![
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
             41.878167223746416,
             42.82091685522181,
             43.095979440396235,
@@ -433,16 +705,38 @@ fn test_dema_odd() {
             48.245239835005584,
             48.692560341186216,
         ],
-        results.collect::<Vec<_>>()
-    );
+        &result
+    ));
 }
 
 #[test]
 fn test_tema_even() {
     let stats = common::test_data();
-    let results = smooth::tema(&stats.close, 8);
-    assert_eq!(
-        vec![
+    let result = smooth::tema(&stats.close, 8).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
+    assert!(common::vec_eq(
+        &vec![
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
             41.85245710750277,
             42.65215910237417,
             42.76254104206679,
@@ -457,16 +751,35 @@ fn test_tema_even() {
             50.92541420046855,
             50.65205563565898,
         ],
-        results.collect::<Vec<_>>()
-    );
+        &result
+    ));
 }
 
 #[test]
 fn test_tema_odd() {
     let stats = common::test_data();
-    let results = smooth::tema(&stats.close, 7);
-    assert_eq!(
-        vec![
+    let result = smooth::tema(&stats.close, 7).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
+    assert!(common::vec_eq(
+        &vec![
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
             40.30171911199053,
             40.4845463271717,
             41.32284194234779,
@@ -484,16 +797,32 @@ fn test_tema_odd() {
             50.948867388256396,
             50.52826712062671,
         ],
-        results.collect::<Vec<_>>()
-    );
+        &result
+    ));
 }
 
 #[test]
 fn test_wilder_even() {
     let stats = common::test_data();
-    let results = smooth::wilder(&stats.close, 16);
-    assert_eq!(
-        vec![
+    let result = smooth::wilder(&stats.close, 16).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
+    assert!(common::vec_eq(
+        &vec![
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
             48.42312526702881,
             47.967929899692535,
             47.418059166520834,
@@ -514,16 +843,31 @@ fn test_wilder_even() {
             46.55729031195337,
             46.72839705301537,
         ],
-        results.collect::<Vec<_>>()
-    );
+        &result
+    ));
 }
 
 #[test]
 fn test_wilder_odd() {
     let stats = common::test_data();
-    let results = smooth::wilder(&stats.close, 15);
-    assert_eq!(
-        vec![
+    let result = smooth::wilder(&stats.close, 15).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
+    assert!(common::vec_eq(
+        &vec![
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
             48.984666951497395,
             48.385689154730905,
             47.90264317039207,
@@ -545,16 +889,32 @@ fn test_wilder_odd() {
             46.523486444150215,
             46.70825389246989,
         ],
-        results.collect::<Vec<_>>()
-    );
+        &result
+    ));
 }
 
 #[test]
 fn test_lrf() {
     let stats = common::test_data();
-    let result = smooth::lrf(&stats.close, 16);
-    assert_eq!(
-        vec![
+    let result = smooth::lrf(&stats.close, 16).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
+    assert!(common::vec_eq(
+        &vec![
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
             40.43308849895702,
             38.47007355970494,
             37.890220025006464,
@@ -575,16 +935,32 @@ fn test_lrf() {
             49.934633058660175,
             50.23628669626572,
         ],
-        result.collect::<Vec<_>>()
-    );
+        &result
+    ));
 }
 
 #[test]
 fn test_trima_even() {
     let stats = common::test_data();
-    let result = smooth::trima(&stats.close, 16);
-    assert_eq!(
-        vec![
+    let result = smooth::trima(&stats.close, 16).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
+    assert!(common::vec_eq(
+        &vec![
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
             48.20791710747613,
             47.198889308505585,
             46.07638925976224,
@@ -605,16 +981,31 @@ fn test_trima_even() {
             44.77319468392266,
             45.403264098697235,
         ],
-        result.collect::<Vec<_>>()
-    );
+        &result
+    ));
 }
 
 #[test]
 fn test_trima_odd() {
     let stats = common::test_data();
-    let result = smooth::trima(&stats.close, 15);
-    assert_eq!(
-        vec![
+    let result = smooth::trima(&stats.close, 15).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
+    assert!(common::vec_eq(
+        &vec![
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
             48.712344229221344,
             47.64968794584274,
             46.51796919107437,
@@ -636,16 +1027,39 @@ fn test_trima_odd() {
             45.093906462192535,
             45.69164079427719,
         ],
-        result.collect::<Vec<_>>()
-    );
+        &result
+    ));
 }
 
 #[test]
 fn test_zlma() {
     let stats = common::test_data();
-    let result = smooth::zlma(&stats.close, 16);
-    assert_eq!(
-        vec![
+    let result = smooth::zlma(&stats.close, 16).collect::<Vec<f64>>();
+    assert_eq!(stats.close.len(), result.len());
+    assert!(common::vec_eq(
+        &vec![
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
             37.98812532424927,
             38.66716965507059,
             40.19926762993361,
@@ -659,16 +1073,32 @@ fn test_zlma() {
             47.99770003005625,
             48.72149975724747,
         ],
-        result.collect::<Vec<_>>()
-    );
+        &result
+    ));
 }
 
 #[test]
 fn test_pwma_even() {
     let stats = common::test_data();
-    let result = smooth::pwma(&stats.close, 16);
-    assert_eq!(
-        vec![
+    let result = smooth::pwma(&stats.close, 16).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
+    assert!(common::vec_eq(
+        &vec![
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
             47.346637923270464,
             46.64698213338852,
             45.94873468449805,
@@ -689,16 +1119,31 @@ fn test_pwma_even() {
             44.77303191553801,
             45.36730686575174,
         ],
-        result.collect::<Vec<f64>>()
-    );
+        &result
+    ));
 }
 
 #[test]
 fn test_pwma_odd() {
     let stats = common::test_data();
-    let result = smooth::pwma(&stats.close, 15);
-    assert_eq!(
-        vec![
+    let result = smooth::pwma(&stats.close, 15).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
+    assert!(common::vec_eq(
+        &vec![
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
             47.71521001239307,
             46.978065834147856,
             46.31589843262918,
@@ -720,16 +1165,17 @@ fn test_pwma_odd() {
             45.08232228946872,
             45.652291442034766,
         ],
-        result.collect::<Vec<f64>>()
-    );
+        &result
+    ));
 }
 
 #[test]
 fn test_kernel() {
     let stats = common::test_data();
-    let result = smooth::kernel(&stats.close, 16.0);
-    assert_eq!(
-        vec![
+    let result = smooth::kernel(&stats.close, 16.0).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
+    assert!(common::vec_eq(
+        &vec![
             46.0,
             52.9067378972657,
             56.996702339360866,
@@ -765,16 +1211,26 @@ fn test_kernel() {
             45.42984879567209,
             45.63317463349805
         ],
-        result.collect::<Vec<f64>>()
-    );
+        &result
+    ));
 }
 
 #[test]
 fn test_kama() {
     let stats = common::test_data();
-    let result = smooth::kama(&stats.close, 10, None, None);
-    assert_eq!(
-        vec![
+    let result = smooth::kama(&stats.close, 10, None, None).collect::<Vec<f64>>();
+    assert_eq!(stats.close.len(), result.len());
+    assert!(common::vec_eq(
+        &vec![
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
             0.3325260623850646,
             4.130932121107074,
             11.886580079601021,
@@ -801,16 +1257,27 @@ fn test_kama() {
             41.76602359325074,
             42.17213740668087,
         ],
-        result.collect::<Vec<f64>>()
-    );
+        &result,
+    ));
 }
 
 #[test]
 fn test_alma() {
     let stats = common::test_data();
-    let result = smooth::alma(&stats.close, 10, 6.0, None);
-    assert_eq!(
-        vec![
+    let result = smooth::alma(&stats.close, 10, 6.0, None).collect::<Vec<f64>>();
+    assert_eq!(stats.close.len(), result.len());
+    assert!(common::vec_eq(
+        &vec![
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
             57.54612121811094,
             54.16044893238803,
             50.04406389693869,
@@ -836,6 +1303,6 @@ fn test_alma() {
             44.99082315775868,
             45.70885781597345,
         ],
-        result.collect::<Vec<f64>>()
-    );
+        &result,
+    ));
 }
