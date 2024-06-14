@@ -120,13 +120,15 @@ pub fn keltner<'a>(
 ///
 /// ```
 pub fn gri<'a>(high: &'a [f64], low: &'a [f64], window: usize) -> impl Iterator<Item = f64> + 'a {
-    high.windows(window)
-        .zip(low.windows(window))
-        .map(move |(h, l)| {
-            let hh = h.iter().fold(f64::NAN, |state, &x| state.max(x));
-            let ll = l.iter().fold(f64::NAN, |state, &x| state.min(x));
-            f64::ln(hh - ll) / f64::ln(window as f64)
-        })
+    iter::repeat(f64::NAN).take(window - 1).chain(
+        high.windows(window)
+            .zip(low.windows(window))
+            .map(move |(h, l)| {
+                let hh = h.iter().fold(f64::NAN, |state, &x| state.max(x));
+                let ll = l.iter().fold(f64::NAN, |state, &x| state.min(x));
+                f64::ln(hh - ll) / f64::ln(window as f64)
+            }),
+    )
 }
 
 pub(crate) fn _true_range<'a>(
@@ -308,11 +310,13 @@ pub fn donchian<'a>(
     low: &'a [f64],
     window: usize,
 ) -> impl Iterator<Item = (f64, f64, f64)> + 'a {
-    high.windows(window).zip(low.windows(window)).map(|(h, l)| {
-        let hh = h.iter().fold(f64::NAN, |state, &x| state.max(x));
-        let ll = l.iter().fold(f64::NAN, |state, &x| state.min(x));
-        (hh, (hh + ll) / 2.0, ll)
-    })
+    iter::repeat((f64::NAN, f64::NAN, f64::NAN))
+        .take(window - 1)
+        .chain(high.windows(window).zip(low.windows(window)).map(|(h, l)| {
+            let hh = h.iter().fold(f64::NAN, |state, &x| state.max(x));
+            let ll = l.iter().fold(f64::NAN, |state, &x| state.min(x));
+            (hh, (hh + ll) / 2.0, ll)
+        }))
 }
 
 /// Fractal Chaos Bands
@@ -335,37 +339,32 @@ pub fn donchian<'a>(
 ///
 /// ```
 pub fn fbands<'a>(high: &'a [f64], low: &'a [f64]) -> impl Iterator<Item = (f64, f64)> + 'a {
-    high.windows(5)
-        .zip(low.windows(5))
-        .scan((0.0, 0.0), |state, (h, l)| {
-            let (hh, _) =
-                h.iter().enumerate().fold(
-                    (0, h[0]),
-                    |state, (idx, x)| {
-                        if x > &state.1 {
-                            (idx, *x)
-                        } else {
-                            state
-                        }
-                    },
-                );
-            let upper = if hh == 2 { h[2] } else { state.0 };
+    let win = 5;
+    iter::repeat((f64::NAN, f64::NAN)).take(win - 1).chain(
+        high.windows(win)
+            .zip(low.windows(win))
+            .scan((0.0, 0.0), |state, (h, l)| {
+                let (hh, _) = h.iter().enumerate().fold((0, h[0]), |state, (idx, x)| {
+                    if x > &state.1 {
+                        (idx, *x)
+                    } else {
+                        state
+                    }
+                });
+                let upper = if hh == 2 { h[2] } else { state.0 };
 
-            let (ll, _) =
-                l.iter().enumerate().fold(
-                    (0, l[0]),
-                    |state, (idx, x)| {
-                        if x < &state.1 {
-                            (idx, *x)
-                        } else {
-                            state
-                        }
-                    },
-                );
-            let lower = if ll == 2 { l[2] } else { state.1 };
-            *state = (upper, lower);
-            Some(*state)
-        })
+                let (ll, _) = l.iter().enumerate().fold((0, l[0]), |state, (idx, x)| {
+                    if x < &state.1 {
+                        (idx, *x)
+                    } else {
+                        state
+                    }
+                });
+                let lower = if ll == 2 { l[2] } else { state.1 };
+                *state = (upper, lower);
+                Some(*state)
+            }),
+    )
 }
 
 /// Historical Volatility
@@ -392,16 +391,18 @@ pub fn fbands<'a>(high: &'a [f64], low: &'a [f64]) -> impl Iterator<Item = (f64,
 /// ```
 pub fn hv(data: &[f64], window: usize, deviations: Option<f64>) -> impl Iterator<Item = f64> + '_ {
     let annualize = 252.0 * deviations.unwrap_or(1.0);
-    data.windows(2)
-        .map(|pair| f64::ln(pair[1] / pair[0]))
-        .collect::<Vec<f64>>()
-        .windows(window)
-        .map(move |w| {
-            let mean = w.iter().sum::<f64>() / window as f64;
-            (w.iter().map(|x| (x - mean).powi(2)).sum::<f64>() * annualize / window as f64).sqrt()
-        })
-        .collect::<Vec<f64>>()
-        .into_iter()
+    iter::repeat(f64::NAN).take(window).chain(
+        data.windows(2)
+            .map(|pair| f64::ln(pair[1] / pair[0]))
+            .collect::<Vec<f64>>()
+            .windows(window)
+            .map(move |w| {
+                let mean = w.iter().sum::<f64>() / window as f64;
+                (w.iter().map(|x| (x - mean).powi(2)).sum::<f64>() * annualize / window as f64)
+                    .sqrt()
+            })
+            .collect::<Vec<f64>>(),
+    )
 }
 
 /// Stoller Average Range Channel (STARC)
@@ -598,21 +599,22 @@ pub fn chop<'a>(
     close: &'a [f64],
     window: usize,
 ) -> impl Iterator<Item = f64> + 'a {
-    izip!(
-        high[1..].windows(window),
-        low[1..].windows(window),
-        _true_range(high, low, close)
-            .collect::<Vec<f64>>()
-            .windows(window)
+    iter::repeat(f64::NAN).take(window).chain(
+        izip!(
+            high[1..].windows(window),
+            low[1..].windows(window),
+            _true_range(high, low, close)
+                .collect::<Vec<f64>>()
+                .windows(window)
+        )
+        .map(|(h, l, tr)| {
+            let hh = h.iter().fold(f64::NAN, |state, &x| state.max(x));
+            let ll = l.iter().fold(f64::NAN, |state, &x| state.min(x));
+            let tr_sum = tr.iter().sum::<f64>();
+            100.0 * f64::ln(tr_sum / (hh - ll)) / f64::ln(window as f64)
+        })
+        .collect::<Vec<f64>>(),
     )
-    .map(|(h, l, tr)| {
-        let hh = h.iter().fold(f64::NAN, |state, &x| state.max(x));
-        let ll = l.iter().fold(f64::NAN, |state, &x| state.min(x));
-        let tr_sum = tr.iter().sum::<f64>();
-        100.0 * f64::ln(tr_sum / (hh - ll)) / f64::ln(window as f64)
-    })
-    .collect::<Vec<f64>>()
-    .into_iter()
 }
 
 /// Vertical horizontal filter
@@ -653,16 +655,17 @@ pub fn vhf<'a>(
             (curr - prev).abs()
         })
         .collect::<Vec<f64>>();
-    izip!(
-        diffs.windows(window),
-        high.windows(window).skip(1),
-        low.windows(window).skip(1)
+    iter::repeat(f64::NAN).take(window).chain(
+        izip!(
+            diffs.windows(window),
+            high.windows(window).skip(1),
+            low.windows(window).skip(1)
+        )
+        .map(|(diff, h, l)| {
+            (h.iter().fold(f64::NAN, |state, &x| state.max(x))
+                - l.iter().fold(f64::NAN, |state, &x| state.min(x)))
+                / diff.iter().sum::<f64>()
+        })
+        .collect::<Vec<f64>>(),
     )
-    .map(|(diff, h, l)| {
-        (h.iter().fold(f64::NAN, |state, &x| state.max(x))
-            - l.iter().fold(f64::NAN, |state, &x| state.min(x)))
-            / diff.iter().sum::<f64>()
-    })
-    .collect::<Vec<f64>>()
-    .into_iter()
 }
