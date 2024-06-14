@@ -326,7 +326,9 @@ pub fn supertrend<'a>(
     multiplier: f64,
 ) -> impl Iterator<Item = f64> + 'a {
     // TODO: needs a test for when it actually flips to use upper band line
-    izip!(high, low, close, atr(high, low, close, window))
+    let tr = _true_range(high, low, close).collect::<Vec<f64>>();
+    let atr = iter::once(f64::NAN).chain(smooth::wilder(&tr, window));
+    izip!(high, low, close, atr)
         .scan(
             (f64::NAN, f64::NAN, f64::MIN_POSITIVE, 1),
             |state, (h, l, c, tr)| {
