@@ -78,6 +78,7 @@ fn test_shinohara() {
     let stats = common::test_data();
     let results =
         trend::shinohara(&stats.high, &stats.low, &stats.close, 26).collect::<Vec<(f64, f64)>>();
+    assert_eq!(stats.close.len(), results.len());
     assert_eq!(
         vec![
             //(f64::NAN, 130.9311144714237),
@@ -90,7 +91,7 @@ fn test_shinohara() {
             (150.77427373025645, 143.57856018147575),
             (150.9041867287, 133.74958218587676),
         ],
-        results[1..]
+        results[26..]
     );
 }
 
@@ -99,6 +100,7 @@ fn test_vortex() {
     let stats = common::test_data();
     let (vi_pos, vi_neg): (Vec<f64>, Vec<f64>) =
         trend::vortex(&stats.high, &stats.low, &stats.close, 16).unzip();
+    assert_eq!(stats.close.len(), vi_neg.len());
     assert_eq!(
         vec![
             0.8610723090930696,
@@ -120,7 +122,7 @@ fn test_vortex() {
             1.161732264987062,
             1.1478332770638693,
         ],
-        vi_pos
+        vi_pos[16..]
     );
     assert_eq!(
         vec![
@@ -143,14 +145,16 @@ fn test_vortex() {
             0.6974842970716879,
             0.7557323147066469,
         ],
-        vi_neg
+        vi_neg[16..]
     );
 }
 
 #[test]
 fn test_asi() {
     let stats = common::test_data();
-    let result = trend::asi(&stats.open, &stats.high, &stats.low, &stats.close, 0.5);
+    let result =
+        trend::asi(&stats.open, &stats.high, &stats.low, &stats.close, 0.5).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
     assert_eq!(
         vec![
             1863.9824746176116,
@@ -187,7 +191,7 @@ fn test_asi() {
             499.93140160760476,
             178.6712171227731,
         ],
-        result.collect::<Vec<f64>>()
+        result[1..]
     );
 }
 
@@ -287,7 +291,8 @@ fn test_supertrend() {
 #[test]
 fn test_rwi() {
     let stats = common::test_data();
-    let result = trend::rwi(&stats.high, &stats.low, &stats.close, 16);
+    let result = trend::rwi(&stats.high, &stats.low, &stats.close, 16).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
     assert_eq!(
         vec![
             (0.9498065403643551, 1.7412617466727387,),
@@ -309,14 +314,15 @@ fn test_rwi() {
             (2.6484633151147925, 0.21501740699560723,),
             (1.111277033009784, 1.1996531008663207,),
         ],
-        result.collect::<Vec<(f64, f64)>>()
+        result[16..]
     );
 }
 
 #[test]
 fn test_psar() {
     let stats = common::test_data();
-    let result = trend::psar(&stats.high, &stats.low, None, None);
+    let result = trend::psar(&stats.high, &stats.low, None, None).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
     assert_eq!(
         vec![
             45.34000015258789,
@@ -353,7 +359,7 @@ fn test_psar() {
             41.82072043040582,
             43.42143396044658
         ],
-        result.collect::<Vec<f64>>()
+        result[1..]
     );
 }
 
@@ -406,7 +412,8 @@ fn test_dpo() {
 #[test]
 fn test_zigzag_short() {
     let mut stats = common::test_data();
-    let result = trend::zigzag(&stats.close, &stats.close, Some(3.0)).collect::<Vec<f64>>();
+    let result = trend::zigzag(&stats.close, &stats.close, Some(3.0)).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
     let expected = vec![
         46.0,
         f64::NAN,
@@ -452,7 +459,8 @@ fn test_zigzag_short() {
 #[test]
 fn test_zigzag_long() {
     let stats = common::test_data();
-    let result = trend::zigzag(&stats.close, &stats.close, Some(15.0)).collect::<Vec<f64>>();
+    let result = trend::zigzag(&stats.close, &stats.close, Some(15.0)).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
     let expected = vec![
         46.0,
         f64::NAN,
@@ -526,7 +534,8 @@ fn test_chandelier() {
 #[test]
 fn test_aroon() {
     let stats = common::test_data();
-    let result = trend::aroon(&stats.high, &stats.low, 16);
+    let result = trend::aroon(&stats.high, &stats.low, 16).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
     assert_eq!(
         vec![
             (12.5, 100.0),
@@ -548,14 +557,15 @@ fn test_aroon() {
             (100.0, 12.5),
             (93.75, 6.25)
         ],
-        result.collect::<Vec<(f64, f64)>>()
+        result[16..]
     );
 }
 
 #[test]
 fn test_decay() {
     let stats = common::test_data();
-    let result = trend::decay(&stats.close, 6);
+    let result = trend::decay(&stats.close, 6).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
     assert_eq!(
         vec![
             46.0,
@@ -593,7 +603,7 @@ fn test_decay() {
             60.11000061035159,
             59.94333394368493,
         ],
-        result.collect::<Vec<f64>>()
+        result
     );
 }
 

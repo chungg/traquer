@@ -59,7 +59,7 @@ pub fn shinohara<'a>(
         .windows(window)
         .map(|w| w.iter().sum())
         .collect::<Vec<f64>>();
-    // yahoo uses close rather than open for weak ratio described above
+    // NOTE: using close rather than open for weak ratio described above
     let weak_ratio = izip!(&high_win, &low_win, &close_win)
         .map(|(h, l, c)| 100.0 * (h - c) / (c - l))
         .collect::<Vec<f64>>();
@@ -70,7 +70,10 @@ pub fn shinohara<'a>(
     )
     .map(|(h, l, c)| 100.0 * (h - c) / (c - l))
     .collect::<Vec<f64>>();
-    iter::once(f64::NAN).chain(strong_ratio).zip(weak_ratio)
+    iter::repeat(f64::NAN)
+        .take(window)
+        .chain(strong_ratio)
+        .zip(iter::repeat(f64::NAN).take(window - 1).chain(weak_ratio))
 }
 
 /// Average directional index
@@ -180,33 +183,34 @@ pub fn vortex<'a>(
     close: &'a [f64],
     window: usize,
 ) -> impl Iterator<Item = (f64, f64)> + 'a {
-    izip!(
-        &high[..high.len() - 1],
-        &high[1..],
-        &low[..low.len() - 1],
-        &low[1..],
-        &close[..close.len() - 1],
+    iter::repeat((f64::NAN, f64::NAN)).take(window).chain(
+        izip!(
+            &high[..high.len() - 1],
+            &high[1..],
+            &low[..low.len() - 1],
+            &low[1..],
+            &close[..close.len() - 1],
+        )
+        .map(|(prevh, h, prevl, l, prevc)| {
+            let vm_pos = (h - prevl).abs();
+            let vm_neg = (l - prevh).abs();
+            let tr = (h - l).max(f64::abs(h - prevc)).max(f64::abs(l - prevc));
+            (vm_pos, vm_neg, tr)
+        })
+        .collect::<Vec<(f64, f64, f64)>>()
+        .windows(window)
+        .map(|w| {
+            let (vm_pos, vm_neg, tr) = w
+                .iter()
+                .copied()
+                .reduce(|(acc_pos, acc_neg, acc_tr), (pos, neg, tr)| {
+                    (acc_pos + pos, acc_neg + neg, acc_tr + tr)
+                })
+                .unwrap();
+            (vm_pos / tr, vm_neg / tr)
+        })
+        .collect::<Vec<(f64, f64)>>(),
     )
-    .map(|(prevh, h, prevl, l, prevc)| {
-        let vm_pos = (h - prevl).abs();
-        let vm_neg = (l - prevh).abs();
-        let tr = (h - l).max(f64::abs(h - prevc)).max(f64::abs(l - prevc));
-        (vm_pos, vm_neg, tr)
-    })
-    .collect::<Vec<(f64, f64, f64)>>()
-    .windows(window)
-    .map(|w| {
-        let (vm_pos, vm_neg, tr) = w
-            .iter()
-            .copied()
-            .reduce(|(acc_pos, acc_neg, acc_tr), (pos, neg, tr)| {
-                (acc_pos + pos, acc_neg + neg, acc_tr + tr)
-            })
-            .unwrap();
-        (vm_pos / tr, vm_neg / tr)
-    })
-    .collect::<Vec<(f64, f64)>>()
-    .into_iter()
 }
 
 /// Accumulative Swing Index
@@ -242,10 +246,10 @@ pub fn asi<'a>(
     close: &'a [f64],
     limit: f64,
 ) -> impl Iterator<Item = f64> + 'a {
-    _swing(open, high, low, close, limit).scan(0.0, |acc, x| {
+    iter::once(f64::NAN).chain(_swing(open, high, low, close, limit).scan(0.0, |acc, x| {
         *acc += x;
         Some(*acc)
-    })
+    }))
 }
 
 /// Ulcer Index
@@ -390,27 +394,28 @@ pub fn rwi<'a>(
     window: usize,
 ) -> impl Iterator<Item = (f64, f64)> + 'a {
     // looks back n number of periods *including* current. other libs may not include current.
-    izip!(
-        high[1..].windows(window),
-        low[1..].windows(window),
-        _true_range(high, low, close)
-            .collect::<Vec<f64>>()
-            .windows(window),
+    iter::repeat((f64::NAN, f64::NAN)).take(window).chain(
+        izip!(
+            high[1..].windows(window),
+            low[1..].windows(window),
+            _true_range(high, low, close)
+                .collect::<Vec<f64>>()
+                .windows(window),
+        )
+        .map(|(h, l, tr)| {
+            let mut rwi_high: f64 = 0.0;
+            let mut rwi_low: f64 = 0.0;
+            let mut tr_sum = 0.0;
+            for i in 2..=window {
+                tr_sum += tr[window - i];
+                let denom = (tr_sum / (i - 1) as f64) * ((i - 1) as f64).sqrt();
+                rwi_high = rwi_high.max((h[window - 1] - l[window - i]) / denom);
+                rwi_low = rwi_low.max((h[window - i] - l[window - 1]) / denom);
+            }
+            (rwi_high, rwi_low)
+        })
+        .collect::<Vec<(f64, f64)>>(),
     )
-    .map(|(h, l, tr)| {
-        let mut rwi_high: f64 = 0.0;
-        let mut rwi_low: f64 = 0.0;
-        let mut tr_sum = 0.0;
-        for i in 2..=window {
-            tr_sum += tr[window - i];
-            let denom = (tr_sum / (i - 1) as f64) * ((i - 1) as f64).sqrt();
-            rwi_high = rwi_high.max((h[window - 1] - l[window - i]) / denom);
-            rwi_low = rwi_low.max((h[window - i] - l[window - 1]) / denom);
-        }
-        (rwi_high, rwi_low)
-    })
-    .collect::<Vec<(f64, f64)>>()
-    .into_iter()
 }
 
 /// Parabolic Stop and Reverse (SAR)
@@ -478,7 +483,7 @@ pub fn psar<'a>(
         }
         result.push(sar);
     }
-    result.into_iter()
+    iter::once(f64::NAN).chain(result)
 }
 
 /// Detrended Price Oscillator
@@ -544,36 +549,30 @@ pub fn aroon<'a>(
     low: &'a [f64],
     window: usize,
 ) -> impl Iterator<Item = (f64, f64)> + 'a {
-    high.windows(window + 1)
-        .zip(low.windows(window + 1))
-        .map(move |(h, l)| {
-            let (hh, _) =
-                h.iter().enumerate().fold(
-                    (0, h[0]),
-                    |state, (idx, x)| {
-                        if x >= &state.1 {
-                            (idx, *x)
-                        } else {
-                            state
-                        }
-                    },
-                );
-            let (ll, _) =
-                l.iter().enumerate().fold(
-                    (0, l[0]),
-                    |state, (idx, x)| {
-                        if x <= &state.1 {
-                            (idx, *x)
-                        } else {
-                            state
-                        }
-                    },
-                );
-            (
-                hh as f64 / window as f64 * 100.0,
-                ll as f64 / window as f64 * 100.0,
-            )
-        })
+    iter::repeat((f64::NAN, f64::NAN)).take(window).chain(
+        high.windows(window + 1)
+            .zip(low.windows(window + 1))
+            .map(move |(h, l)| {
+                let (hh, _) = h.iter().enumerate().fold((0, h[0]), |state, (idx, x)| {
+                    if x >= &state.1 {
+                        (idx, *x)
+                    } else {
+                        state
+                    }
+                });
+                let (ll, _) = l.iter().enumerate().fold((0, l[0]), |state, (idx, x)| {
+                    if x <= &state.1 {
+                        (idx, *x)
+                    } else {
+                        state
+                    }
+                });
+                (
+                    hh as f64 / window as f64 * 100.0,
+                    ll as f64 / window as f64 * 100.0,
+                )
+            }),
+    )
 }
 
 /// Chandelier Exit
