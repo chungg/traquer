@@ -58,5 +58,4 @@ The results are in the same scale as input data and is often used as a signal li
 ## TODO
 - simplify reqs
 - handle div by zero scenarios
-- pad results with nan to match len of inputs
 - allow other numeric types rather than just f64
