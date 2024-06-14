@@ -34,7 +34,9 @@ fn test_twiggs() {
 #[test]
 fn test_kvo() {
     let stats = common::test_data();
-    let result = volume::kvo(&stats.high, &stats.low, &stats.close, &stats.volume, 10, 16);
+    let result = volume::kvo(&stats.high, &stats.low, &stats.close, &stats.volume, 10, 16)
+        .collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
     assert_eq!(
         vec![
             -656322.9297191856,
@@ -56,14 +58,15 @@ fn test_kvo() {
             1045791.2002935112,
             491703.71571153356,
         ],
-        result.collect::<Vec<f64>>()
+        result[16..]
     );
 }
 
 #[test]
 fn test_elder_force() {
     let stats = common::test_data();
-    let result = volume::elder_force(&stats.close, &stats.volume, 16);
+    let result = volume::elder_force(&stats.close, &stats.volume, 16).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
     assert_eq!(
         vec![
             15163924.326658249,
@@ -85,7 +88,7 @@ fn test_elder_force() {
             6967489.387947403,
             5483494.728818839,
         ],
-        result.collect::<Vec<f64>>()
+        result[16..]
     );
 }
 #[test]
@@ -279,7 +282,8 @@ fn test_tvi() {
 #[test]
 fn test_ease() {
     let stats = common::test_data();
-    let result = volume::ease(&stats.high, &stats.low, &stats.volume, 16);
+    let result = volume::ease(&stats.high, &stats.low, &stats.volume, 16).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
     assert_eq!(
         vec![
             -30.071767986066288,
@@ -301,7 +305,7 @@ fn test_ease() {
             76.98413524618097,
             64.64598529287485,
         ],
-        result.collect::<Vec<f64>>()
+        result[16..]
     );
 }
 

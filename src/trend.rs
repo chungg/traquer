@@ -70,10 +70,7 @@ pub fn shinohara<'a>(
     )
     .map(|(h, l, c)| 100.0 * (h - c) / (c - l))
     .collect::<Vec<f64>>();
-    iter::repeat(f64::NAN)
-        .take(1)
-        .chain(strong_ratio)
-        .zip(weak_ratio)
+    iter::once(f64::NAN).chain(strong_ratio).zip(weak_ratio)
 }
 
 /// Average directional index
@@ -139,16 +136,16 @@ pub fn adx<'a>(
     let di_neg = izip!(smooth::wilder(&dm_neg, window), &atr)
         .map(|(di, tr)| di / tr * 100.0)
         .collect::<Vec<f64>>();
-    let dx = izip!(&di_pos, &di_neg)
+    let dx = izip!(&di_pos[window - 1..], &di_neg[window - 1..])
         .map(|(pos, neg)| f64::abs(pos - neg) / (pos + neg) * 100.0)
         .collect::<Vec<f64>>();
-    izip!(
+    iter::once((f64::NAN, f64::NAN, f64::NAN)).chain(izip!(
         di_pos,
         di_neg,
         iter::repeat(f64::NAN)
-            .take(smoothing - 1)
+            .take(window - 1)
             .chain(smooth::wilder(&dx, smoothing).collect::<Vec<f64>>()),
-    )
+    ))
 }
 
 /// Vortex
@@ -279,16 +276,17 @@ pub fn ulcer(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
     let highest = data
         .windows(window)
         .map(|w| w.iter().fold(f64::NAN, |state, &x| state.max(x)));
-    smooth::sma(
-        &highest
-            .zip(data.iter().skip(window - 1))
-            .map(|(high, c)| (100.0 * (c - high) / high).powi(2))
-            .collect::<Vec<f64>>(),
-        window,
+    iter::repeat(f64::NAN).take(window - 1).chain(
+        smooth::sma(
+            &highest
+                .zip(data.iter().skip(window - 1))
+                .map(|(high, c)| (100.0 * (c - high) / high).powi(2))
+                .collect::<Vec<f64>>(),
+            window,
+        )
+        .map(|x| x.sqrt())
+        .collect::<Vec<f64>>(),
     )
-    .map(|x| x.sqrt())
-    .collect::<Vec<f64>>()
-    .into_iter()
 }
 
 /// Supertrend
@@ -324,8 +322,7 @@ pub fn supertrend<'a>(
     multiplier: f64,
 ) -> impl Iterator<Item = f64> + 'a {
     // TODO: needs a test for when it actually flips to use upper band line
-    let atr = atr(high, low, close, window);
-    izip!(&high[window..], &low[window..], &close[window..], atr)
+    izip!(high, low, close, atr(high, low, close, window))
         .scan(
             (f64::NAN, f64::NAN, f64::MIN_POSITIVE, 1),
             |state, (h, l, c, tr)| {
@@ -510,7 +507,12 @@ pub fn dpo(
 ) -> impl Iterator<Item = f64> + '_ {
     let ma = smooth::ma(data, window, mamode.unwrap_or(smooth::MaMode::SMA));
     let lag = window / 2 + 1;
-    data[window - lag - 1..].iter().zip(ma).map(|(x, y)| x - y)
+    iter::repeat(f64::NAN).take(window - 1).chain(
+        data[window - lag - 1..]
+            .iter()
+            .zip(ma.skip(window - 1))
+            .map(|(x, y)| x - y),
+    )
 }
 
 /// Aroon
@@ -609,16 +611,18 @@ pub fn chandelier<'a>(
     multiplier: Option<f64>,
 ) -> impl Iterator<Item = (f64, f64)> + 'a {
     let multiplier = multiplier.unwrap_or(3.0);
-    izip!(
-        high.windows(window),
-        low.windows(window),
-        atr(high, low, close, window)
+    iter::repeat((f64::NAN, f64::NAN)).take(window).chain(
+        izip!(
+            high.windows(window).skip(1),
+            low.windows(window).skip(1),
+            atr(high, low, close, window).skip(window)
+        )
+        .map(move |(h, l, atr)| {
+            let hh = h.iter().fold(f64::NAN, |state, &x| state.max(x));
+            let ll = l.iter().fold(f64::NAN, |state, &x| state.min(x));
+            (hh - multiplier * atr, ll + multiplier * atr)
+        }),
     )
-    .map(move |(h, l, atr)| {
-        let hh = h.iter().fold(f64::NAN, |state, &x| state.max(x));
-        let ll = l.iter().fold(f64::NAN, |state, &x| state.min(x));
-        (hh - multiplier * atr, ll + multiplier * atr)
-    })
 }
 
 /// ZigZag Indicator
@@ -768,28 +772,31 @@ pub fn cks<'a>(
     multiplier: Option<f64>,
 ) -> impl Iterator<Item = (f64, f64)> + 'a {
     let multiplier = multiplier.unwrap_or(1.0);
-    izip!(
-        high[1..].windows(win1),
-        low[1..].windows(win1),
-        atr(high, low, close, win1)
-    )
-    .map(|(h, l, tr)| {
-        (
-            h.iter().fold(f64::NAN, |state, &x| state.max(x)) - multiplier * tr,
-            l.iter().fold(f64::NAN, |state, &x| state.min(x)) + multiplier * tr,
+    iter::repeat((f64::NAN, f64::NAN))
+        .take(win1 + (win2 - 1))
+        .chain(
+            izip!(
+                high[1..].windows(win1),
+                low[1..].windows(win1),
+                atr(high, low, close, win1).skip(win1)
+            )
+            .map(|(h, l, tr)| {
+                (
+                    h.iter().fold(f64::NAN, |state, &x| state.max(x)) - multiplier * tr,
+                    l.iter().fold(f64::NAN, |state, &x| state.min(x)) + multiplier * tr,
+                )
+            })
+            .collect::<Vec<(f64, f64)>>()
+            .windows(win2)
+            .map(|w| {
+                let mut hh: f64 = 0.0;
+                let mut ll: f64 = f64::MAX;
+                for (h, l) in w {
+                    hh = hh.max(*h);
+                    ll = ll.min(*l);
+                }
+                (hh, ll)
+            })
+            .collect::<Vec<(f64, f64)>>(),
         )
-    })
-    .collect::<Vec<(f64, f64)>>()
-    .windows(win2)
-    .map(|w| {
-        let mut hh: f64 = 0.0;
-        let mut ll: f64 = f64::MAX;
-        for (h, l) in w {
-            hh = hh.max(*h);
-            ll = ll.min(*l);
-        }
-        (hh, ll)
-    })
-    .collect::<Vec<(f64, f64)>>()
-    .into_iter()
 }

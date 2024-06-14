@@ -37,16 +37,21 @@ use crate::volatility::_true_range;
 ///
 /// ```
 pub fn rsi(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
-    let (gain, loss): (Vec<f64>, Vec<f64>) = data[1..]
-        .iter()
-        .zip(data[..data.len() - 1].iter())
-        .map(|(curr, prev)| (f64::max(0.0, curr - prev), f64::min(0.0, curr - prev).abs()))
+    let (gain, loss): (Vec<f64>, Vec<f64>) = data
+        .windows(2)
+        .map(|pair| {
+            (
+                f64::max(0.0, pair[1] - pair[0]),
+                f64::min(0.0, pair[1] - pair[0]).abs(),
+            )
+        })
         .unzip();
-    smooth::wilder(&gain, window)
-        .zip(smooth::wilder(&loss, window))
-        .map(|(g, l)| 100.0 * g / (g + l))
-        .collect::<Vec<f64>>()
-        .into_iter()
+    iter::once(f64::NAN).chain(
+        smooth::wilder(&gain, window)
+            .zip(smooth::wilder(&loss, window))
+            .map(|(g, l)| 100.0 * g / (g + l))
+            .collect::<Vec<f64>>(),
+    )
 }
 
 /// Moving average convergence/divergence
@@ -76,7 +81,7 @@ pub fn rsi(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
 pub fn macd(close: &[f64], short: usize, long: usize) -> impl Iterator<Item = f64> + '_ {
     let short_ma = smooth::ewma(close, short);
     let long_ma = smooth::ewma(close, long);
-    short_ma.skip(long - short).zip(long_ma).map(|(x, y)| x - y)
+    short_ma.zip(long_ma).map(|(x, y)| x - y)
 }
 
 /// Chande momentum oscillator
@@ -139,7 +144,7 @@ pub fn cmo(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
 /// ```
 pub fn cfo(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
     smooth::lrf(data, window)
-        .zip(data.iter().skip(window - 1))
+        .zip(data)
         .map(|(tsf, x)| 100.0 * (x - tsf) / x)
 }
 
@@ -182,12 +187,7 @@ pub fn elder_ray<'a>(
     window: usize,
 ) -> impl Iterator<Item = (f64, f64)> + 'a {
     let close_ma = smooth::ewma(close, window);
-    izip!(
-        high.iter().skip(window - 1),
-        low.iter().skip(window - 1),
-        close_ma
-    )
-    .map(|(h, l, c)| (h - c, l - c))
+    izip!(high, low, close_ma).map(|(h, l, c)| (h - c, l - c))
 }
 
 /// williams alligator
@@ -260,10 +260,7 @@ pub fn wpr<'a>(
 pub fn ppo(data: &[f64], short: usize, long: usize) -> impl Iterator<Item = f64> + '_ {
     let short_ma = smooth::ewma(data, short);
     let long_ma = smooth::ewma(data, long);
-    short_ma
-        .skip(long - short)
-        .zip(long_ma)
-        .map(|(x, y)| 100.0 * (x / y - 1.0))
+    short_ma.zip(long_ma).map(|(x, y)| 100.0 * (x / y - 1.0))
 }
 
 /// Absolute Price Oscillator
@@ -291,7 +288,7 @@ pub fn ppo(data: &[f64], short: usize, long: usize) -> impl Iterator<Item = f64>
 pub fn apo(data: &[f64], short: usize, long: usize) -> impl Iterator<Item = f64> + '_ {
     let short_ma = smooth::ewma(data, short);
     let long_ma = smooth::ewma(data, long);
-    short_ma.skip(long - short).zip(long_ma).map(|(x, y)| x - y)
+    short_ma.zip(long_ma).map(|(x, y)| x - y)
 }
 
 /// Price Momentum Oscillator
@@ -317,19 +314,20 @@ pub fn apo(data: &[f64], short: usize, long: usize) -> impl Iterator<Item = f64>
 ///
 /// ```
 pub fn pmo(data: &[f64], win1: usize, win2: usize) -> impl Iterator<Item = f64> + '_ {
-    smooth::ewma(
-        &smooth::ewma(
-            &data
-                .windows(2)
-                .map(|pair| 1000.0 * (pair[1] / pair[0] - 1.0))
-                .collect::<Vec<f64>>(),
-            win1,
+    iter::repeat(f64::NAN).take(win1).chain(
+        smooth::ewma(
+            &smooth::ewma(
+                &data
+                    .windows(2)
+                    .map(|pair| 1000.0 * (pair[1] / pair[0] - 1.0))
+                    .collect::<Vec<f64>>(),
+                win1,
+            )
+            .collect::<Vec<f64>>()[win1 - 1..],
+            win2,
         )
         .collect::<Vec<f64>>(),
-        win2,
     )
-    .collect::<Vec<f64>>()
-    .into_iter()
 }
 
 /// Ultimate oscillator
@@ -431,9 +429,9 @@ pub fn pgo<'a>(
     window: usize,
 ) -> impl Iterator<Item = f64> + 'a {
     let tr = _true_range(high, low, close).collect::<Vec<f64>>();
-    let atr = smooth::ewma(&tr, window);
+    let atr = iter::once(f64::NAN).chain(smooth::ewma(&tr, window));
     let sma_close = smooth::sma(close, window);
-    izip!(close.iter().skip(window), sma_close.skip(1), atr)
+    izip!(close, sma_close, atr)
         .map(|(c, c_ma, tr_ma)| (c - c_ma) / tr_ma)
         .collect::<Vec<f64>>()
         .into_iter()
@@ -534,17 +532,20 @@ pub fn si<'a>(
 /// ```
 pub fn trix(close: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
     let ema3 = smooth::ewma(
-        &smooth::ewma(&smooth::ewma(close, window).collect::<Vec<f64>>(), window)
-            .collect::<Vec<f64>>(),
+        &smooth::ewma(
+            &smooth::ewma(close, window).collect::<Vec<f64>>()[window - 1..],
+            window,
+        )
+        .collect::<Vec<f64>>()[window - 1..],
         window,
     )
     .collect::<Vec<f64>>();
-    ema3[..ema3.len() - 1]
-        .iter()
-        .zip(&ema3[1..])
-        .map(|(prev, curr)| 100.0 * (curr - prev) / prev)
-        .collect::<Vec<f64>>()
-        .into_iter()
+    iter::repeat(f64::NAN).take((window - 1) * 2 + 1).chain(
+        ema3.iter()
+            .zip(&ema3[1..])
+            .map(|(prev, curr)| 100.0 * (curr - prev) / prev)
+            .collect::<Vec<f64>>(),
+    )
 }
 
 /// Trend intensity index
@@ -570,25 +571,27 @@ pub fn trix(close: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
 ///
 /// ```
 pub fn tii(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
-    smooth::sma(data, window)
-        .zip(&data[(window - 1)..])
-        .map(|(avg, actual)| {
-            let dev: f64 = actual - avg;
-            (dev.max(0.0), dev.min(0.0).abs())
-        })
-        .collect::<Vec<(f64, f64)>>()
-        .windows(window.div_ceil(2))
-        .map(|w| {
-            let mut sd_pos = 0.0;
-            let mut sd_neg = 0.0;
-            for (pos_dev, neg_dev) in w {
-                sd_pos += pos_dev;
-                sd_neg += neg_dev;
-            }
-            100.0 * sd_pos / (sd_pos + sd_neg)
-        })
-        .collect::<Vec<f64>>()
-        .into_iter()
+    let win = window.div_ceil(2);
+    iter::repeat(f64::NAN).take(win - 1).chain(
+        smooth::sma(data, window)
+            .zip(data)
+            .map(|(avg, actual)| {
+                let dev: f64 = actual - avg;
+                (dev.max(0.0), dev.min(0.0).abs())
+            })
+            .collect::<Vec<(f64, f64)>>()
+            .windows(win)
+            .map(|w| {
+                let mut sd_pos = 0.0;
+                let mut sd_neg = 0.0;
+                for (pos_dev, neg_dev) in w {
+                    sd_pos += pos_dev;
+                    sd_neg += neg_dev;
+                }
+                100.0 * sd_pos / (sd_pos + sd_neg)
+            })
+            .collect::<Vec<f64>>(),
+    )
 }
 
 /// Stochastic Oscillator
@@ -622,6 +625,7 @@ pub fn stochastic<'a>(
     close: &'a [f64],
     window: usize,
 ) -> impl Iterator<Item = (f64, f64)> + 'a {
+    let smooth_win = 3;
     let fast_k = smooth::sma(
         &izip!(
             high.windows(window),
@@ -634,14 +638,19 @@ pub fn stochastic<'a>(
             100.0 * (c - ll) / (hh - ll)
         })
         .collect::<Vec<f64>>(),
-        3,
+        smooth_win,
     )
     .collect::<Vec<f64>>();
-    let k = smooth::sma(&fast_k, 3).collect::<Vec<f64>>();
-    izip!(fast_k, iter::repeat(f64::NAN).take(3 - 1).chain(k))
+    let k = smooth::sma(&fast_k[smooth_win - 1..], smooth_win).collect::<Vec<f64>>();
+    izip!(
+        iter::repeat(f64::NAN).take(window - 1).chain(fast_k),
+        iter::repeat(f64::NAN)
+            .take((window - 1) + (smooth_win - 1))
+            .chain(k)
+    )
 }
 
-fn _stc(series: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
+fn _stc(series: &[f64], window: usize, smooth: usize) -> impl Iterator<Item = f64> + '_ {
     smooth::wilder(
         &series
             .windows(window)
@@ -655,7 +664,7 @@ fn _stc(series: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
                 100.0 * (w.last().unwrap() - ll) / (hh - ll)
             })
             .collect::<Vec<f64>>(),
-        2,
+        smooth,
     )
     .collect::<Vec<f64>>()
     .into_iter()
@@ -673,7 +682,7 @@ fn _stc(series: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
 /// # Source
 ///
 /// https://www.investopedia.com/articles/forex/10/schaff-trend-cycle-indicator.asp
-/// https://www.stockmaniacs.net/schaff-trend-cycle-indicator/
+/// https://quantstrategy.io/blog/understanding-the-schaff-trend-cycle-stc-indicator-a-powerful-technical-analysis-tool/
 ///
 /// # Examples
 ///
@@ -691,13 +700,26 @@ pub fn stc(
     short: usize,
     long: usize,
 ) -> impl Iterator<Item = f64> + '_ {
-    let series = macd(close, short, long);
-    _stc(
-        &_stc(&series.collect::<Vec<f64>>(), window).collect::<Vec<f64>>(),
-        window,
-    )
-    .collect::<Vec<f64>>()
-    .into_iter()
+    let smooth = 2;
+    iter::repeat(f64::NAN)
+        .take((long - 1) + (window - 1) * 2 + (smooth - 1) * 2)
+        .chain(
+            _stc(
+                &_stc(
+                    &macd(close, short, long)
+                        .skip(long - 1)
+                        .collect::<Vec<f64>>(),
+                    window,
+                    smooth,
+                )
+                .skip(smooth - 1)
+                .collect::<Vec<f64>>(),
+                window,
+                smooth,
+            )
+            .skip(smooth - 1)
+            .collect::<Vec<f64>>(),
+        )
 }
 
 /// Relative Vigor
@@ -752,11 +774,12 @@ pub fn relative_vigor<'a>(
         .windows(4)
         .map(|w| (w[3] + 2.0 * w[2] + 2.0 * w[1] + w[0]) / 6.0)
         .collect::<Vec<f64>>();
-    smooth::sma(&numerator, window)
-        .zip(smooth::sma(&denominator, window))
-        .map(|(n, d)| n / d)
-        .collect::<Vec<f64>>()
-        .into_iter()
+    iter::repeat(f64::NAN).take(4 - 1).chain(
+        smooth::sma(&numerator, window)
+            .zip(smooth::sma(&denominator, window))
+            .map(|(n, d)| n / d)
+            .collect::<Vec<f64>>(),
+    )
 }
 
 /// Elhers Fisher Transform
@@ -804,8 +827,7 @@ pub fn fisher<'a>(
             let transform = (0.66
                 * ((w[window - 1] - hl_min) / (hl_max - hl_min).max(0.000001) - 0.5)
                 + 0.67 * state.0)
-                .min(0.999999)
-                .max(-0.999999);
+                .clamp(-0.999999, 0.999999);
             let result = 0.5 * ((1.0 + transform) / (1.0 - transform)).ln() + 0.5 * state.1;
             *state = (transform, result);
             Some(state.1)
@@ -844,35 +866,32 @@ pub fn rainbow(
 ) -> impl Iterator<Item = (f64, f64)> + '_ {
     let mut smas = Vec::with_capacity(10);
     smas.push(smooth::sma(data, window).collect::<Vec<f64>>());
-    for _ in 1..10 {
-        smas.push(
-            iter::repeat(f64::NAN)
-                .take(window - 1)
-                .chain(smooth::sma(&smas[smas.len() - 1], window))
-                .collect::<Vec<f64>>(),
-        );
+    for i in 1..10 {
+        smas.push(smooth::sma(&smas[i - 1], window).collect::<Vec<f64>>());
     }
-    ((window - 1) * 10..data.len()).map(move |i| {
-        let mut total: f64 = 0.0;
-        let mut hsma = f64::MIN;
-        let mut lsma = f64::MAX;
-        for sma in smas.iter() {
-            let val = sma[i - (window - 1)];
-            total += val;
-            hsma = hsma.max(val);
-            lsma = lsma.min(val);
-        }
-        let mut hlookback = f64::MIN;
-        let mut llookback = f64::MAX;
-        ((i - (lookback - 1)).max(0)..=i).for_each(|x| {
-            let val = data[x];
-            hlookback = hlookback.max(val);
-            llookback = llookback.min(val);
-        });
-        let osc = 100.0 * (data[i] - total / 10.0) / (hlookback - llookback).max(0.000001);
-        let band = 100.0 * (hsma - lsma) / (hlookback - llookback).max(0.000001);
-        (osc, band)
-    })
+    iter::repeat((f64::NAN, f64::NAN))
+        .take((window - 1) * 10)
+        .chain(((window - 1) * 10..data.len()).map(move |i| {
+            let mut total: f64 = 0.0;
+            let mut hsma = f64::MIN;
+            let mut lsma = f64::MAX;
+            for sma in smas.iter() {
+                let val = sma[i];
+                total += val;
+                hsma = hsma.max(val);
+                lsma = lsma.min(val);
+            }
+            let mut hlookback = f64::MIN;
+            let mut llookback = f64::MAX;
+            ((i - (lookback - 1)).max(0)..=i).for_each(|x| {
+                let val = data[x];
+                hlookback = hlookback.max(val);
+                llookback = llookback.min(val);
+            });
+            let osc = 100.0 * (data[i] - total / 10.0) / (hlookback - llookback).max(0.000001);
+            let band = 100.0 * (hsma - lsma) / (hlookback - llookback).max(0.000001);
+            (osc, band)
+        }))
 }
 
 /// Coppock Curve
@@ -903,14 +922,15 @@ pub fn coppock(
     short: usize,
     long: usize,
 ) -> impl Iterator<Item = f64> + '_ {
-    smooth::wma(
-        &(long..data.len())
-            .map(|x| 100.0 * (data[x] / data[x - short] + data[x] / data[x - long] - 2.0))
-            .collect::<Vec<f64>>(),
-        window,
+    iter::repeat(f64::NAN).take(long).chain(
+        smooth::wma(
+            &(long..data.len())
+                .map(|x| 100.0 * (data[x] / data[x - short] + data[x] / data[x - long] - 2.0))
+                .collect::<Vec<f64>>(),
+            window,
+        )
+        .collect::<Vec<f64>>(),
     )
-    .collect::<Vec<f64>>()
-    .into_iter()
 }
 
 /// Rate of Change
@@ -1008,7 +1028,6 @@ pub fn bal_power<'a>(
 /// ```
 pub fn disparity(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
     data.iter()
-        .skip(window - 1)
         .zip(smooth::ewma(data, window))
         .map(|(x, ma)| 100.0 * (x - ma) / ma)
 }

@@ -8,6 +8,7 @@ fn test_adx() {
     let stats = common::test_data();
     let result: (Vec<f64>, Vec<f64>, Vec<f64>) =
         multiunzip(trend::adx(&stats.high, &stats.low, &stats.close, 14, 14));
+    assert_eq!(stats.close.len(), result.0.len());
     assert_eq!(
         vec![
             31.860139412194698,
@@ -31,7 +32,7 @@ fn test_adx() {
             37.32862815236502,
             35.23477297887128,
         ],
-        result.0
+        result.0[14..]
     );
     assert_eq!(
         vec![
@@ -56,7 +57,7 @@ fn test_adx() {
             16.20809033889095,
             17.880973133699126,
         ],
-        result.1
+        result.1[14..]
     );
     assert_eq!(
         vec![
@@ -68,7 +69,7 @@ fn test_adx() {
             16.086895874937387,
             17.27152240413718,
         ],
-        result.2[14 - 1..]
+        result.2[14 + 14 - 1..]
     );
 }
 
@@ -193,9 +194,24 @@ fn test_asi() {
 #[test]
 fn test_ulcer() {
     let stats = common::test_data();
-    let result = trend::ulcer(&stats.close, 8);
-    assert_eq!(
-        vec![
+    let result = trend::ulcer(&stats.close, 8).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
+    assert!(common::vec_eq(
+        &vec![
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
             20.73223668909602,
             19.094435269396094,
             16.649343658592862,
@@ -217,16 +233,34 @@ fn test_ulcer() {
             1.6390653783421978,
             2.187009055695484,
         ],
-        result.collect::<Vec<f64>>()
-    );
+        &result
+    ));
 }
 
 #[test]
 fn test_supertrend() {
     let stats = common::test_data();
-    let result = trend::supertrend(&stats.high, &stats.low, &stats.close, 16, 3.0);
-    assert_eq!(
-        vec![
+    let result =
+        trend::supertrend(&stats.high, &stats.low, &stats.close, 16, 3.0).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
+    assert!(common::vec_eq(
+        &vec![
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
             22.87718629837036,
             22.87718629837036,
             22.87718629837036,
@@ -246,8 +280,8 @@ fn test_supertrend() {
             39.78407957956028,
             39.78407957956028,
         ],
-        result.collect::<Vec<f64>>()
-    );
+        &result
+    ));
 }
 
 #[test]
@@ -326,9 +360,25 @@ fn test_psar() {
 #[test]
 fn test_dpo() {
     let stats = common::test_data();
-    let result = trend::dpo(&stats.close, 16, None);
-    assert_eq!(
-        vec![
+    let result = trend::dpo(&stats.close, 16, None).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
+    assert!(common::vec_eq(
+        &vec![
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
+            f64::NAN,
             2.0268754959106445,
             -1.129373550415039,
             -1.0500013828277588,
@@ -349,8 +399,8 @@ fn test_dpo() {
             -2.404374599456787,
             -0.057187557220458984,
         ],
-        result.collect::<Vec<f64>>()
-    );
+        &result
+    ));
 }
 
 #[test]
@@ -445,29 +495,31 @@ fn test_zigzag_long() {
 #[test]
 fn test_chandelier() {
     let stats = common::test_data();
-    let result = trend::chandelier(&stats.high, &stats.low, &stats.close, 16, None);
+    let result =
+        trend::chandelier(&stats.high, &stats.low, &stats.close, 16, None).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
     assert_eq!(
         vec![
-            (57.04718828201294, 57.53281354904175,),
-            (57.70548936724663, 56.5145118534565,),
-            (57.883895890787244, 55.716106398031116,),
-            (47.12114860198926, 53.988848193665035,),
-            (39.31482736749604, 53.335170343685604,),
+            (57.04718828201294, 57.172812938690186,),
+            (57.70548936724663, 55.89451292157173,),
+            (46.74389268644154, 54.366104109212756,),
+            (38.661149517516606, 53.988848193665035,),
+            (35.36482660455658, 53.335170343685604,),
             (35.94427432569819, 52.755722622544,),
-            (36.62213199914393, 52.077864949098256,),
-            (37.00137628597112, 51.58862386661677,),
+            (36.512135203489635, 52.077864949098256,),
+            (34.941374912680104, 51.58862386661677,),
             (35.12835139671425, 51.401647382582624,),
             (35.359704310441955, 51.17029446885492,),
-            (35.735035395943505, 50.79496338335337,),
+            (35.43503615888296, 50.79496338335337,),
             (35.66409606516676, 50.56590347706957,),
-            (35.75527786817697, 50.47472167405936,),
+            (36.514276739026585, 50.47472167405936,),
             (36.8733221106841, 50.11567630240184,),
-            (37.06555206078234, 49.92344635230361,),
-            (37.5330164888682, 49.68698091713766,),
-            (37.68408110543918, 49.9959191997366,),
+            (37.29655105370225, 49.92344635230361,),
+            (37.99301938803812, 49.68698091713766,),
+            (42.514079121796605, 49.9959191997366,),
             (42.71382388104528, 49.796174440487924,),
         ],
-        result.collect::<Vec<(f64, f64)>>()
+        result[16..]
     );
 }
 
@@ -548,7 +600,8 @@ fn test_decay() {
 #[test]
 fn test_cks() {
     let stats = common::test_data();
-    let result = trend::cks(&stats.high, &stats.low, &stats.close, 10, 6, None);
+    let result = trend::cks(&stats.high, &stats.low, &stats.close, 10, 6, None).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
     assert_eq!(
         vec![
             (67.6907509613037, 45.472941443092346,),
@@ -571,6 +624,6 @@ fn test_cks() {
             (51.42338292368371, 41.07373242732082,),
             (51.48204446346866, 43.91325859865124,),
         ],
-        result.collect::<Vec<(f64, f64)>>()
+        result[10 + 6 - 1..]
     );
 }
