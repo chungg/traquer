@@ -118,22 +118,23 @@ pub fn twiggs<'a>(
 ) -> impl Iterator<Item = f64> + 'a {
     let data = izip!(&high[1..], &low[1..], &close[1..], &volume[1..]);
     // not using wilder moving average to minimise drift caused by floating point math
-    wilder_sum(
-        &data
-            .scan(close[0], |state, (h, l, c, vol)| {
-                let range_vol = vol
-                    * ((2.0 * c - f64::min(*l, *state) - f64::max(*h, *state))
-                        / (f64::max(*h, *state) - f64::min(*l, *state)));
-                *state = *c;
-                Some(range_vol)
-            })
-            .collect::<Vec<f64>>(),
-        window,
+    iter::repeat(f64::NAN).take(window).chain(
+        wilder_sum(
+            &data
+                .scan(close[0], |state, (h, l, c, vol)| {
+                    let range_vol = vol
+                        * ((2.0 * c - f64::min(*l, *state) - f64::max(*h, *state))
+                            / (f64::max(*h, *state) - f64::min(*l, *state)));
+                    *state = *c;
+                    Some(range_vol)
+                })
+                .collect::<Vec<f64>>(),
+            window,
+        )
+        .zip(wilder_sum(&volume[1..], window))
+        .map(|(range, vol)| range / vol)
+        .collect::<Vec<f64>>(),
     )
-    .zip(wilder_sum(&volume[1..], window))
-    .map(|(range, vol)| range / vol)
-    .collect::<Vec<f64>>()
-    .into_iter()
 }
 
 /// Accumulation/Distribution (A/D) indicator
@@ -185,7 +186,7 @@ pub fn ad<'a>(
         )
     } else {
         // alternate logic to consider prior close like yahoo
-        Box::new(
+        Box::new(iter::once(f64::NAN).chain(
             izip!(&high[1..], &low[1..], &close[1..], &volume[1..]).scan(
                 (close[0], 0.0),
                 |state, (h, l, c, vol)| {
@@ -200,7 +201,7 @@ pub fn ad<'a>(
                     Some(adl)
                 },
             ),
-        )
+        ))
     }
 }
 
@@ -292,14 +293,15 @@ pub fn mfi<'a>(
                 },
             )
             .unzip();
-    pos_mf
-        .windows(window)
-        .zip(neg_mf.windows(window))
-        .map(|(pos, neg)| {
-            100.0 - (100.0 / (1.0 + pos.iter().sum::<f64>() / neg.iter().sum::<f64>()))
-        })
-        .collect::<Vec<f64>>()
-        .into_iter()
+    iter::repeat(f64::NAN).take(window).chain(
+        pos_mf
+            .windows(window)
+            .zip(neg_mf.windows(window))
+            .map(|(pos, neg)| {
+                100.0 - (100.0 / (1.0 + pos.iter().sum::<f64>() / neg.iter().sum::<f64>()))
+            })
+            .collect::<Vec<f64>>(),
+    )
 }
 
 /// Chaikin money flow
@@ -337,14 +339,15 @@ pub fn cmf<'a>(
     volume: &'a [f64],
     window: usize,
 ) -> impl Iterator<Item = f64> + 'a {
-    izip!(high, low, close, volume)
-        .map(|(h, l, c, vol)| vol * ((c - l) - (h - c)) / (h - l))
-        .collect::<Vec<f64>>()
-        .windows(window)
-        .zip(volume.windows(window))
-        .map(|(mfv_win, v_win)| mfv_win.iter().sum::<f64>() / v_win.iter().sum::<f64>())
-        .collect::<Vec<f64>>()
-        .into_iter()
+    iter::repeat(f64::NAN).take(window - 1).chain(
+        izip!(high, low, close, volume)
+            .map(|(h, l, c, vol)| vol * ((c - l) - (h - c)) / (h - l))
+            .collect::<Vec<f64>>()
+            .windows(window)
+            .zip(volume.windows(window))
+            .map(|(mfv_win, v_win)| mfv_win.iter().sum::<f64>() / v_win.iter().sum::<f64>())
+            .collect::<Vec<f64>>(),
+    )
 }
 
 /// Trade Volume Index
@@ -376,20 +379,22 @@ pub fn tvi<'a>(
     volume: &'a [f64],
     min_tick: f64,
 ) -> impl Iterator<Item = f64> + 'a {
-    izip!(&close[..close.len() - 1], &close[1..], &volume[1..],).scan(
-        (1, 0.0),
-        move |state, (prev, curr, vol)| {
-            let direction = if curr - prev > min_tick {
-                1
-            } else if prev - curr > min_tick {
-                -1
-            } else {
-                state.0
-            };
-            let tvi = state.1 + direction as f64 * vol;
-            *state = (direction, tvi);
-            Some(tvi)
-        },
+    iter::once(f64::NAN).chain(
+        izip!(&close[..close.len() - 1], &close[1..], &volume[1..],).scan(
+            (1, 0.0),
+            move |state, (prev, curr, vol)| {
+                let direction = if curr - prev > min_tick {
+                    1
+                } else if prev - curr > min_tick {
+                    -1
+                } else {
+                    state.0
+                };
+                let tvi = state.1 + direction as f64 * vol;
+                *state = (direction, tvi);
+                Some(tvi)
+            },
+        ),
     )
 }
 
@@ -463,10 +468,10 @@ pub fn ease<'a>(
 ///
 /// ```
 pub fn obv<'a>(close: &'a [f64], volume: &'a [f64]) -> impl Iterator<Item = f64> + 'a {
-    close.windows(2).enumerate().scan(0.0, |state, (i, pairs)| {
+    iter::once(f64::NAN).chain(close.windows(2).enumerate().scan(0.0, |state, (i, pairs)| {
         *state += (pairs[1] - pairs[0]).signum() * volume[i + 1];
         Some(*state)
-    })
+    }))
 }
 
 /// Market Facilitation Index

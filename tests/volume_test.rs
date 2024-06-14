@@ -5,7 +5,9 @@ mod common;
 #[test]
 fn test_twiggs() {
     let stats = common::test_data();
-    let result = volume::twiggs(&stats.high, &stats.low, &stats.close, &stats.volume, 16);
+    let result = volume::twiggs(&stats.high, &stats.low, &stats.close, &stats.volume, 16)
+        .collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
     assert_eq!(
         vec![
             -0.18613223690613337,
@@ -27,7 +29,7 @@ fn test_twiggs() {
             -0.14855035203055256,
             -0.15469018900758857,
         ],
-        result.collect::<Vec<f64>>()
+        result[16..]
     );
 }
 
@@ -94,7 +96,9 @@ fn test_elder_force() {
 #[test]
 fn test_mfi() {
     let stats = common::test_data();
-    let result = volume::mfi(&stats.high, &stats.low, &stats.close, &stats.volume, 16);
+    let result =
+        volume::mfi(&stats.high, &stats.low, &stats.close, &stats.volume, 16).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
     assert_eq!(
         vec![
             57.23427292919309,
@@ -116,7 +120,7 @@ fn test_mfi() {
             87.34401989374501,
             85.51147984689622,
         ],
-        result.collect::<Vec<f64>>(),
+        result[16..]
     );
 }
 
@@ -129,7 +133,9 @@ fn test_ad() {
         &stats.close,
         &stats.volume,
         Some(false),
-    );
+    )
+    .collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
     assert_eq!(
         vec![
             -12220014.53999535,
@@ -167,7 +173,7 @@ fn test_ad() {
             -55780759.43377636,
             -56496069.02735695,
         ],
-        result.collect::<Vec<f64>>()
+        result
     );
     assert_eq!(
         volume::ad(&stats.high, &stats.low, &stats.close, &stats.volume, None)
@@ -192,7 +198,9 @@ fn test_ad_yahoo() {
         &stats.close,
         &stats.volume,
         Some(true),
-    );
+    )
+    .collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
     assert_eq!(
         vec![
             336703421.3851929,
@@ -229,14 +237,16 @@ fn test_ad_yahoo() {
             304462333.9931488,
             298815868.7785034,
         ],
-        result.collect::<Vec<f64>>()
+        result[1..]
     );
 }
 
 #[test]
 fn test_cmf() {
     let stats = common::test_data();
-    let result = volume::cmf(&stats.high, &stats.low, &stats.close, &stats.volume, 16);
+    let result =
+        volume::cmf(&stats.high, &stats.low, &stats.close, &stats.volume, 16).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
     assert_eq!(
         vec![
             -0.31996402726557827,
@@ -259,14 +269,15 @@ fn test_cmf() {
             -0.1013140453290804,
             -0.09237139625802167,
         ],
-        result.collect::<Vec<f64>>()
+        result[15..]
     );
 }
 
 #[test]
 fn test_tvi() {
     let stats = common::test_data();
-    let result = volume::tvi(&stats.close, &stats.volume, 0.5);
+    let result = volume::tvi(&stats.close, &stats.volume, 0.5).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
     assert_eq!(
         vec![
             24398800.0, 59729800.0, 40971500.0, 28363400.0, 15375500.0, 24818400.0, 19995500.0,
@@ -275,7 +286,7 @@ fn test_tvi() {
             11944400.0, 10458600.0, 13222800.0, 15901100.0, 14148200.0, 15746300.0, 18111300.0,
             16923000.0, 19039700.0, 25281400.0, 38772900.0, 36090498.0,
         ],
-        result.collect::<Vec<f64>>()
+        result[1..]
     );
 }
 
@@ -312,7 +323,8 @@ fn test_ease() {
 #[test]
 fn test_obv() {
     let stats = common::test_data();
-    let result = volume::obv(&stats.close, &stats.volume);
+    let result = volume::obv(&stats.close, &stats.volume).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
     assert_eq!(
         vec![
             24398800.0, 59729800.0, 40971500.0, 28363400.0, 15375500.0, 24818400.0, 19995500.0,
@@ -321,14 +333,15 @@ fn test_obv() {
             11944400.0, 10458600.0, 13222800.0, 15901100.0, 14148200.0, 15746300.0, 18111300.0,
             16923000.0, 19039700.0, 25281400.0, 38772900.0, 36090498.0,
         ],
-        result.collect::<Vec<f64>>()
+        result[1..]
     );
 }
 
 #[test]
 fn test_bw_mfi() {
     let stats = common::test_data();
-    let result = volume::bw_mfi(&stats.high, &stats.low, &stats.volume);
+    let result = volume::bw_mfi(&stats.high, &stats.low, &stats.volume).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
     assert_eq!(
         vec![
             0.3551550727197042,
@@ -366,6 +379,6 @@ fn test_bw_mfi() {
             0.4046991872269693,
             1.0624799989416553,
         ],
-        result.collect::<Vec<f64>>()
+        result
     );
 }
