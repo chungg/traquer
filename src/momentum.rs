@@ -112,7 +112,9 @@ pub fn macd(close: &[f64], short: usize, long: usize) -> impl Iterator<Item = f6
 ///
 /// ```
 pub fn cmo(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
-    smooth::_cmo(data, window).map(|x| x * 100.0)
+    iter::repeat(f64::NAN)
+        .take(window)
+        .chain(smooth::_cmo(data, window).map(|x| x * 100.0))
 }
 
 /// Chande Forecast Oscillator
@@ -226,16 +228,18 @@ pub fn wpr<'a>(
     close: &'a [f64],
     window: usize,
 ) -> impl Iterator<Item = f64> + 'a {
-    izip!(
-        high.windows(window),
-        low.windows(window),
-        &close[(window - 1)..]
+    iter::repeat(f64::NAN).take(window - 1).chain(
+        izip!(
+            high.windows(window),
+            low.windows(window),
+            &close[(window - 1)..]
+        )
+        .map(|(h, l, c)| {
+            let hh = h.iter().fold(f64::NAN, |state, &x| state.max(x));
+            let ll = l.iter().fold(f64::NAN, |state, &x| state.min(x));
+            -100.0 * ((hh - c) / (hh - ll))
+        }),
     )
-    .map(|(h, l, c)| {
-        let hh = h.iter().fold(f64::NAN, |state, &x| state.max(x));
-        let ll = l.iter().fold(f64::NAN, |state, &x| state.min(x));
-        -100.0 * ((hh - c) / (hh - ll))
-    })
 }
 
 /// Percent price oscillator
@@ -376,25 +380,26 @@ pub fn ultimate<'a>(
         )
     })
     .collect::<Vec<(f64, f64)>>();
-    bp_tr_vals
-        .windows(win3)
-        .map(|w| {
-            let (bp_sum1, tr_sum1) = w
-                .iter()
-                .skip(win3 - win1)
-                .fold((0.0, 0.0), |acc, (bp, tr)| (acc.0 + bp, acc.1 + tr));
-            let (bp_sum2, tr_sum2) = w
-                .iter()
-                .skip(win3 - win2)
-                .fold((0.0, 0.0), |acc, (bp, tr)| (acc.0 + bp, acc.1 + tr));
-            let (bp_sum3, tr_sum3) = w
-                .iter()
-                .fold((0.0, 0.0), |acc, (bp, tr)| (acc.0 + bp, acc.1 + tr));
-            100.0 * (bp_sum1 / tr_sum1 * 4.0 + bp_sum2 / tr_sum2 * 2.0 + bp_sum3 / tr_sum3)
-                / (4.0 + 2.0 + 1.0)
-        })
-        .collect::<Vec<f64>>()
-        .into_iter()
+    iter::repeat(f64::NAN).take(win3).chain(
+        bp_tr_vals
+            .windows(win3)
+            .map(|w| {
+                let (bp_sum1, tr_sum1) = w
+                    .iter()
+                    .skip(win3 - win1)
+                    .fold((0.0, 0.0), |acc, (bp, tr)| (acc.0 + bp, acc.1 + tr));
+                let (bp_sum2, tr_sum2) = w
+                    .iter()
+                    .skip(win3 - win2)
+                    .fold((0.0, 0.0), |acc, (bp, tr)| (acc.0 + bp, acc.1 + tr));
+                let (bp_sum3, tr_sum3) = w
+                    .iter()
+                    .fold((0.0, 0.0), |acc, (bp, tr)| (acc.0 + bp, acc.1 + tr));
+                100.0 * (bp_sum1 / tr_sum1 * 4.0 + bp_sum2 / tr_sum2 * 2.0 + bp_sum3 / tr_sum3)
+                    / (4.0 + 2.0 + 1.0)
+            })
+            .collect::<Vec<f64>>(),
+    )
 }
 
 /// Pretty good oscillator
@@ -504,7 +509,7 @@ pub fn si<'a>(
     close: &'a [f64],
     limit: f64,
 ) -> impl Iterator<Item = f64> + 'a {
-    _swing(open, high, low, close, limit)
+    iter::once(f64::NAN).chain(_swing(open, high, low, close, limit))
 }
 
 /// Triple Exponential Average
@@ -816,24 +821,25 @@ pub fn fisher<'a>(
         .zip(low)
         .map(|(h, l)| (h + l) / 2.0)
         .collect::<Vec<f64>>();
-    hl2.windows(window)
-        .scan((0.0, 0.0), |state, w| {
-            let mut hl_max: f64 = 0.0;
-            let mut hl_min: f64 = f64::MAX;
-            for &e in w {
-                hl_max = hl_max.max(e);
-                hl_min = hl_min.min(e);
-            }
-            let transform = (0.66
-                * ((w[window - 1] - hl_min) / (hl_max - hl_min).max(0.000001) - 0.5)
-                + 0.67 * state.0)
-                .clamp(-0.999999, 0.999999);
-            let result = 0.5 * ((1.0 + transform) / (1.0 - transform)).ln() + 0.5 * state.1;
-            *state = (transform, result);
-            Some(state.1)
-        })
-        .collect::<Vec<f64>>()
-        .into_iter()
+    iter::repeat(f64::NAN).take(window - 1).chain(
+        hl2.windows(window)
+            .scan((0.0, 0.0), |state, w| {
+                let mut hl_max: f64 = 0.0;
+                let mut hl_min: f64 = f64::MAX;
+                for &e in w {
+                    hl_max = hl_max.max(e);
+                    hl_min = hl_min.min(e);
+                }
+                let transform = (0.66
+                    * ((w[window - 1] - hl_min) / (hl_max - hl_min).max(0.000001) - 0.5)
+                    + 0.67 * state.0)
+                    .clamp(-0.999999, 0.999999);
+                let result = 0.5 * ((1.0 + transform) / (1.0 - transform)).ln() + 0.5 * state.1;
+                *state = (transform, result);
+                Some(state.1)
+            })
+            .collect::<Vec<f64>>(),
+    )
 }
 
 /// Rainbow Oscillator
@@ -957,8 +963,10 @@ pub fn coppock(
 ///
 /// ```
 pub fn roc(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
-    data.windows(window)
-        .map(|w| 100.0 * (w[w.len() - 1] / w[0] - 1.0))
+    iter::repeat(f64::NAN).take(window - 1).chain(
+        data.windows(window)
+            .map(|w| 100.0 * (w[w.len() - 1] / w[0] - 1.0)),
+    )
 }
 
 /// Balance of Power
@@ -1096,14 +1104,16 @@ pub fn qstick<'a>(
 /// ```
 pub fn cog(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
     let weights: Vec<f64> = (1..=window).map(|x| x as f64).collect();
-    data.windows(window).map(move |w| {
-        -w.iter()
-            .rev()
-            .zip(weights.iter())
-            .map(|(e, i)| e * i)
-            .sum::<f64>()
-            / w.iter().sum::<f64>()
-    })
+    iter::repeat(f64::NAN)
+        .take(window - 1)
+        .chain(data.windows(window).map(move |w| {
+            -w.iter()
+                .rev()
+                .zip(weights.iter())
+                .map(|(e, i)| e * i)
+                .sum::<f64>()
+                / w.iter().sum::<f64>()
+        }))
 }
 
 /// Psychological Line
@@ -1135,11 +1145,12 @@ pub fn cog(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
 ///
 /// ```
 pub fn psych(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
-    data.windows(2)
-        .map(|pair| (pair[1] - pair[0]).signum().max(0.0))
-        .collect::<Vec<f64>>()
-        .windows(window)
-        .map(|w| w.iter().sum::<f64>() * 100.0 / window as f64)
-        .collect::<Vec<f64>>()
-        .into_iter()
+    iter::repeat(f64::NAN).take(window).chain(
+        data.windows(2)
+            .map(|pair| (pair[1] - pair[0]).signum().max(0.0))
+            .collect::<Vec<f64>>()
+            .windows(window)
+            .map(|w| w.iter().sum::<f64>() * 100.0 / window as f64)
+            .collect::<Vec<f64>>(),
+    )
 }

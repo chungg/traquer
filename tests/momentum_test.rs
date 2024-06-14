@@ -97,7 +97,8 @@ fn test_macd() {
 #[test]
 fn test_cmo() {
     let stats = common::test_data();
-    let result = momentum::cmo(&stats.close, 16);
+    let result = momentum::cmo(&stats.close, 16).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
     assert_eq!(
         vec![
             -7.743786559793555,
@@ -119,7 +120,7 @@ fn test_cmo() {
             44.454063824420864,
             43.61402085815939,
         ],
-        result.collect::<Vec<f64>>()
+        result[16..]
     );
 }
 
@@ -258,7 +259,8 @@ fn test_elder_ray() {
 #[test]
 fn test_wpr() {
     let stats = common::test_data();
-    let result = momentum::wpr(&stats.high, &stats.low, &stats.close, 16);
+    let result = momentum::wpr(&stats.high, &stats.low, &stats.close, 16).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
     assert_eq!(
         vec![
             -99.09142622449394,
@@ -281,7 +283,7 @@ fn test_wpr() {
             -21.111723928174033,
             -32.930944560522704,
         ],
-        result.collect::<Vec<f64>>()
+        result[15..]
     );
 }
 
@@ -426,7 +428,9 @@ fn test_pmo() {
 #[test]
 fn test_ultimate() {
     let stats = common::test_data();
-    let result = momentum::ultimate(&stats.high, &stats.low, &stats.close, 6, 12, 24);
+    let result =
+        momentum::ultimate(&stats.high, &stats.low, &stats.close, 6, 12, 24).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
     assert_eq!(
         vec![
             52.64489292919164,
@@ -440,7 +444,7 @@ fn test_ultimate() {
             44.154676988833835,
             42.65072465563253,
         ],
-        result.collect::<Vec<f64>>()
+        result[24..]
     );
 }
 
@@ -493,7 +497,9 @@ fn test_pgo() {
 #[test]
 fn test_si() {
     let stats = common::test_data();
-    let result = momentum::si(&stats.open, &stats.high, &stats.low, &stats.close, 0.5);
+    let result =
+        momentum::si(&stats.open, &stats.high, &stats.low, &stats.close, 0.5).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
     assert_eq!(
         vec![
             1863.9824746176116,
@@ -530,7 +536,7 @@ fn test_si() {
             59.009650555611834,
             -321.26018448483165,
         ],
-        result.collect::<Vec<f64>>()
+        result[1..]
     );
 }
 
@@ -854,7 +860,8 @@ fn test_relative_vigor() {
 #[test]
 fn test_fisher() {
     let stats = common::test_data();
-    let result = momentum::fisher(&stats.high, &stats.low, 16);
+    let result = momentum::fisher(&stats.high, &stats.low, 16).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
     assert_eq!(
         vec![
             -0.34282825441539394,
@@ -877,7 +884,7 @@ fn test_fisher() {
             2.7111315248922243,
             2.457215146525715,
         ],
-        result.collect::<Vec<f64>>()
+        result[15..]
     );
 }
 
@@ -956,7 +963,8 @@ fn test_coppock() {
 #[test]
 fn test_roc() {
     let stats = common::test_data();
-    let result = momentum::roc(&stats.close, 16);
+    let result = momentum::roc(&stats.close, 16).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
     assert_eq!(
         vec![
             -13.043478260869568,
@@ -979,7 +987,7 @@ fn test_roc() {
             31.222884678686967,
             18.156751501922706,
         ],
-        result.collect::<Vec<f64>>()
+        result[15..]
     );
 }
 
@@ -1125,7 +1133,8 @@ fn test_qstick() {
 #[test]
 fn test_cog() {
     let stats = common::test_data();
-    let result = momentum::cog(&stats.close, 16);
+    let result = momentum::cog(&stats.close, 16).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
     assert_eq!(
         vec![
             -8.967512936942779,
@@ -1148,18 +1157,19 @@ fn test_cog() {
             -8.179093436115151,
             -8.204185273664265,
         ],
-        result.collect::<Vec<f64>>()
+        result[15..]
     );
 }
 #[test]
 fn test_psych() {
     let stats = common::test_data();
-    let result = momentum::psych(&stats.close, 16);
+    let result = momentum::psych(&stats.close, 16).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
     assert_eq!(
         vec![
             37.5, 31.25, 31.25, 31.25, 37.5, 43.75, 43.75, 43.75, 50.0, 50.0, 50.0, 56.25, 62.5,
             56.25, 62.5, 68.75, 68.75, 68.75,
         ],
-        result.collect::<Vec<f64>>()
+        result[16..]
     );
 }
