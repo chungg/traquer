@@ -573,3 +573,64 @@ pub fn alma(
             sum / sumw
         }))
 }
+
+/// McGinley Dynamic
+///
+/// Takes into account speed changes in a market to show a smoother,
+/// more responsive, moving average line.
+///
+/// # Source
+///
+/// https://www.investopedia.com/terms/m/mcginley-dynamic.asp
+///
+/// # Examples
+///
+/// ```
+/// use traquer::smooth;
+///
+/// smooth::mdma(&vec![1.0, 2.0, 3.0, 4.0, 5.0], 3).collect::<Vec<f64>>();
+/// ```
+pub fn mdma(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
+    let k = 0.6;
+    iter::once(data[0]).chain(data[1..].iter().scan(data[0], move |state, x| {
+        *state += (x - *state) / (k * window as f64 * (x / *state).powi(4));
+        Some(*state)
+    }))
+}
+
+/// Holt-Winter
+///
+/// Applies exponential smoothing across 3 factors: value, trend, and seasonality.
+///
+/// # Source
+///
+/// https://orangematter.solarwinds.com/2019/12/15/holt-winters-forecasting-simplified/
+/// https://medium.com/analytics-vidhya/a-thorough-introduction-to-holt-winters-forecasting-c21810b8c0e6
+/// https://www.mql5.com/en/code/20856
+///
+/// # Examples
+///
+/// ```
+/// use traquer::smooth;
+///
+/// smooth::hwma(&vec![1.0, 2.0, 3.0, 4.0, 5.0],
+///              Some(0.2), Some(0.1), None).collect::<Vec<f64>>();
+/// ```
+pub fn hwma(
+    data: &[f64],
+    alpha: Option<f64>,
+    beta: Option<f64>,
+    gamma: Option<f64>,
+) -> impl Iterator<Item = f64> + '_ {
+    let alpha = alpha.unwrap_or(0.2).clamp(0.0, 1.0);
+    let beta = beta.unwrap_or(0.1).clamp(0.0, 1.0);
+    let gamma = gamma.unwrap_or(0.1).clamp(0.0, 1.0);
+
+    data.iter().scan((data[0], 0.0, 0.0), move |state, x| {
+        let avg = (1.0 - alpha) * (state.0 + state.1 + 0.5 * state.2) + alpha * x;
+        let trend = (1.0 - beta) * (state.1 + state.2) + beta * (avg - state.0);
+        let season = (1.0 - gamma) * state.2 + gamma * (trend - state.1);
+        *state = (avg, trend, season);
+        Some(avg + trend + 0.5 * season)
+    })
+}

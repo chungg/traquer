@@ -579,3 +579,94 @@ pub fn nvi<'a>(data: &'a [f64], volume: &'a [f64]) -> impl Iterator<Item = f64> 
         },
     ))
 }
+
+/// Volume Weighted Average Price (VWAP)
+///
+/// Measures the average typical price by volume. Tracks similar to a moving average.
+///
+/// # Usage
+///
+/// Designed for intraday data, instruments with prices below VWAP may be considered undervalued.
+///
+/// # Source
+///
+/// https://www.investopedia.com/terms/v/vwap.asp
+///
+/// # Examples
+///
+/// ```
+/// use traquer::volume;
+///
+/// volume::vwap(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0], None).collect::<Vec<f64>>();
+///
+/// ```
+pub fn vwap<'a>(
+    high: &'a [f64],
+    low: &'a [f64],
+    close: &'a [f64],
+    volume: &'a [f64],
+    reset_idx: Option<&'a [usize]>,
+) -> impl Iterator<Item = f64> + 'a {
+    // NOTE: assumes reset_idx is sorted
+    let mut reset_idx = reset_idx.unwrap_or(&[close.len()]).to_vec();
+    izip!(high, low, close, volume).enumerate().scan(
+        (0.0, 0.0),
+        move |state, (idx, (h, l, c, vol))| {
+            let (mut tpv_sum, mut vol_sum) = state;
+            if idx == reset_idx[0] {
+                tpv_sum = 0.0;
+                vol_sum = 0.0;
+                reset_idx.rotate_left(1);
+            }
+            tpv_sum += (h + l + c) / 3.0 * vol;
+            vol_sum += vol;
+            *state = (tpv_sum, vol_sum);
+            Some(tpv_sum / vol_sum)
+        },
+    )
+}
+
+/// Volume Weighted Moving Average
+///
+/// Measures price by volume. Tracks similar to a moving average. A period with a
+/// higher volume will significantly influence the value more than a period with a lower volume.
+///
+/// # Usage
+///
+/// Show trend like any normal moving average.
+///
+/// # Source
+///
+/// https://howtotrade.com/indicators/volume-weighted-moving-average/
+///
+/// # Examples
+///
+/// ```
+/// use traquer::volume;
+///
+/// volume::vwma(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0], 3).collect::<Vec<f64>>();
+///
+/// ```
+pub fn vwma<'a>(
+    data: &'a [f64],
+    volume: &'a [f64],
+    window: usize,
+) -> impl Iterator<Item = f64> + 'a {
+    iter::repeat(f64::NAN).take(window - 1).chain(
+        data.windows(window)
+            .zip(volume.windows(window))
+            .map(|(data_w, vol_w)| {
+                data_w
+                    .iter()
+                    .zip(vol_w)
+                    .fold(0.0, |acc, (x, v)| acc + x * v)
+                    / vol_w.iter().sum::<f64>()
+            }),
+    )
+}
