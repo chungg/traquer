@@ -23,5 +23,5 @@ fn main() {
     //        .collect::<Vec<_>>()
     //);
     dbg!(volume::nvi(&stats.close, &stats.volume).collect::<Vec<_>>());
-    //dbg!(smooth::alma(&stats.close, 10, 6.0, None).collect::<Vec<f64>>());
+    //dbg!(smooth::hwma(&stats.close, None, None, None).collect::<Vec<f64>>());
 }
