@@ -669,3 +669,56 @@ pub fn vhf<'a>(
         .collect::<Vec<f64>>(),
     )
 }
+
+/// Heikin-Ashi Candlestick
+///
+/// Uses a modified formula based on two-period averages to derive OHLC candlesticks
+///
+/// # Usage
+///
+/// Like normal chandlestick chart.
+///
+/// # Source
+///
+/// https://www.marketvolume.com/technicalanalysis/heikin_ashi_candlesticks.asp
+/// https://www.investopedia.com/terms/h/heikinashi.asp
+///
+/// # Examples
+///
+/// ```
+/// use traquer::volatility;
+///
+/// volatility::heikin_ashi(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     ).collect::<Vec<(f64,f64,f64,f64)>>();
+///
+/// ```
+pub fn heikin_ashi<'a>(
+    open: &'a [f64],
+    high: &'a [f64],
+    low: &'a [f64],
+    close: &'a [f64],
+) -> impl Iterator<Item = (f64, f64, f64, f64)> + 'a {
+    let c_0 = (open[0] + high[0] + low[0] + close[0]) / 4.0;
+    let o_0 = (open[0] + close[0]) / 2.0;
+    iter::once((o_0, high[0], low[0], c_0)).chain(
+        izip!(
+            open[1..].iter(),
+            high[1..].iter(),
+            low[1..].iter(),
+            close[1..].iter()
+        )
+        .scan((o_0, c_0), |(prevo, prevc), (o, h, l, c)| {
+            let c_i = (o + h + l + c) / 4.0;
+            let o_i = (*prevo + *prevc) / 2.0;
+            let h_i = h.max(o_i).max(c_i);
+            let l_i = l.min(o_i).min(c_i);
+            *prevo = o_i;
+            *prevc = c_i;
+            Some((o_i, h_i, l_i, c_i))
+        }),
+    )
+}

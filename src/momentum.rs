@@ -245,7 +245,7 @@ pub fn wpr<'a>(
 /// Percent price oscillator
 ///
 /// Measure the difference between two moving averages as a percentage of the larger
-/// moving average.
+/// moving average. Effectively same as Chande's Range Action Verification Index.
 ///
 /// # Usage
 ///
@@ -1153,4 +1153,147 @@ pub fn psych(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
             .map(|w| w.iter().sum::<f64>() * 100.0 / window as f64)
             .collect::<Vec<f64>>(),
     )
+}
+
+/// True Strength Index
+///
+/// Measures the strength of an asset or market's price movement over time as
+/// well as any directions in that price.
+///
+/// # Usage
+///
+/// Uptrends are denoted by tsi values crossing above signal line or centre line.
+///
+/// # Source
+///
+/// https://www.investopedia.com/terms/t/tsi.asp
+///
+/// # Examples
+///
+/// ```
+/// use traquer::momentum;
+///
+/// momentum::tsi(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0,2.0,3.0,4.0,5.0,6.0,4.0],
+///     3, 6, 3).collect::<Vec<(f64,f64)>>();
+///
+/// ```
+pub fn tsi(
+    data: &[f64],
+    short: usize,
+    long: usize,
+    signal: usize,
+) -> impl Iterator<Item = (f64, f64)> + '_ {
+    let diffs = data
+        .windows(2)
+        .map(|pair| pair[1] - pair[0])
+        .collect::<Vec<f64>>();
+    let long_diff = smooth::ewma(&diffs, long)
+        .skip(long - 1)
+        .collect::<Vec<f64>>();
+    let pcds = smooth::ewma(&long_diff, short);
+    let abs_long_diff = smooth::ewma(&diffs.iter().map(|x| x.abs()).collect::<Vec<f64>>(), long)
+        .skip(long - 1)
+        .collect::<Vec<f64>>();
+    let abs_pcds = smooth::ewma(&abs_long_diff, short);
+    let tsi = pcds
+        .zip(abs_pcds)
+        .map(|(pcd, apcd)| 100.0 * pcd / apcd)
+        .collect::<Vec<f64>>();
+    let signal = iter::repeat(f64::NAN)
+        .take(short - 1)
+        .chain(smooth::ewma(&tsi[short - 1..], signal));
+    iter::repeat((f64::NAN, f64::NAN)).take(long).chain(
+        tsi.iter()
+            .zip(signal)
+            .map(|(&x, y)| (x, y))
+            .collect::<Vec<(f64, f64)>>(),
+    )
+}
+
+/// Pring's Special K
+///
+/// The sum of several different weighted averages of different rate of change calculations.
+/// Assumes that prices are revolving around the four-year business cycle.
+///
+/// # Usage
+///
+/// Designed to peak and trough with the price at bull and bear market turning points.
+///
+/// # Source
+///
+/// https://school.stockcharts.com/doku.php?id=technical_indicators:pring_s_special_k
+///
+/// # Examples
+///
+/// ```
+/// use traquer::momentum;
+///
+/// momentum::special_k(&vec![1.0; 50]).collect::<Vec<f64>>();
+///
+/// ```
+pub fn special_k(data: &[f64]) -> impl Iterator<Item = f64> + '_ {
+    const ROCS: [usize; 12] = [10, 15, 20, 30, 50, 65, 75, 100, 195, 265, 390, 530];
+    const PERIODS: [usize; 12] = [10, 10, 10, 15, 50, 65, 75, 100, 130, 130, 130, 195];
+    const MULTIPLIERS: [f64; 12] = [1.0, 2.0, 3.0, 4.0, 1.0, 2.0, 3.0, 4.0, 1.0, 2.0, 3.0, 4.0];
+    prings(data, &ROCS, &PERIODS, &MULTIPLIERS)
+}
+
+/// Pring's Know Sure Thing
+///
+/// Oscillator developed by Martin Pring to make rate-of-change readings easier for
+/// traders to interpret.
+///
+/// # Usage
+///
+/// Signals are generated when the KST crosses over the signal line, but traders also look for overbought or oversold conditions.
+///
+/// # Source
+///
+/// https://www.investopedia.com/terms/k/know-sure-thing-kst.asp
+///
+/// # Examples
+///
+/// ```
+/// use traquer::momentum;
+///
+/// momentum::kst(&vec![1.0; 50], Some([10, 15, 25, 30]), None).collect::<Vec<f64>>();
+///
+/// ```
+pub fn kst(
+    data: &[f64],
+    rocs: Option<[usize; 4]>,
+    windows: Option<[usize; 4]>,
+) -> impl Iterator<Item = f64> + '_ {
+    let rocs = rocs.unwrap_or([10, 15, 20, 30]);
+    let periods = windows.unwrap_or([10, 10, 10, 15]);
+    const MULTIPLIERS: [f64; 4] = [1.0, 2.0, 3.0, 4.0];
+    prings(data, &rocs, &periods, &MULTIPLIERS)
+}
+
+fn prings<'a, 'b>(
+    data: &'a [f64],
+    rocs: &'b [usize],
+    periods: &'b [usize],
+    multipliers: &'b [f64],
+) -> impl Iterator<Item = f64> + 'a {
+    let mut result = vec![0.0; data.len() - rocs[0] - (periods[0] - 1)];
+    izip!(rocs, periods, multipliers).for_each(|(roc_win, ma_win, mult)| {
+        let roc_win = roc_win + 1;
+        let roc = data
+            .windows(roc_win)
+            .map(|w| 100.0 * (w[roc_win - 1] / w[0] - 1.0))
+            .collect::<Vec<f64>>();
+        if !roc.is_empty() {
+            smooth::sma(&roc, *ma_win)
+                .skip(ma_win - 1)
+                .enumerate()
+                .for_each(|(c, val)| {
+                    result[c + ((roc_win - 1) - (rocs[0])) + (ma_win - periods[0])] += val * mult;
+                });
+        }
+    });
+    iter::repeat(f64::NAN)
+        .take(rocs[0] + (periods[0] - 1))
+        .chain(result)
 }
