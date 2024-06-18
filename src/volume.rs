@@ -509,3 +509,73 @@ pub fn bw_mfi<'a>(
         .zip(volume)
         .map(|((h, l), vol)| (h - l) / vol * (10.0_f64).powi(6))
 }
+
+/// Positive Volume Index
+///
+/// Based on price moves depending on whether the current volume is higher than
+/// the previous period.
+///
+/// # Usage
+///
+/// When above the one year average, confirmation of uptrend.
+///
+/// # Source
+///
+/// https://www.investopedia.com/terms/p/pvi.asp
+///
+/// # Examples
+///
+/// ```
+/// use traquer::volume;
+///
+/// volume::pvi(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0]).collect::<Vec<f64>>();
+///
+/// ```
+pub fn pvi<'a>(data: &'a [f64], volume: &'a [f64]) -> impl Iterator<Item = f64> + 'a {
+    iter::once(f64::NAN).chain(data.windows(2).zip(volume.windows(2)).scan(
+        100.0,
+        |state, (c, vol)| {
+            if vol[1] > vol[0] {
+                *state *= c[1] / c[0];
+            }
+            Some(*state)
+        },
+    ))
+}
+
+/// Negative Volume Index
+///
+/// Based on price moves depending on whether the current volume is higher than
+/// the previous period.
+///
+/// # Usage
+///
+/// When above the one year average, confirmation of downtrend.
+///
+/// # Source
+///
+/// https://www.investopedia.com/terms/n/nvi.asp
+///
+/// # Examples
+///
+/// ```
+/// use traquer::volume;
+///
+/// volume::nvi(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0]).collect::<Vec<f64>>();
+///
+/// ```
+pub fn nvi<'a>(data: &'a [f64], volume: &'a [f64]) -> impl Iterator<Item = f64> + 'a {
+    iter::once(f64::NAN).chain(data.windows(2).zip(volume.windows(2)).scan(
+        100.0,
+        |state, (c, vol)| {
+            if vol[1] < vol[0] {
+                *state *= c[1] / c[0];
+            }
+            Some(*state)
+        },
+    ))
+}

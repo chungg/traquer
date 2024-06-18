@@ -321,6 +321,12 @@ fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("sig-volume-obv", |b| {
         b.iter(|| black_box(volume::obv(&stats.close, &stats.volume).collect::<Vec<f64>>()))
     });
+    c.bench_function("sig-volume-pvi", |b| {
+        b.iter(|| black_box(volume::pvi(&stats.close, &stats.volume).collect::<Vec<f64>>()))
+    });
+    c.bench_function("sig-volume-nvi", |b| {
+        b.iter(|| black_box(volume::nvi(&stats.close, &stats.volume).collect::<Vec<f64>>()))
+    });
     c.bench_function("sig-volatility-mass", |b| {
         b.iter(|| black_box(volatility::mass(&stats.high, &stats.low, 9, 16).collect::<Vec<f64>>()))
     });
