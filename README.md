@@ -1,6 +1,18 @@
+[![Crates.io][crates-badge]][crates-url]
+[![Apache licensed][license-badge]][license-url]
+[![Build Status][actions-badge]][actions-url]
+
+[crates-badge]: https://img.shields.io/crates/v/traquer.svg
+[crates-url]: https://crates.io/crates/traquer
+[license-badge]: https://img.shields.io/badge/license-Apache%20v2-blue.svg
+[license-url]: https://github.com/chungg/traquer/blob/main/LICENSE
+[actions-badge]: https://github.com/chungg/traquer/actions/workflows/gate.yml/badge.svg
+[actions-url]: https://github.com/chungg/traquer/actions?query=branch%3Amain
+
 # traquer
 
-Technical analysis library that gives you false hope that you can beat the market.
+A simple, dataframe-agnostic, technical analysis library that gives you false hope
+that you can beat the market.
 
 ## installation
 1. (optional) https://rustup.rs/
@@ -27,8 +39,9 @@ encouraged.
 
 ## types of indicators
 
-Indicators often behave quite similarly depending on window size and classfication/api may
-change (if egregiously wrong).
+90+ indicators available across 5 categories. Even across categories, indicators often
+behave quite similarly depending on window size and classfication/api may change
+(if egregiously wrong).
 
 ### momentum
 Provides technical indicators that measures the rate of change or speed of price
@@ -54,8 +67,6 @@ the indicator, it may be a momentum indicator or trend indicator.
 Provides moving average functions. Often used to track trend, levels of support, breakouts, etc...
 The results are in the same scale as input data and is often used as a signal line for input data.
 
-
-## TODO
-- simplify reqs
+## todo
 - handle div by zero scenarios
 - allow other numeric types rather than just f64

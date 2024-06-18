@@ -1,6 +1,6 @@
 [package]
 name = "traquer"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 description = "technical analysis library"
 license = "Apache-2.0"
@@ -10,12 +10,12 @@ categories = ["finance"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-itertools = "0.12.1"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0.117"
+itertools = "0.13.0"
 
 [dev-dependencies]
 criterion = "0.5.1"
+serde = { version = "1.0.203", features = ["derive"] }
+serde_json = "1.0.117"
 
 [[bench]]
 name = "traquer"
