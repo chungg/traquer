@@ -16,13 +16,13 @@ use crate::smooth;
 /// Measures the volatility of stock prices by calculating a ratio of two exponential
 /// moving averages of the high-low differential.
 ///
-/// # Usage
+/// ## Usage
 ///
 /// A high value suggests a potential reversal in trend.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.investopedia.com/terms/m/mass-index.asp
+/// [[1]](https://www.investopedia.com/terms/m/mass-index.asp)
 ///
 /// # Examples
 ///
@@ -67,9 +67,9 @@ pub fn mass<'a>(
 ///
 /// Upper and lower bands are defined by True Range from moving average.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.investopedia.com/terms/k/keltnerchannel.asp
+/// [[1]](https://www.investopedia.com/terms/k/keltnerchannel.asp)
 ///
 /// # Examples
 ///
@@ -99,14 +99,14 @@ pub fn keltner<'a>(
 /// Calculates the range of a security's price action over a specified period,
 /// providing insights into the volatility
 ///
-/// # Usage
+/// ## Usage
 ///
 /// A high value suggests a strong trend while a low value suggests sideways movement.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://superalgos.org/Docs/Foundations/Topic/gapo.shtml
-/// https://library.tradingtechnologies.com/trade/chrt-ti-gopalakrishnan-range-index.html
+/// [[1]](https://superalgos.org/Docs/Foundations/Topic/gapo.shtml)
+/// [[2]](https://library.tradingtechnologies.com/trade/chrt-ti-gopalakrishnan-range-index.html)
 ///
 /// # Examples
 ///
@@ -146,9 +146,9 @@ pub(crate) fn _true_range<'a>(
 /// the current low; the absolute value of the current high less the previous close;
 /// and the absolute value of the current low less the previous close.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.investopedia.com/terms/a/atr.asp
+/// [[1]](https://www.investopedia.com/terms/a/atr.asp)
 ///
 /// # Examples
 ///
@@ -170,7 +170,7 @@ pub fn tr<'a>(high: &'a [f64], low: &'a [f64], close: &'a [f64]) -> impl Iterato
 ///
 /// Moving average of the True Range series
 ///
-/// https://www.investopedia.com/terms/a/atr.asp
+/// [[1]](https://www.investopedia.com/terms/a/atr.asp)
 ///
 /// # Examples
 ///
@@ -200,9 +200,9 @@ pub fn atr<'a>(
 ///
 /// Average of a given day's high, low, and close price.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/typical-price
+/// [[1]](https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/typical-price)
 ///
 /// # Examples
 ///
@@ -261,9 +261,9 @@ pub fn std_dev(
 ///
 /// Channels defined by standard deviations away from a moving average.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.investopedia.com/terms/b/bollingerbands.asp
+/// [[1]](https://www.investopedia.com/terms/b/bollingerbands.asp)
 ///
 /// # Examples
 ///
@@ -290,9 +290,9 @@ pub fn bbands(
 ///
 /// Channels defined by highest high and lowest low
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.tradingview.com/support/solutions/43000502253-donchian-channels-dc/
+/// [[1]](https://www.tradingview.com/support/solutions/43000502253-donchian-channels-dc/)
 ///
 /// # Examples
 ///
@@ -323,9 +323,9 @@ pub fn donchian<'a>(
 ///
 /// Channels defined by peaks or valleys in prior period.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.tradingview.com/script/Yy2ASjTq-Fractal-Chaos-Bands/
+/// [[1]](https://www.tradingview.com/script/Yy2ASjTq-Fractal-Chaos-Bands/)
 ///
 /// # Examples
 ///
@@ -371,13 +371,13 @@ pub fn fbands<'a>(high: &'a [f64], low: &'a [f64]) -> impl Iterator<Item = (f64,
 ///
 /// Measures the standard deviation of returns, annualised.
 ///
-/// # Usage
+/// ## Usage
 ///
 /// A higher value suggests higher risk.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.macroption.com/historical-volatility-calculation/
+/// [[1]](https://www.macroption.com/historical-volatility-calculation/)
 ///
 /// # Examples
 ///
@@ -410,7 +410,7 @@ pub fn hv(data: &[f64], window: usize, deviations: Option<f64>) -> impl Iterator
 /// Upper and lower bands are defined by True Range from moving average with a multiplier.
 /// Similar to Keltner Channels.
 ///
-/// https://www.investopedia.com/terms/s/starc.asp
+/// [[1]](https://www.investopedia.com/terms/s/starc.asp)
 ///
 /// # Examples
 ///
@@ -443,14 +443,14 @@ pub fn starc<'a>(
 /// Measures the volatility of a security's price action by comparing the spread between
 /// the high and low prices over a specified period.
 ///
-/// # Usage
+/// ## Usage
 ///
 /// A high value suggests high volatility.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.tradingview.com/chart/AUDUSD/gjfxqWqW-What-Is-a-Chaikin-Volatility-Indicator-in-Trading/
-/// https://theforexgeek.com/chaikins-volatility-indicator/
+/// [[1]](https://www.tradingview.com/chart/AUDUSD/gjfxqWqW-What-Is-a-Chaikin-Volatility-Indicator-in-Trading/)
+/// [[2]](https://theforexgeek.com/chaikins-volatility-indicator/)
 ///
 /// # Examples
 ///
@@ -490,13 +490,13 @@ pub fn cvi<'a>(
 /// Measures the direction and magnitude of volatility in an asset’s price. Unlike the
 /// Relative Strength Index (RSI), which uses absolute prices, the RVI uses standard deviation.
 ///
-/// # Usage
+/// ## Usage
 ///
 /// A high value suggests higher volatility.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.tradingview.com/support/solutions/43000594684-relative-volatility-index/
+/// [[1]](https://www.tradingview.com/support/solutions/43000594684-relative-volatility-index/)
 ///
 /// # Examples
 ///
@@ -539,14 +539,14 @@ pub fn relative_vol(
 /// reflects the concept that trends require more force to reverse than to continue
 /// in the same direction.
 ///
-/// # Usage
+/// ## Usage
 ///
 /// A high value suggests higher volatility.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.tradingview.com/script/ODEBlQkx-Inertia-Indicator/
-/// https://theforexgeek.com/inertia-indicator/
+/// [[1]](https://www.tradingview.com/script/ODEBlQkx-Inertia-Indicator/)
+/// [[2]](https://theforexgeek.com/inertia-indicator/)
 ///
 /// # Examples
 ///
@@ -573,13 +573,13 @@ pub fn inertia(close: &[f64], window: usize, smoothing: usize) -> impl Iterator<
 /// into account the range between the highest high and the lowest low prices over
 /// a specified period.
 ///
-/// # Usage
+/// ## Usage
 ///
 /// A high value suggests a strong trend while a low value suggests sideways movement.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.tradingview.com/support/solutions/43000501980-choppiness-index-chop/
+/// [[1]](https://www.tradingview.com/support/solutions/43000501980-choppiness-index-chop/)
 ///
 /// # Examples
 ///
@@ -622,13 +622,13 @@ pub fn chop<'a>(
 /// Measures the level of trend activity in a financial market by comparing the max price
 /// range over a specific period to the cumulative price movement within that period.
 ///
-/// # Usage
+/// ## Usage
 ///
 /// A higher VHF value indicates a trending market, while lower VHF suggests consolidation.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.upcomingtrader.com/blog/the-vertical-horizontal-filter-a-traders-guide-to-market-phases/
+/// [[1]](https://www.upcomingtrader.com/blog/the-vertical-horizontal-filter-a-traders-guide-to-market-phases/)
 ///
 /// # Examples
 ///
@@ -674,14 +674,14 @@ pub fn vhf<'a>(
 ///
 /// Uses a modified formula based on two-period averages to derive OHLC candlesticks
 ///
-/// # Usage
+/// ## Usage
 ///
 /// Like normal chandlestick chart.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.marketvolume.com/technicalanalysis/heikin_ashi_candlesticks.asp
-/// https://www.investopedia.com/terms/h/heikinashi.asp
+/// [[1]](https://www.marketvolume.com/technicalanalysis/heikin_ashi_candlesticks.asp)
+/// [[2]](https://www.investopedia.com/terms/h/heikinashi.asp)
 ///
 /// # Examples
 ///

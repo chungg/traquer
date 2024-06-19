@@ -18,13 +18,13 @@ use crate::volatility::_true_range;
 /// over a specified period. Shows the magnitude of recent price changes to determine
 /// overbought or oversold conditions.
 ///
-/// # Usage
+/// ## Usage
 ///
 /// Usually, a value above 70 suggests overbought and a value below 30, oversold.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.investopedia.com/terms/r/rsi.asp
+/// [[1]](https://www.investopedia.com/terms/r/rsi.asp)
 ///
 /// # Examples
 ///
@@ -60,13 +60,13 @@ pub fn rsi(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
 /// the strength and direction of the trend. When the MACD crosses above the signal line,
 /// it's a bullish signal, indicating a potential uptrend.
 ///
-/// # Usage
+/// ## Usage
 ///
 /// An increasing value suggests a stronger uptrend. Often paired with signal line to suggests buy/sell.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.investopedia.com/terms/m/macd.asp
+/// [[1]](https://www.investopedia.com/terms/m/macd.asp)
 ///
 /// # Examples
 ///
@@ -92,14 +92,14 @@ pub fn macd(close: &[f64], short: usize, long: usize) -> impl Iterator<Item = f6
 /// period, then dividing the result by the sum of the absolute values of all price
 /// changes over the same period.
 ///
-/// # Usage
+/// ## Usage
 ///
 /// A reading above 50 indicates strong bullish momentum, while a reading below -50
 /// suggests strong bearish momentum.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.investopedia.com/terms/c/chandemomentumoscillator.asp
+/// [[1]](https://www.investopedia.com/terms/c/chandemomentumoscillator.asp)
 ///
 /// # Examples
 ///
@@ -126,13 +126,13 @@ pub fn cmo(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
 /// The resulting value is then multiplied by 100 to create an oscillator that ranges
 /// from -100 to +100.
 ///
-/// # Usage
+/// ## Usage
 ///
 /// A value greater than 0, suggests an uptrend.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.stockmaniacs.net/chande-forecast-oscillator/
+/// [[1]](https://www.stockmaniacs.net/chande-forecast-oscillator/)
 ///
 /// # Examples
 ///
@@ -162,13 +162,13 @@ pub fn cfo(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
 ///   - This measures the ability of sellers to push the price down.
 ///   -  It's calculated by subtracting the EWMA from the low price.
 ///
-/// # Usage
+/// ## Usage
 ///
 /// Increasing bull and bear values above 0 suggest a stronger uptrend.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.investopedia.com/articles/trading/03/022603.asp
+/// [[1]](https://www.investopedia.com/articles/trading/03/022603.asp)
 ///
 /// # Examples
 ///
@@ -194,9 +194,9 @@ pub fn elder_ray<'a>(
 
 /// Williams Alligator
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.investopedia.com/articles/trading/072115/exploring-williams-alligator-indicator.asp
+/// [[1]](https://www.investopedia.com/articles/trading/072115/exploring-williams-alligator-indicator.asp)
 pub fn alligator(_data: &[f64]) {}
 
 /// Williams Percent Range
@@ -206,12 +206,13 @@ pub fn alligator(_data: &[f64]) {}
 ///
 /// W%R = (Highest High - Close) / (Highest High - Lowest Low) * -100
 ///
-/// # Usage
+/// ## Usage
 ///
 /// Typically, a value above -20 suggests overbought and below -80, oversold.
 ///
-/// # Source
-/// https://www.investopedia.com/terms/w/williamsr.asp
+/// ## Sources
+///
+/// [[1]](https://www.investopedia.com/terms/w/williamsr.asp)
 ///
 /// # Examples
 ///
@@ -250,7 +251,7 @@ pub fn wpr<'a>(
 /// Measure the difference between two moving averages as a percentage of the larger
 /// moving average. Effectively same as Chande's Range Action Verification Index.
 ///
-/// # Usage
+/// ## Usage
 ///
 /// A value above zero suggests an uptrend
 ///
@@ -274,13 +275,13 @@ pub fn ppo(data: &[f64], short: usize, long: usize) -> impl Iterator<Item = f64>
 ///
 /// Measure the difference between two moving averages.
 ///
-/// # Usage
+/// ## Usage
 ///
 /// A value above zero suggests an uptrend.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/apo
+/// [[1]](https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/apo)
 ///
 /// # Examples
 ///
@@ -302,13 +303,13 @@ pub fn apo(data: &[f64], short: usize, long: usize) -> impl Iterator<Item = f64>
 ///
 /// A double smoothed version of ROC designed to track changes in a trend strength
 ///
-/// # Usage
+/// ## Usage
 ///
 /// A value above zero suggests an uptrend.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.marketvolume.com/technicalanalysis/pmo.asp
+/// [[1]](https://www.marketvolume.com/technicalanalysis/pmo.asp)
 ///
 /// # Examples
 ///
@@ -342,13 +343,13 @@ pub fn pmo(data: &[f64], win1: usize, win2: usize) -> impl Iterator<Item = f64> 
 /// A technical indicator that uses the weighted average of three different time periods
 /// to reduce the volatility and false transaction signals.
 ///
-/// # Usage
+/// ## Usage
 ///
 /// Typically, a value above 70 suggests overbought and a value below 30, oversold.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.investopedia.com/terms/u/ultimateoscillator.asp
+/// [[1]](https://www.investopedia.com/terms/u/ultimateoscillator.asp)
 ///
 /// # Examples
 ///
@@ -410,13 +411,13 @@ pub fn ultimate<'a>(
 /// Combines moving averages and the Average True Range (ATR) to create an oscillator
 /// that oscillates around a centerline
 ///
-/// # Usage
+/// ## Usage
 ///
 /// Typically, a value above 3 suggests overbought and a value below -3, oversold.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://library.tradingtechnologies.com/trade/chrt-ti-pretty-good-oscillator.html
+/// [[1]](https://library.tradingtechnologies.com/trade/chrt-ti-pretty-good-oscillator.html)
 ///
 /// # Examples
 ///
@@ -483,14 +484,14 @@ pub(crate) fn _swing<'a>(
 ///
 /// Calculates the strength of price movement and predicts potential trend reversal.
 ///
-/// # Usage
+/// ## Usage
 ///
 /// A value above 0 suggests an uptrend.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.investopedia.com/terms/a/asi.asp
-/// https://quantstrategy.io/blog/accumulative-swing-index-how-to-trade/
+/// [[1]](https://www.investopedia.com/terms/a/asi.asp)
+/// [[2]](https://quantstrategy.io/blog/accumulative-swing-index-how-to-trade/)
 ///
 /// # Examples
 ///
@@ -520,13 +521,13 @@ pub fn si<'a>(
 /// Indicator to show the percentage change in a moving average that has been smoothed
 /// exponentially three times.
 ///
-/// # Usage
+/// ## Usage
 ///
 /// A value above 0 suggests an uptrend.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.investopedia.com/terms/t/trix.asp
+/// [[1]](https://www.investopedia.com/terms/t/trix.asp)
 ///
 /// # Examples
 ///
@@ -560,13 +561,13 @@ pub fn trix(close: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
 ///
 /// Uses RSI principles but applies them to closing price deviations instead of the closing prices
 ///
-/// # Usage
+/// ## Usage
 ///
 /// Typically, a value above 80 suggests overbought and a value below 20, oversold.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.marketvolume.com/technicalanalysis/trendintensityindex.asp
+/// [[1]](https://www.marketvolume.com/technicalanalysis/trendintensityindex.asp)
 ///
 /// # Examples
 ///
@@ -607,13 +608,13 @@ pub fn tii(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
 /// Compares a security’s closing price to a range of its highest highs and lowest lows
 /// over a specific time period.
 ///
-/// # Usage
+/// ## Usage
 ///
 /// Typically, a value above 80 suggests overbought and a value below 20, oversold.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.investopedia.com/articles/technical/073001.asp
+/// [[1]](https://www.investopedia.com/articles/technical/073001.asp)
 ///
 /// # Examples
 ///
@@ -683,14 +684,14 @@ fn _stc(series: &[f64], window: usize, smooth: usize) -> impl Iterator<Item = f6
 /// A modified version of the Moving Average Convergence Divergence. It aims to improve
 /// upon traditional moving averages (MAs) by incorporating cycle analysis.
 ///
-/// # Usage
+/// ## Usage
 ///
 /// Typically a value above 75 suggests overbought and a value below 25, oversold.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.investopedia.com/articles/forex/10/schaff-trend-cycle-indicator.asp
-/// https://quantstrategy.io/blog/understanding-the-schaff-trend-cycle-stc-indicator-a-powerful-technical-analysis-tool/
+/// [[1]](https://www.investopedia.com/articles/forex/10/schaff-trend-cycle-indicator.asp)
+/// [[2]](https://quantstrategy.io/blog/understanding-the-schaff-trend-cycle-stc-indicator-a-powerful-technical-analysis-tool/)
 ///
 /// # Examples
 ///
@@ -735,13 +736,13 @@ pub fn stc(
 /// Measures the strength of a trend by comparing a security’s closing price to its trading range
 /// while smoothing the results using a simple moving average.
 ///
-/// # Usage
+/// ## Usage
 ///
 /// A value above 0 suggests an uptrend.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.investopedia.com/terms/r/relative_vigor_index.asp
+/// [[1]](https://www.investopedia.com/terms/r/relative_vigor_index.asp)
 ///
 /// # Examples
 ///
@@ -795,13 +796,13 @@ pub fn relative_vigor<'a>(
 /// Converts price data into a Gaussian normal distribution.
 /// Extreme readings (above +1 or below -1) may signal potential price reversals.
 ///
-/// # Usage
+/// ## Usage
 ///
 /// A value above 0 suggests an uptrend.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.investopedia.com/terms/f/fisher-transform.asp
+/// [[1]](https://www.investopedia.com/terms/f/fisher-transform.asp)
 ///
 /// # Examples
 ///
@@ -850,13 +851,13 @@ pub fn fisher<'a>(
 /// Based on multiple simple moving averages (SMAs). The highest high and lowest low
 /// of these SMAs create high and low oscillator curves.
 ///
-/// # Usage
+/// ## Usage
 ///
 /// An oscillator value above 0 suggests an uptrend. A higher band value suggests instability.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.tradingview.com/script/gWYg0ti0-Indicators-Rainbow-Charts-Oscillator-Binary-Wave-and-MAs/
+/// [[1]](https://www.tradingview.com/script/gWYg0ti0-Indicators-Rainbow-Charts-Oscillator-Binary-Wave-and-MAs/)
 ///
 /// # Examples
 ///
@@ -907,13 +908,13 @@ pub fn rainbow(
 ///
 /// Calculated as a weighted moving average of the sum of two rate of change periods
 ///
-/// # Usage
+/// ## Usage
 ///
 /// A value above 0 suggests an uptrend.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.investopedia.com/terms/c/coppockcurve.asp
+/// [[1]](https://www.investopedia.com/terms/c/coppockcurve.asp)
 ///
 /// # Examples
 ///
@@ -947,13 +948,13 @@ pub fn coppock(
 /// Measures the percentage change in price between the current price
 /// and the price a certain number of periods prior.
 ///
-/// # Usage
+/// ## Usage
 ///
 /// A value above 0 suggests an uptrend.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.investopedia.com/terms/p/pricerateofchange.asp.
+/// [[1]](https://www.investopedia.com/terms/p/pricerateofchange.asp)
 ///
 /// # Examples
 ///
@@ -976,13 +977,13 @@ pub fn roc(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
 ///
 /// An oscillator that measures the strength of buying and selling pressure
 ///
-/// # Usage
+/// ## Usage
 ///
 /// A value above 0 suggests an uptrend.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.tradingview.com/support/solutions/43000589100-balance-of-power-bop/
+/// [[1]](https://www.tradingview.com/support/solutions/43000589100-balance-of-power-bop/)
 ///
 /// # Examples
 ///
@@ -1019,13 +1020,13 @@ pub fn bal_power<'a>(
 /// Measures the relative position of the most recent closing price to a selected
 /// moving average as a percentage.
 ///
-/// # Usage
+/// ## Usage
 ///
 /// A value above 0 suggests an uptrend.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.investopedia.com/terms/d/disparityindex.asp
+/// [[1]](https://www.investopedia.com/terms/d/disparityindex.asp)
 ///
 /// # Examples
 ///
@@ -1050,14 +1051,14 @@ pub fn disparity(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ 
 /// indicator moves lower. When the price is closing higher than the open,
 /// the indicator moves up
 ///
-/// # Usage
+/// ## Usage
 ///
 /// A value greater than zero means that the majority of datapoints in period have been up,
 /// indicating that buying pressure has been increasing.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.investopedia.com/terms/q/qstick.asp
+/// [[1]](https://www.investopedia.com/terms/q/qstick.asp)
 ///
 /// # Examples
 ///
@@ -1087,13 +1088,13 @@ pub fn qstick<'a>(
 ///
 /// Calculates the midpoint of a security's price action over a specified period.
 ///
-/// # Usage
+/// ## Usage
 ///
 /// Troughs suggest buy signal and peaks, sell.
 ///
-/// # Source
+/// ## Sources
 ///
-/// http://www.mesasoftware.com/papers/TheCGOscillator.pdf
+/// [[1]](http://www.mesasoftware.com/papers/TheCGOscillator.pdf)
 ///
 /// # Examples
 ///
@@ -1129,13 +1130,13 @@ pub fn cog(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
 /// Calculates a ratio based on the number of up bars (price higher than previous bar) over
 /// a specified number of bars.
 ///
-/// # Usage
+/// ## Usage
 ///
 /// An increasing line suggests a stronger uptrend.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://tradingliteracy.com/psychological-line-indicator/
+/// [[1]](https://tradingliteracy.com/psychological-line-indicator/)
 ///
 /// # Examples
 ///
@@ -1163,13 +1164,13 @@ pub fn psych(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
 /// Measures the strength of an asset or market's price movement over time as
 /// well as any directions in that price.
 ///
-/// # Usage
+/// ## Usage
 ///
 /// Uptrends are denoted by tsi values crossing above signal line or centre line.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.investopedia.com/terms/t/tsi.asp
+/// [[1]](https://www.investopedia.com/terms/t/tsi.asp)
 ///
 /// # Examples
 ///
@@ -1219,13 +1220,13 @@ pub fn tsi(
 /// The sum of several different weighted averages of different rate of change calculations.
 /// Assumes that prices are revolving around the four-year business cycle.
 ///
-/// # Usage
+/// ## Usage
 ///
 /// Designed to peak and trough with the price at bull and bear market turning points.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://school.stockcharts.com/doku.php?id=technical_indicators:pring_s_special_k
+/// [[1]](https://school.stockcharts.com/doku.php?id=technical_indicators:pring_s_special_k)
 ///
 /// # Examples
 ///
@@ -1247,13 +1248,13 @@ pub fn special_k(data: &[f64]) -> impl Iterator<Item = f64> + '_ {
 /// Oscillator developed by Martin Pring to make rate-of-change readings easier for
 /// traders to interpret.
 ///
-/// # Usage
+/// ## Usage
 ///
 /// Signals are generated when the KST crosses over the signal line, but traders also look for overbought or oversold conditions.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.investopedia.com/terms/k/know-sure-thing-kst.asp
+/// [[1]](https://www.investopedia.com/terms/k/know-sure-thing-kst.asp)
 ///
 /// # Examples
 ///
@@ -1306,13 +1307,13 @@ fn prings<'a, 'b>(
 /// An advanced version of the Relative Strength Index. It applies MACD Histogram principle
 /// to the double smoothed RSI
 ///
-/// # Usage
+/// ## Usage
 ///
 /// A move above zero line suggests an uptrend.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.marketvolume.com/technicalanalysis/derivativeoscillator.asp
+/// [[1]](https://www.marketvolume.com/technicalanalysis/derivativeoscillator.asp)
 ///
 /// # Examples
 ///
