@@ -5,6 +5,8 @@
 //! as a signal line for input data.
 
 use itertools::izip;
+use std::collections::VecDeque;
+use std::f64::consts::PI;
 use std::iter;
 
 /// Moving average types
@@ -633,4 +635,216 @@ pub fn hwma(
         *state = (avg, trend, season);
         Some(avg + trend + 0.5 * season)
     })
+}
+
+/// Fibonacci's Weighted Moving Average
+///
+/// Incorporates Fibonacci ratios into its calculation, assigning varying weights to
+/// data points, enhancing its responsiveness.
+///
+/// ## Sources
+///
+/// [[1]](https://blog.xcaldata.com/confirming-market-trends-with-fibonacci-weighted-moving-average-fwma/)
+///
+/// # Examples
+///
+/// ```
+/// use traquer::smooth;
+///
+/// smooth::fwma(&vec![1.0, 2.0, 3.0, 4.0, 5.0], 3).collect::<Vec<f64>>();
+/// ```
+pub fn fwma(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
+    let mut denom = 2.0;
+    let weights = iter::repeat(1.0)
+        .take(2)
+        .chain((0..window - 2).scan((1.0, 1.0), |state, _| {
+            *state = (state.1, state.0 + state.1);
+            denom += state.1;
+            Some(state.1)
+        }))
+        .collect::<Vec<f64>>()
+        .iter()
+        .map(|i| i / denom)
+        .collect::<Vec<f64>>();
+    iter::repeat(f64::NAN)
+        .take(window - 1)
+        .chain(data.windows(window).map(move |w| {
+            w.iter()
+                .zip(weights.iter())
+                .map(|(value, weight)| value * weight)
+                .sum()
+        }))
+}
+
+/// Ehler's Super Smoother Filter
+///
+/// Aims to eliminate short-term fluctuations while reacting quickly.
+/// The 2-pole logic balances smoothing and responsiveness while the 3-pole option prioritises
+/// smoothing more.
+///
+/// ## Sources
+///
+/// [[1]](https://www.tradingview.com/script/VdJy0yBJ-Ehlers-Super-Smoother-Filter/)
+///
+/// # Examples
+///
+/// ```
+/// use traquer::smooth;
+///
+/// smooth::ssf(&vec![1.0, 2.0, 3.0, 4.0, 5.0], 3, Some(false)).collect::<Vec<f64>>();
+/// ```
+pub fn ssf(
+    data: &[f64],
+    window: usize,
+    tri_poles: Option<bool>,
+) -> Box<dyn Iterator<Item = f64> + '_> {
+    let tri_poles = tri_poles.unwrap_or(false);
+    if tri_poles {
+        let x = PI / window as f64;
+        let y = (-x).exp();
+        let y2 = y * y;
+        let z = 2.0 * y * (3.0_f64.sqrt() * x).cos();
+        let d = y2 * y2;
+        let c = -y2 * (1.0 + z);
+        let b = y2 + z;
+        let a = 1.0 - b - c - d;
+        Box::new(iter::repeat(f64::NAN).take(3).chain(data[3..].iter().scan(
+            (data[0], data[1], data[2]),
+            move |state, x| {
+                *state = (
+                    state.1,
+                    state.2,
+                    a * x + b * state.2 + c * state.1 + d * state.0,
+                );
+                Some(state.2)
+            },
+        )))
+    } else {
+        let x = PI * 2.0_f64.sqrt() / window as f64;
+        let y = (-x).exp();
+        let c = -y * y;
+        let b = 2.0 * y * x.cos();
+        let a = 1.0 - b - c;
+        Box::new(iter::repeat(f64::NAN).take(2).chain(data[2..].iter().scan(
+            (data[0], data[1]),
+            move |state, x| {
+                *state = (state.1, a * x + b * state.1 + c * state.0);
+                Some(state.1)
+            },
+        )))
+    }
+}
+
+/// MESA Adaptive Moving Average
+///
+/// Built to adjust and adapt to ever-changing market dynamics. Uses a Hilbert Transform
+/// Discriminator, which is a linear operator that imparts a 90-degree phase shift to frequency
+/// components of an equation to keep up with market movements. Produces an additional
+/// Following Adaptive Moving Average (FAMA) that undergoes vertical movements with a lag.
+///
+/// ## Sources
+///
+/// [[1]](https://www.mesasoftware.com/papers/MAMA.pdf)
+///
+/// # Examples
+///
+/// ```
+/// use traquer::smooth;
+///
+/// smooth::mama(&vec![1.0, 2.0, 3.0, 4.0, 5.0], None, Some(0.05)).collect::<Vec<(f64,f64)>>();
+/// ```
+pub fn mama(
+    data: &[f64],
+    fast: Option<f64>,
+    slow: Option<f64>,
+) -> impl Iterator<Item = (f64, f64)> + '_ {
+    let fast = fast.unwrap_or(0.5);
+    let slow = slow.unwrap_or(0.05);
+
+    let sm = iter::repeat(0.0)
+        .take(3)
+        .chain(
+            data.windows(4)
+                .map(|w| (4.0 * w[3] + 3.0 * w[2] + 2.0 * w[1] + w[0]) / 10.0),
+        )
+        .collect::<Vec<f64>>();
+    let mut dtrend: VecDeque<f64> = [0.0; 7].into();
+
+    let mut i1: VecDeque<f64> = [0.0; 7].into();
+    let mut q1: VecDeque<f64> = [0.0; 7].into();
+
+    iter::repeat((f64::NAN, f64::NAN))
+        .take(6)
+        .chain(
+            (6..data.len()).scan((0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0), move |state, i| {
+                // state = (mama, fama, period, phase, re, im, i2, q2)
+                let tweak = 0.075 * state.2 + 0.54;
+
+                dtrend.pop_back();
+                dtrend.push_front(
+                    ((0.0962 * sm[i]) + (0.5769 * sm[i - 2])
+                        - (0.5769 * sm[i - 4])
+                        - (0.0962 * sm[i - 6]))
+                        * tweak,
+                );
+
+                // Compute InPhase and Quadrature components
+                q1.pop_back();
+                q1.push_front(
+                    ((0.0962 * dtrend[0]) + (0.5769 * dtrend[2])
+                        - (0.5769 * dtrend[4])
+                        - (0.0962 * dtrend[6]))
+                        * tweak,
+                );
+                i1.pop_back();
+                i1.push_front(dtrend[3]);
+
+                // Advance the phase of I1 and Q1 by 90 degrees}
+                let ji =
+                    ((0.0962 * i1[0]) + (0.5769 * i1[2]) - (0.5769 * i1[4]) - (0.0962 * i1[6]))
+                        * tweak;
+                let jq =
+                    ((0.0962 * q1[0]) + (0.5769 * q1[2]) - (0.5769 * q1[4]) - (0.0962 * q1[6]))
+                        * tweak;
+
+                // Phasor addition for 3 bar averaging
+                // Smooth the I and Q components before applying the discriminator
+                let i2 = 0.2 * (i1[0] - jq) + (0.8 * state.6);
+                let q2 = 0.2 * (q1[0] + ji) + (0.8 * state.7);
+
+                // Homodyne Discriminator
+                let re = 0.2 * ((i2 * state.6) + (q2 * state.7)) + (0.8 * state.4);
+                let im = 0.2 * ((i2 * state.7) - (q2 * state.6)) + (0.8 * state.5);
+
+                let mut pd = if im != 0.0 && re != 0.0 {
+                    360.0 / (im / re).atan()
+                } else {
+                    0.0
+                }
+                .clamp(0.67 * state.2, 1.5 * state.2)
+                .clamp(6.0, 50.0);
+                pd = (0.2 * pd) + (0.8 * state.2);
+
+                let phase = if i1[0] != 0.0 {
+                    (q1[0] / i1[0]).atan()
+                } else {
+                    0.0
+                };
+                let delta_phase = (state.3 - phase).max(1.0);
+
+                let alpha = (fast / delta_phase).max(slow);
+                let mama = alpha * data[i] + (1.0 - alpha) * state.0;
+                *state = (
+                    mama,
+                    0.5 * alpha * mama + (1.0 - 0.5 * alpha) * state.1,
+                    pd,
+                    phase,
+                    re,
+                    im,
+                    i2,
+                    q2,
+                );
+                Some((state.0, state.1))
+            }),
+        )
 }

@@ -1346,3 +1346,118 @@ pub fn derivative(
             .collect::<Vec<_>>(),
     )
 }
+
+/// Commodity Channel Index
+///
+/// Measures the difference between the current price and the historical average price.
+///
+/// ## Usage
+///
+/// Value above zero indicates the price is above historical average.
+///
+/// ## Sources
+///
+/// [[1]](https://www.investopedia.com/terms/c/commoditychannelindex.asp)
+///
+/// # Examples
+///
+/// ```
+/// use traquer::momentum;
+///
+/// momentum::derivative(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0,2.0,3.0,4.0,5.0,6.0,4.0],
+///     2, 3, 2).collect::<Vec<f64>>();
+///
+/// ```
+pub fn cci<'a>(
+    high: &'a [f64],
+    low: &'a [f64],
+    close: &'a [f64],
+    window: usize,
+) -> impl Iterator<Item = f64> + 'a {
+    iter::repeat(f64::NAN).take(window - 1).chain(
+        izip!(high, low, close)
+            .map(|(h, l, c)| (h + l + c) / 3.0)
+            .collect::<Vec<f64>>()
+            .windows(window)
+            .map(|w| {
+                let avg = w.iter().sum::<f64>() / window as f64;
+                let dev = w.iter().fold(0.0, |acc, x| acc + (x - avg).abs()) / window as f64;
+                (w.last().unwrap() - avg) / (0.015 * dev)
+            })
+            .collect::<Vec<f64>>(),
+    )
+}
+
+/// Quantitative Qualitative Estimation (QQE)
+///
+/// A derivative of RSI. Effectively a smoothed version to dampen short term changes.
+///
+/// ## Usage
+///
+/// When value crosses above signal line, suggests uptrend. Also, a value below 30 or above 70
+/// suggests oversold or overbought respectively.
+///
+/// ## Sources
+///
+/// [[1]](https://www.lizardindicators.com/the-quantitative-qualitative-estimation-indicator/)
+/// [[2]](https://tradingtact.com/qqe-indicator/)
+/// [[3]](https://www.prorealcode.com/prorealtime-indicators/qqe-quantitative-qualitative-estimation/)
+///
+/// # Examples
+///
+/// ```
+/// use traquer::momentum;
+///
+/// momentum::qqe(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0,2.0,3.0,4.0,5.0,6.0,4.0],
+///     3, 3).collect::<Vec<f64>>();
+///
+/// ```
+pub fn qqe(data: &[f64], window: usize, smoothing: usize) -> impl Iterator<Item = f64> + '_ {
+    let qqe_factor = 4.236;
+    let rsi_vals = rsi(data, window).skip(window).collect::<Vec<f64>>();
+    let rsi_ma = smooth::ewma(&rsi_vals, smoothing)
+        .skip(smoothing - 1)
+        .collect::<Vec<f64>>();
+    let dar = smooth::wilder(
+        &smooth::wilder(
+            &rsi_ma
+                .windows(2)
+                .map(|pair| (pair[1] - pair[0]).abs())
+                .collect::<Vec<f64>>(),
+            window,
+        )
+        .skip(window - 1)
+        .collect::<Vec<f64>>(),
+        window,
+    )
+    .skip(window - 1)
+    .map(|x| x * qqe_factor)
+    .collect::<Vec<f64>>();
+    let rsi_ma = rsi_ma
+        .into_iter()
+        .skip(window * 2 - 1)
+        .collect::<Vec<f64>>();
+
+    iter::repeat(f64::NAN)
+        .take(window * 3 + (smoothing - 1))
+        .chain((1..dar.len()).scan(0.0, move |state, x| {
+            *state = if rsi_ma[x] > *state {
+                if rsi_ma[x - 1] > *state {
+                    state.max(rsi_ma[x] - dar[x])
+                } else {
+                    rsi_ma[x] - dar[x]
+                }
+            } else if rsi_ma[x] < *state {
+                if rsi_ma[x - 1] < *state {
+                    state.min(rsi_ma[x] + dar[x])
+                } else {
+                    rsi_ma[x] + dar[x]
+                }
+            } else {
+                *state
+            };
+            Some(*state)
+        }))
+}

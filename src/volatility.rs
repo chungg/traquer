@@ -170,6 +170,8 @@ pub fn tr<'a>(high: &'a [f64], low: &'a [f64], close: &'a [f64]) -> impl Iterato
 ///
 /// Moving average of the True Range series
 ///
+/// ## Sources
+///
 /// [[1]](https://www.investopedia.com/terms/a/atr.asp)
 ///
 /// # Examples
@@ -721,4 +723,32 @@ pub fn heikin_ashi<'a>(
             Some((o_i, h_i, l_i, c_i))
         }),
     )
+}
+
+/// Weighted Closing Price
+///
+/// Doubles the closing price.
+///
+/// ## Usage
+///
+/// Similar to ATR.
+///
+/// # Examples
+///
+/// ```
+/// use traquer::volatility;
+///
+/// volatility::wcp(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     ).collect::<Vec<f64>>();
+///
+/// ```
+pub fn wcp<'a>(
+    high: &'a [f64],
+    low: &'a [f64],
+    close: &'a [f64],
+) -> impl Iterator<Item = f64> + 'a {
+    izip!(high, low, close).map(|(h, l, c)| (h + l + 2.0 * c) / 4.0)
 }

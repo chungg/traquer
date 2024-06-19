@@ -279,6 +279,14 @@ fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("sig-momentum-derivative", |b| {
         b.iter(|| black_box(momentum::derivative(&stats.close, 6, 10, 3).collect::<Vec<_>>()))
     });
+    c.bench_function("sig-momentum-cci", |b| {
+        b.iter(|| {
+            black_box(momentum::cci(&stats.high, &stats.low, &stats.close, 16).collect::<Vec<_>>())
+        })
+    });
+    c.bench_function("sig-momentum-qqe", |b| {
+        b.iter(|| black_box(momentum::qqe(&stats.close, 6, 3).collect::<Vec<_>>()))
+    });
     c.bench_function("sig-trend-aroon", |b| {
         b.iter(|| black_box(trend::aroon(&stats.high, &stats.low, 16).collect::<Vec<(f64, f64)>>()))
     });
@@ -430,6 +438,11 @@ fn criterion_benchmark(c: &mut Criterion) {
             )
         })
     });
+    c.bench_function("sig-volatility-wcp", |b| {
+        b.iter(|| {
+            black_box(volatility::wcp(&stats.high, &stats.low, &stats.close).collect::<Vec<f64>>())
+        })
+    });
     c.bench_function("ma-ewma", |b| {
         b.iter(|| black_box(smooth::ewma(&stats.close, 16).collect::<Vec<f64>>()))
     });
@@ -483,6 +496,15 @@ fn criterion_benchmark(c: &mut Criterion) {
     });
     c.bench_function("ma-hwma", |b| {
         b.iter(|| black_box(smooth::hwma(&stats.close, None, None, None).collect::<Vec<f64>>()))
+    });
+    c.bench_function("ma-fwma", |b| {
+        b.iter(|| black_box(smooth::fwma(&stats.close, 16).collect::<Vec<f64>>()))
+    });
+    c.bench_function("ma-ssf", |b| {
+        b.iter(|| black_box(smooth::ssf(&stats.close, 16, None).collect::<Vec<f64>>()))
+    });
+    c.bench_function("ma-mama", |b| {
+        b.iter(|| black_box(smooth::mama(&stats.close, None, None).collect::<Vec<(f64, f64)>>()))
     });
 }
 
