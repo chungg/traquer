@@ -33,12 +33,13 @@ fn vforce<'a>(
 /// Note: This is different from formula defined in source. The vforce value is simply
 /// volume * trend
 ///
-/// # Usage
+/// ## Usage
 ///
 /// When the value is above its signal line and/or it crosses above 0, it suggests an uptrend.
 ///
-/// # Source
-/// https://www.investopedia.com/terms/k/klingeroscillator.asp
+/// ## Sources
+///
+/// [[1]](https://www.investopedia.com/terms/k/klingeroscillator.asp)
 ///
 /// # Examples
 ///
@@ -87,14 +88,14 @@ fn wilder_sum(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
 /// It's similar to the Accumulation/Distribution Line. A rising TMF indicates buying pressure,
 /// as more money is flowing into the security.
 ///
-/// # Usage
+/// ## Usage
 ///
 /// A value above 0 suggests an uptrend.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.marketvolume.com/technicalanalysis/twiggsmoneyflow.asp
-/// https://www.incrediblecharts.com/indicators/twiggs_money_flow.php
+/// [[1]](https://www.marketvolume.com/technicalanalysis/twiggsmoneyflow.asp)
+/// [[2]](https://www.incrediblecharts.com/indicators/twiggs_money_flow.php)
 ///
 /// # Examples
 ///
@@ -146,13 +147,13 @@ pub fn twiggs<'a>(
 /// price and volume) by the money flow volume (which is the volume at the current price level).
 /// This function supports alternate logic to consider prior close like yahoo
 ///
-/// # Usage
+/// ## Usage
 ///
 /// An increasing value suggests an uptrend.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.investopedia.com/terms/a/accumulationdistribution.asp
+/// [[1]](https://www.investopedia.com/terms/a/accumulationdistribution.asp)
 ///
 /// # Examples
 ///
@@ -211,13 +212,13 @@ pub fn ad<'a>(
 /// A high EFI value indicates a strong price move with high volume, which can be a sign of
 /// a strong trend
 ///
-/// # Usage
+/// ## Usage
 ///
 /// A value above 0 suggests an uptrend.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.investopedia.com/articles/trading/03/031203.asp
+/// [[1]](https://www.investopedia.com/articles/trading/03/031203.asp)
 ///
 /// # Examples
 ///
@@ -252,13 +253,13 @@ pub fn elder_force<'a>(
 /// A high MFI value (above 80) indicates that the security is overbought, and a
 /// correction may be due.
 ///
-/// # Usage
+/// ## Usage
 ///
 /// Typically, a value above 80 suggests overbought and a value below 20, oversold.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.investopedia.com/terms/m/mfi.asp
+/// [[1]](https://www.investopedia.com/terms/m/mfi.asp)
 ///
 /// # Examples
 ///
@@ -311,13 +312,13 @@ pub fn mfi<'a>(
 /// the current price level). A positive CMF value indicates that money is flowing into
 /// the security, which can be a sign of buying pressure.
 ///
-/// # Usage
+/// ## Usage
 ///
 /// A value above 0 suggests an uptrend.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://corporatefinanceinstitute.com/resources/equities/chaikin-money-flow-cmf/
+/// [[1]](https://corporatefinanceinstitute.com/resources/equities/chaikin-money-flow-cmf/)
 ///
 /// # Examples
 ///
@@ -355,13 +356,13 @@ pub fn cmf<'a>(
 /// Measures the flow of money into and out of a security by analyzing the trading volume at
 /// different price levels.
 ///
-/// # Usage
+/// ## Usage
 ///
 /// An increasing value suggests an uptrend.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.investopedia.com/terms/t/tradevolumeindex.asp
+/// [[1]](https://www.investopedia.com/terms/t/tradevolumeindex.asp)
 ///
 /// # Examples
 ///
@@ -404,12 +405,12 @@ pub fn tvi<'a>(
 /// A high Ease value indicates that prices can move easily with low volume, while a
 /// low Ease value indicates that prices are difficult to move and require high volume.
 ///
-/// # Usage
+/// ## Usage
 ///
 /// A value above 0 suggests an uptrend.
 ///
-/// # Source
-/// https://www.investopedia.com/terms/e/easeofmovement.asp
+/// ## Sources
+/// [[1]](https://www.investopedia.com/terms/e/easeofmovement.asp)
 ///
 /// # Examples
 ///
@@ -449,13 +450,13 @@ pub fn ease<'a>(
 /// Shows the cumulative total of volume traded on up days minus the cumulative total of
 /// volume traded on down days.
 ///
-/// # Usage
+/// ## Usage
 ///
 /// An increasing value suggests an uptrend.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.investopedia.com/terms/o/onbalancevolume.asp
+/// [[1]](https://www.investopedia.com/terms/o/onbalancevolume.asp)
 ///
 /// # Examples
 ///
@@ -480,13 +481,13 @@ pub fn obv<'a>(close: &'a [f64], volume: &'a [f64]) -> impl Iterator<Item = f64>
 /// indicates that prices are moving efficiently with low volume, while a low BW MFI
 /// value indicates that prices are moving inefficiently with high volume.
 ///
-/// # Usage
+/// ## Usage
 ///
 /// If both value and volume increases, suggests uptrend.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.metatrader5.com/en/terminal/help/indicators/bw_indicators/market_facilitation
+/// [[1]](https://www.metatrader5.com/en/terminal/help/indicators/bw_indicators/market_facilitation)
 ///
 /// # Examples
 ///
@@ -515,13 +516,13 @@ pub fn bw_mfi<'a>(
 /// Based on price moves depending on whether the current volume is higher than
 /// the previous period.
 ///
-/// # Usage
+/// ## Usage
 ///
 /// When above the one year average, confirmation of uptrend.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.investopedia.com/terms/p/pvi.asp
+/// [[1]](https://www.investopedia.com/terms/p/pvi.asp)
 ///
 /// # Examples
 ///
@@ -550,13 +551,13 @@ pub fn pvi<'a>(data: &'a [f64], volume: &'a [f64]) -> impl Iterator<Item = f64> 
 /// Based on price moves depending on whether the current volume is higher than
 /// the previous period.
 ///
-/// # Usage
+/// ## Usage
 ///
 /// When above the one year average, confirmation of downtrend.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.investopedia.com/terms/n/nvi.asp
+/// [[1]](https://www.investopedia.com/terms/n/nvi.asp)
 ///
 /// # Examples
 ///
@@ -584,13 +585,13 @@ pub fn nvi<'a>(data: &'a [f64], volume: &'a [f64]) -> impl Iterator<Item = f64> 
 ///
 /// Measures the average typical price by volume. Tracks similar to a moving average.
 ///
-/// # Usage
+/// ## Usage
 ///
 /// Designed for intraday data, instruments with prices below VWAP may be considered undervalued.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.investopedia.com/terms/v/vwap.asp
+/// [[1]](https://www.investopedia.com/terms/v/vwap.asp)
 ///
 /// # Examples
 ///
@@ -635,13 +636,13 @@ pub fn vwap<'a>(
 /// Measures price by volume. Tracks similar to a moving average. A period with a
 /// higher volume will significantly influence the value more than a period with a lower volume.
 ///
-/// # Usage
+/// ## Usage
 ///
 /// Show trend like any normal moving average.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://howtotrade.com/indicators/volume-weighted-moving-average/
+/// [[1]](https://howtotrade.com/indicators/volume-weighted-moving-average/)
 ///
 /// # Examples
 ///

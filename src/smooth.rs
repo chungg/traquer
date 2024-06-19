@@ -105,9 +105,9 @@ pub fn sma(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
 ///
 /// DEMA = 2 * EMA1 - EMA2
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.investopedia.com/terms/d/double-exponential-moving-average.asp
+/// [[1]](https://www.investopedia.com/terms/d/double-exponential-moving-average.asp)
 ///
 /// # Examples
 ///
@@ -131,9 +131,9 @@ pub fn dema(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
 ///
 /// TEMA = 3 * EMA1 - 3 * EMA2 + EMA3
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.investopedia.com/terms/t/triple-exponential-moving-average.asp
+/// [[1]](https://www.investopedia.com/terms/t/triple-exponential-moving-average.asp)
 ///
 /// # Examples
 ///
@@ -187,9 +187,9 @@ pub fn wma(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
 ///
 /// PWMA = (C(n,0) * x1 + C(n,1) * x2 + ... + C(n,n) * xn) / 2^n
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://en.wikipedia.org/wiki/Pascal%27s_triangle
+/// [[1]](https://en.wikipedia.org/wiki/Pascal%27s_triangle)
 ///
 /// # Examples
 ///
@@ -368,9 +368,9 @@ pub fn vma(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
 /// A type of moving average that incorporates the slope and intercept of a linear regression
 /// line to make predictions.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://quantstrategy.io/blog/what-is-tsf-understanding-time-series-forecast-indicator/
+/// [[1]](https://quantstrategy.io/blog/what-is-tsf-understanding-time-series-forecast-indicator/)
 ///
 /// # Examples
 ///
@@ -426,9 +426,9 @@ pub fn trima(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
 /// Developed by John Ehlers and Ric Way. A type of moving average that aims to eliminate
 /// the lag associated with traditional moving averages.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://en.wikipedia.org/wiki/Zero_lag_exponential_moving_average
+/// [[1]](https://en.wikipedia.org/wiki/Zero_lag_exponential_moving_average)
 ///
 /// # Examples
 ///
@@ -461,10 +461,10 @@ pub fn zlma(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
 /// Note: This implementation leverages a Gaussian kernel and currently only considers
 /// historical data and a backwindow of 255 datapoints when computing value.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.stat.cmu.edu/~ryantibs/advmethods/notes/kernel.pdf
-/// https://mccormickml.com/2014/02/26/kernel-regression/
+/// [[1]](https://www.stat.cmu.edu/~ryantibs/advmethods/notes/kernel.pdf)
+/// [[2]](https://mccormickml.com/2014/02/26/kernel-regression/)
 ///
 /// This only considers historical data and a backwindow of 255 datapoints.
 ///
@@ -503,9 +503,9 @@ pub fn kernel(data: &[f64], sigma: f64) -> impl Iterator<Item = f64> + '_ {
 /// Similar to VIDYA, in that it uses two smoothing constants. Computes an Efficiency Ratio to
 /// adapt the moving average to price trends.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.marketvolume.com/technicalanalysis/kama.asp
+/// [[1]](https://www.marketvolume.com/technicalanalysis/kama.asp)
 ///
 /// # Examples
 ///
@@ -540,9 +540,9 @@ pub fn kama(
 /// Design to use Gaussian distribution that is shifted with a calculated offset in order
 /// for the average to be biased towards more recent days
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.tradingview.com/support/solutions/43000594683-arnaud-legoux-moving-average/
+/// [[1]](https://www.tradingview.com/support/solutions/43000594683-arnaud-legoux-moving-average/)
 ///
 /// # Examples
 ///
@@ -579,9 +579,9 @@ pub fn alma(
 /// Takes into account speed changes in a market to show a smoother,
 /// more responsive, moving average line.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.investopedia.com/terms/m/mcginley-dynamic.asp
+/// [[1]](https://www.investopedia.com/terms/m/mcginley-dynamic.asp)
 ///
 /// # Examples
 ///
@@ -602,11 +602,11 @@ pub fn mdma(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
 ///
 /// Applies exponential smoothing across 3 factors: value, trend, and seasonality.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://orangematter.solarwinds.com/2019/12/15/holt-winters-forecasting-simplified/
-/// https://medium.com/analytics-vidhya/a-thorough-introduction-to-holt-winters-forecasting-c21810b8c0e6
-/// https://www.mql5.com/en/code/20856
+/// [[1]](https://orangematter.solarwinds.com/2019/12/15/holt-winters-forecasting-simplified/)
+/// [[2]](https://medium.com/analytics-vidhya/a-thorough-introduction-to-holt-winters-forecasting-c21810b8c0e6)
+/// [[3]](https://www.mql5.com/en/code/20856)
 ///
 /// # Examples
 ///

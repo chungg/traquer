@@ -18,16 +18,16 @@ use crate::volatility::{_true_range, atr};
 /// The Strong Ratio is (high - prev close) / (prev close - low) and the Weak Ratio
 /// is (high - close) / (close - low).
 ///
-/// # Usage
+/// ## Usage
 ///
 /// When Strong Ratio is above the Weak, it suggests uptrend with greater intensity the greater,
 /// the delta.
 ///
 /// NOTE: Implementation differs from source where weak ratio uses close rather than open.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.sevendata.co.jp/shihyou/technical/shinohara.html
+/// [[1]](https://www.sevendata.co.jp/shihyou/technical/shinohara.html)
 ///
 /// # Examples
 ///
@@ -82,13 +82,13 @@ pub fn shinohara<'a>(
 /// the difference between two consecutive lows with the difference between their
 /// respective highs.
 ///
-/// # Usage
+/// ## Usage
 ///
 /// When +DMI is above -DMI, it suggests an uptrend. A higher ADX value suggest strength of trend
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.investopedia.com/terms/a/adx.asp
+/// [[1]](https://www.investopedia.com/terms/a/adx.asp)
 ///
 /// # Examples
 ///
@@ -156,14 +156,14 @@ pub fn adx<'a>(
 /// Calculates two lines: VI+ and VI-. The greater the distance between the low of a price bar and
 /// the subsequent bar's high, the greater the positive Vortex movement (VM+).
 ///
-/// # Usage
+/// ## Usage
 ///
 /// When VI+ crosses above VI-, it suggests a uptrend.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://en.wikipedia.org/wiki/Vortex_indicator
-/// https://www.investopedia.com/terms/v/vortex-indicator-vi.asp
+/// [[1]](https://en.wikipedia.org/wiki/Vortex_indicator)
+/// [[2]](https://www.investopedia.com/terms/v/vortex-indicator-vi.asp)
 ///
 /// # Examples
 ///
@@ -217,14 +217,14 @@ pub fn vortex<'a>(
 ///
 /// Cumulative sum of Swing Index
 ///
-/// # Usage
+/// ## Usage
 ///
 /// An increasing value suggests an uptrend.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.investopedia.com/terms/a/asi.asp
-/// https://quantstrategy.io/blog/accumulative-swing-index-how-to-trade/
+/// [[1]](https://www.investopedia.com/terms/a/asi.asp)
+/// [[2]](https://quantstrategy.io/blog/accumulative-swing-index-how-to-trade/)
 ///
 /// # Examples
 ///
@@ -258,13 +258,13 @@ pub fn asi<'a>(
 /// The index increases in value as the price moves farther away from a recent high
 /// and falls as the price rises to new highs.
 ///
-/// # Usage
+/// ## Usage
 ///
 /// Value decreases during uptrends.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://en.wikipedia.org/wiki/Ulcer_index
+/// [[1]](https://en.wikipedia.org/wiki/Ulcer_index)
 ///
 /// # Examples
 ///
@@ -297,14 +297,14 @@ pub fn ulcer(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
 ///
 /// Acts as a dynamic level of support or resistance.
 ///
-/// # Usage
+/// ## Usage
 ///
 /// A value above close line suggests downtrend.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.tradingview.com/support/solutions/43000634738-supertrend/
-/// https://www.investopedia.com/supertrend-indicator-7976167
+/// [[1]](https://www.tradingview.com/support/solutions/43000634738-supertrend/)
+/// [[2]](https://www.investopedia.com/supertrend-indicator-7976167)
 ///
 /// # Examples
 ///
@@ -364,7 +364,7 @@ pub fn supertrend<'a>(
 ///
 /// Compares a security's price movements to random movements to determine if it's in a trend.
 ///
-/// # Usage
+/// ## Usage
 ///
 /// When RWI High is above RWI Low, it suggests an uptrend and strength increases as it goes
 /// above 1.
@@ -372,10 +372,10 @@ pub fn supertrend<'a>(
 /// NOTE: Window includes current price where other libraries use window strictly as lookback.
 /// You may need to add 1 to window for comparable behaviour.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.technicalindicators.net/indicators-technical-analysis/168-rwi-random-walk-index
-/// https://www.investopedia.com/terms/r/random-walk-index.asp
+/// [[1]](https://www.technicalindicators.net/indicators-technical-analysis/168-rwi-random-walk-index)
+/// [[2]](https://www.investopedia.com/terms/r/random-walk-index.asp)
 ///
 /// # Examples
 ///
@@ -425,13 +425,13 @@ pub fn rwi<'a>(
 /// Calculating the stop for each upcoming period. When the stop is hit you close the
 /// current trade and initiate a new trade in the opposite direction.
 ///
-/// # Usage
+/// ## Usage
 ///
 /// A value above close line suggests downtrend.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.investopedia.com/terms/p/parabolicindicator.asp
+/// [[1]](https://www.investopedia.com/terms/p/parabolicindicator.asp)
 ///
 /// # Examples
 ///
@@ -493,7 +493,7 @@ pub fn psar<'a>(
 /// Measure the difference between a security's price and its trend and attempts to identify
 /// cyclicality. It behaves closer to a momentum indicator
 ///
-/// # Usage
+/// ## Usage
 ///
 /// Suggests uptrend when above zero or when value reaches prior low of oscillator.
 ///
@@ -527,13 +527,13 @@ pub fn dpo(
 /// Measures the trend strength and direction of an asset based on the time between highs and
 /// lows. Consists of two lines that show the time since a recent high or low.
 ///
-/// # Usage
+/// ## Usage
 ///
 /// When up line is above the down, it suggests an uptrend.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.tradingview.com/support/solutions/43000501801-aroon/
+/// [[1]](https://www.tradingview.com/support/solutions/43000501801-aroon/)
 ///
 /// # Examples
 ///
@@ -584,13 +584,13 @@ pub fn aroon<'a>(
 /// one line (Chandelier Exit Long) is used to close long position and the other
 /// (Chandelier Exit Short) is used to close short position.
 ///
-/// # Usage
+/// ## Usage
 ///
 /// Close long position when price drops below Exit Long line.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.marketvolume.com/technicalanalysis/chandelierexit.asp
+/// [[1]](https://www.marketvolume.com/technicalanalysis/chandelierexit.asp)
 ///
 /// # Examples
 ///
@@ -630,14 +630,14 @@ pub fn chandelier<'a>(
 ///
 /// A series of trend lines that connect significant peaks and valleys.
 ///
-/// # Usage
+/// ## Usage
 ///
 /// Used in conjuction with Elliot Wave Theory. Can be used to identify support/resistence
 /// but need keep in mind it (may) redraw last trendline as new data comes in.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://www.marketvolume.com/technicalanalysis/zig_zag.asp
+/// [[1]](https://www.marketvolume.com/technicalanalysis/zig_zag.asp)
 ///
 /// # Examples
 ///
@@ -714,13 +714,13 @@ pub fn zigzag<'a>(
 ///
 /// Propagates signals from the past into the future. Minimises lower prices.
 ///
-/// # Usage
+/// ## Usage
 ///
 /// ¯\_(ツ)_/¯
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://tulipindicators.org/decay
+/// [[1]](https://tulipindicators.org/decay)
 ///
 /// # Examples
 ///
@@ -744,13 +744,13 @@ pub fn decay(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
 /// Calculated using a combination of the highest high and lowest low prices over a specific
 /// lookback period and the instrument’s ATR. Produces two stop-loss levels.
 ///
-/// # Usage
+/// ## Usage
 ///
 /// Buy signal when price crosses above the long and short lines.
 ///
-/// # Source
+/// ## Sources
 ///
-/// https://blog.xcaldata.com/chande-kroll-stop-for-mastering-risk-management-in-stock-market/
+/// [[1]](https://blog.xcaldata.com/chande-kroll-stop-for-mastering-risk-management-in-stock-market/)
 ///
 /// # Examples
 ///
