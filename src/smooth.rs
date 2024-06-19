@@ -1,4 +1,4 @@
-//! Moving average functions
+//! Moving Average Functions
 //!
 //! Provides moving average functions. Often used to track trend, levels of support,
 //! breakouts, etc... The results are in the same scale as input data and are often used
@@ -51,7 +51,7 @@ pub fn ma(data: &[f64], window: usize, mamode: MaMode) -> Box<dyn Iterator<Item 
     }
 }
 
-/// Exponentially weighted moving average
+/// Exponentially Weighted Moving Average
 ///
 /// A type of moving average that gives more weight to more recent data points,
 /// with the weight decreasing exponentially as you move further back in time.
@@ -78,7 +78,7 @@ pub fn ewma(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
         )
 }
 
-/// Simple moving average
+/// Simple Moving Average
 ///
 /// A type of moving average that gives equal weight to all data points in a fixed window.
 ///
@@ -98,7 +98,7 @@ pub fn sma(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
     )
 }
 
-/// Double exponential moving average
+/// Double Exponential Moving Average
 ///
 /// A type of moving average that gives more weight to recent data points and adapts
 /// quickly to changes in the trend.
@@ -124,7 +124,7 @@ pub fn dema(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
     ma.into_iter().zip(mama).map(|(ma1, ma2)| 2.0 * ma1 - ma2)
 }
 
-/// Triple exponential moving average
+/// Triple Exponential Moving Average
 ///
 /// A type of moving average that gives more weight to recent data points and adapts
 /// quickly to changes in the trend.
@@ -154,7 +154,7 @@ pub fn tema(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
     .map(|(ma1, ma2, ma3)| 3.0 * ma1 - 3.0 * ma2 + ma3)
 }
 
-/// Weighted moving average
+/// Weighted Moving Average
 ///
 /// Assigns different weights to each data point in a moving average calculation unlike
 /// a Simple Moving Average (SMA), which gives equal weight to all data points. Uses linear
@@ -180,7 +180,7 @@ pub fn wma(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
         }))
 }
 
-/// Pascal's Triangle moving average
+/// Pascal's Triangle Moving Average
 ///
 /// Uses the coefficients from Pascal's Triangle to weight the data points in a moving average
 /// calculation.
@@ -222,7 +222,7 @@ pub fn pwma(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
         }))
 }
 
-/// Welles Wilder's moving average
+/// Welles Wilder's Moving Average
 ///
 /// Developed by J. Welles Wilder Jr. A type of moving average that uses a smoothing
 /// formula to reduce the lag and volatility associated with traditional moving averages.
@@ -252,7 +252,7 @@ pub fn wilder(data: &[f64], window: usize) -> Box<dyn Iterator<Item = f64> + '_>
     )
 }
 
-/// Hull's moving average
+/// Hull's Moving Average
 ///
 /// Developed by Alan Hull. A type of moving average that uses a weighted average of three
 /// different moving averages to create a more responsive and accurate indicator.
@@ -284,7 +284,7 @@ pub(crate) fn std_dev(data: &[f64], window: usize) -> impl Iterator<Item = f64> 
     })
 }
 
-/// Volatility index dynamic average (VIDYA)
+/// Volatility Index Dynamic Average (VIDYA)
 ///
 /// A type of moving average that uses a combination of short-term and long-term
 /// volatility measures to create a dynamic and responsive indicator.
@@ -336,7 +336,7 @@ pub(crate) fn _cmo(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '
         .into_iter()
 }
 
-/// Variable moving average (VMA)
+/// Variable Moving Average (VMA)
 ///
 /// A dynamic moving average that is calculated based on the Chande Momentum Oscillator values.
 /// The VMA is used to smooth out the CMO values and provide a more stable signal.
@@ -421,7 +421,7 @@ pub fn trima(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
         .into_iter()
 }
 
-/// Zero lag moving average
+/// Zero Lag moving average
 ///
 /// Developed by John Ehlers and Ric Way. A type of moving average that aims to eliminate
 /// the lag associated with traditional moving averages.
@@ -452,7 +452,7 @@ pub fn zlma(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
     )
 }
 
-/// Kernel regression
+/// Kernel Regression
 ///
 /// A non-parametric technique used to estimate the conditional expectation of a
 /// random variable. The goal is to find a non-linear relationship between a pair of
@@ -498,7 +498,7 @@ pub fn kernel(data: &[f64], sigma: f64) -> impl Iterator<Item = f64> + '_ {
     })
 }
 
-/// Kaufman Adaptive (KAMA)
+/// Kaufman Adaptive Moving Average (KAMA)
 ///
 /// Similar to VIDYA, in that it uses two smoothing constants. Computes an Efficiency Ratio to
 /// adapt the moving average to price trends.
@@ -535,7 +535,7 @@ pub fn kama(
         }))
 }
 
-/// Arnaud Legoux (ALMA)
+/// Arnaud Legoux Moving Average (ALMA)
 ///
 /// Design to use Gaussian distribution that is shifted with a calculated offset in order
 /// for the average to be biased towards more recent days
@@ -574,7 +574,7 @@ pub fn alma(
         }))
 }
 
-/// McGinley Dynamic
+/// McGinley Dynamic Moving Average
 ///
 /// Takes into account speed changes in a market to show a smoother,
 /// more responsive, moving average line.
@@ -598,7 +598,7 @@ pub fn mdma(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
     }))
 }
 
-/// Holt-Winter
+/// Holt-Winter Moving Average
 ///
 /// Applies exponential smoothing across 3 factors: value, trend, and seasonality.
 ///

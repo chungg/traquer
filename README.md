@@ -24,9 +24,7 @@ that you can beat the market.
 ```rust
 use traquer::smooth;
 
-fn main() {
-    dbg!(smooth::ewma(&vec![1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>());
-}
+smooth::ewma(&vec![1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
 ```
 
 ## contributing
@@ -36,6 +34,7 @@ encouraged.
 - https://rustup.rs/
 - cargo test
 - cargo bench
+- cargo run --example file_json
 
 ## types of indicators
 

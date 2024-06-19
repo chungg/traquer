@@ -1,6 +1,4 @@
-//! Technical analysis library
-//!
-//! A set of functions to derive signals from financial(-like) data
+#![doc = include_str!("../README.md")]
 
 pub mod momentum;
 pub mod smooth;

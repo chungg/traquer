@@ -25,7 +25,7 @@ fn vforce<'a>(
     )
 }
 
-/// Klinger volume oscillator (KVO)
+/// Klinger Volume Oscillator (KVO)
 ///
 /// Developed by Stephen Klinger. It helps determine the long-term trend of money flow
 /// while remaining sensitive enough to detect short-term fluctuations.
@@ -81,7 +81,7 @@ fn wilder_sum(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
     })
 }
 
-/// Twiggs money flow
+/// Twiggs Money Flow
 ///
 /// Developed by Colin Twiggs that measures the flow of money into and out of a security.
 /// It's similar to the Accumulation/Distribution Line. A rising TMF indicates buying pressure,
@@ -205,7 +205,7 @@ pub fn ad<'a>(
     }
 }
 
-/// Elder force index
+/// Elder Force Index
 ///
 /// Calculated by multiplying the change in price by the volume traded during that period.
 /// A high EFI value indicates a strong price move with high volume, which can be a sign of
@@ -246,7 +246,7 @@ pub fn elder_force<'a>(
     )
 }
 
-/// Money flow index
+/// Money Flow Index
 ///
 /// Calculated by using the typical price and the volume traded during that period.
 /// A high MFI value (above 80) indicates that the security is overbought, and a
@@ -304,7 +304,7 @@ pub fn mfi<'a>(
     )
 }
 
-/// Chaikin money flow
+/// Chaikin Money Flow
 ///
 /// Calculated by multiplying the money flow multiplier (which is based on the
 /// security's price and volume) by the money flow volume (which is the volume at

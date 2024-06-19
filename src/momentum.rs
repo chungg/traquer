@@ -12,7 +12,7 @@ use itertools::izip;
 use crate::smooth;
 use crate::volatility::_true_range;
 
-/// Relative strength index
+/// Relative Strength Index
 ///
 /// Calculated by comparing the average gain of up days to the average loss of down days
 /// over a specified period. Shows the magnitude of recent price changes to determine
@@ -54,7 +54,7 @@ pub fn rsi(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
     )
 }
 
-/// Moving average convergence/divergence
+/// Moving Average Convergence/Divergence
 ///
 /// Shows the convergence and divergence of the two moving averages, indicating changes in
 /// the strength and direction of the trend. When the MACD crosses above the signal line,
@@ -84,7 +84,7 @@ pub fn macd(close: &[f64], short: usize, long: usize) -> impl Iterator<Item = f6
     short_ma.zip(long_ma).map(|(x, y)| x - y)
 }
 
-/// Chande momentum oscillator
+/// Chande Momentum Oscillator
 ///
 /// The CMO oscillates between +100 and -100, with high values indicating strong upward
 /// momentum and low values indicating strong downward momentum. The indicator is
@@ -150,7 +150,7 @@ pub fn cfo(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
         .map(|(tsf, x)| 100.0 * (x - tsf) / x)
 }
 
-/// Elder ray
+/// Elder Ray
 ///
 /// The Elder Ray Index consists of two components:
 ///
@@ -192,7 +192,10 @@ pub fn elder_ray<'a>(
     izip!(high, low, close_ma).map(|(h, l, c)| (h - c, l - c))
 }
 
-/// williams alligator
+/// Williams Alligator
+///
+/// # Source
+///
 /// https://www.investopedia.com/articles/trading/072115/exploring-williams-alligator-indicator.asp
 pub fn alligator(_data: &[f64]) {}
 
@@ -242,7 +245,7 @@ pub fn wpr<'a>(
     )
 }
 
-/// Percent price oscillator
+/// Percent Price Oscillator
 ///
 /// Measure the difference between two moving averages as a percentage of the larger
 /// moving average. Effectively same as Chande's Range Action Verification Index.
@@ -334,7 +337,7 @@ pub fn pmo(data: &[f64], win1: usize, win2: usize) -> impl Iterator<Item = f64> 
     )
 }
 
-/// Ultimate oscillator
+/// Ultimate Oscillator
 ///
 /// A technical indicator that uses the weighted average of three different time periods
 /// to reduce the volatility and false transaction signals.
@@ -402,7 +405,7 @@ pub fn ultimate<'a>(
     )
 }
 
-/// Pretty good oscillator
+/// Pretty Good Oscillator
 ///
 /// Combines moving averages and the Average True Range (ATR) to create an oscillator
 /// that oscillates around a centerline
@@ -553,7 +556,7 @@ pub fn trix(close: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
     )
 }
 
-/// Trend intensity index
+/// Trend Intensity Index
 ///
 /// Uses RSI principles but applies them to closing price deviations instead of the closing prices
 ///
@@ -1040,7 +1043,7 @@ pub fn disparity(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ 
         .map(|(x, ma)| 100.0 * (x - ma) / ma)
 }
 
-/// Quick stick
+/// Quick Stick
 ///
 /// Measures buying and selling pressure, taking an average of the difference between
 /// closing and opening prices. When the price is closing lower than it opens, the
@@ -1080,7 +1083,7 @@ pub fn qstick<'a>(
     smooth::ewma(&q, window).collect::<Vec<f64>>().into_iter()
 }
 
-/// Centre of gravity
+/// Centre of Gravity
 ///
 /// Calculates the midpoint of a security's price action over a specified period.
 ///
