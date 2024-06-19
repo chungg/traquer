@@ -12,7 +12,7 @@ use crate::momentum::_swing;
 use crate::smooth;
 use crate::volatility::{_true_range, atr};
 
-/// Shinohara intensity ratio
+/// Shinohara Intensity Ratio
 ///
 /// Measures trend intensity by plotting Strong Ratio (Strength) and Weak Ratio (Popularity) lines.
 /// The Strong Ratio is (high - prev close) / (prev close - low) and the Weak Ratio
@@ -76,7 +76,7 @@ pub fn shinohara<'a>(
         .zip(iter::repeat(f64::NAN).take(window - 1).chain(weak_ratio))
 }
 
-/// Average directional index
+/// Average Directional Index (ADX)
 ///
 /// Measures strength a trend, not the direction, by directional movement by comparing
 /// the difference between two consecutive lows with the difference between their
@@ -151,7 +151,7 @@ pub fn adx<'a>(
     ))
 }
 
-/// Vortex
+/// Vortex Indicator
 ///
 /// Calculates two lines: VI+ and VI-. The greater the distance between the low of a price bar and
 /// the subsequent bar's high, the greater the positive Vortex movement (VM+).

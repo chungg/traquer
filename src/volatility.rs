@@ -140,7 +140,7 @@ pub(crate) fn _true_range<'a>(
         .map(|(h, l, prevc)| (h - l).max(f64::abs(h - prevc)).max(f64::abs(l - prevc)))
 }
 
-/// True range
+/// True Range
 ///
 /// Measures market volatility by computing the greatest of the following: current high less
 /// the current low; the absolute value of the current high less the previous close;
@@ -166,7 +166,7 @@ pub fn tr<'a>(high: &'a [f64], low: &'a [f64], close: &'a [f64]) -> impl Iterato
     iter::once(f64::NAN).chain(_true_range(high, low, close))
 }
 
-/// Average true range
+/// Average True Range
 ///
 /// Moving average of the True Range series
 ///
@@ -196,7 +196,7 @@ pub fn atr<'a>(
     )
 }
 
-/// Typical price
+/// Typical Price
 ///
 /// Average of a given day's high, low, and close price.
 ///
@@ -617,7 +617,7 @@ pub fn chop<'a>(
     )
 }
 
-/// Vertical horizontal filter
+/// Vertical Horizontal Filter
 ///
 /// Measures the level of trend activity in a financial market by comparing the max price
 /// range over a specific period to the cumulative price movement within that period.
