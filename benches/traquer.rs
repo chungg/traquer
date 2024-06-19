@@ -276,6 +276,9 @@ fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("sig-momentum-kst", |b| {
         b.iter(|| black_box(momentum::kst(&stats.close, None, None).collect::<Vec<_>>()))
     });
+    c.bench_function("sig-momentum-derivative", |b| {
+        b.iter(|| black_box(momentum::derivative(&stats.close, 6, 10, 3).collect::<Vec<_>>()))
+    });
     c.bench_function("sig-trend-aroon", |b| {
         b.iter(|| black_box(trend::aroon(&stats.high, &stats.low, 16).collect::<Vec<(f64, f64)>>()))
     });
@@ -326,6 +329,23 @@ fn criterion_benchmark(c: &mut Criterion) {
     });
     c.bench_function("sig-volume-nvi", |b| {
         b.iter(|| black_box(volume::nvi(&stats.close, &stats.volume).collect::<Vec<f64>>()))
+    });
+    c.bench_function("sig-volume-vwap", |b| {
+        b.iter(|| {
+            black_box(
+                volume::vwap(
+                    &stats.high,
+                    &stats.low,
+                    &stats.close,
+                    &stats.volume,
+                    Some(&[7, 15, 23, 31]),
+                )
+                .collect::<Vec<f64>>(),
+            )
+        })
+    });
+    c.bench_function("sig-volume-vwma", |b| {
+        b.iter(|| black_box(volume::vwma(&stats.close, &stats.volume, 16).collect::<Vec<f64>>()))
     });
     c.bench_function("sig-volatility-mass", |b| {
         b.iter(|| black_box(volatility::mass(&stats.high, &stats.low, 9, 16).collect::<Vec<f64>>()))
@@ -457,6 +477,12 @@ fn criterion_benchmark(c: &mut Criterion) {
     });
     c.bench_function("ma-alma", |b| {
         b.iter(|| black_box(smooth::alma(&stats.close, 10, 6.0, None).collect::<Vec<f64>>()))
+    });
+    c.bench_function("ma-mdma", |b| {
+        b.iter(|| black_box(smooth::mdma(&stats.close, 16).collect::<Vec<f64>>()))
+    });
+    c.bench_function("ma-hwma", |b| {
+        b.iter(|| black_box(smooth::hwma(&stats.close, None, None, None).collect::<Vec<f64>>()))
     });
 }
 

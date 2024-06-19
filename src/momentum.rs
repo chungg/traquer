@@ -1297,3 +1297,48 @@ fn prings<'a, 'b>(
         .take(rocs[0] + (periods[0] - 1))
         .chain(result)
 }
+
+/// Derivative Oscillator
+///
+/// An advanced version of the Relative Strength Index. It applies MACD Histogram principle
+/// to the double smoothed RSI
+///
+/// # Usage
+///
+/// A move above zero line suggests an uptrend.
+///
+/// # Source
+///
+/// https://www.marketvolume.com/technicalanalysis/derivativeoscillator.asp
+///
+/// # Examples
+///
+/// ```
+/// use traquer::momentum;
+///
+/// momentum::derivative(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0,2.0,3.0,4.0,5.0,6.0,4.0],
+///     2, 3, 2).collect::<Vec<f64>>();
+///
+/// ```
+pub fn derivative(
+    data: &[f64],
+    win1: usize,
+    win2: usize,
+    signal: usize,
+) -> impl Iterator<Item = f64> + '_ {
+    let result = smooth::ewma(
+        &smooth::ewma(&rsi(data, win1).skip(win1).collect::<Vec<_>>(), win1)
+            .skip(win1 - 1)
+            .collect::<Vec<_>>(),
+        win2,
+    )
+    .collect::<Vec<_>>();
+    let signal_line = smooth::sma(&result, signal);
+    iter::repeat(f64::NAN).take(win1 + (win1 - 1)).chain(
+        signal_line
+            .zip(&result)
+            .map(|(sig, val)| val - sig)
+            .collect::<Vec<_>>(),
+    )
+}

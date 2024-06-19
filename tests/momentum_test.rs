@@ -1283,3 +1283,27 @@ fn test_kst() {
     );
     // NOTE: should ideally at least 4th MA. only does first 3 (which have same window)
 }
+
+#[test]
+fn test_derivative() {
+    let stats = common::test_data();
+    let result = momentum::derivative(&stats.close, 6, 10, 3).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
+    assert_eq!(
+        vec![
+            0.5604761236322204,
+            0.6135380309274652,
+            1.0392995668664753,
+            1.5951109349643744,
+            1.4555620650925292,
+            1.3160224737770676,
+            1.5322506385343004,
+            1.4308845282231388,
+            1.3991872497412743,
+            1.5696049032967991,
+            1.8673709554192968,
+            1.479907321136352,
+        ],
+        result[6 + (6 - 1) + (10 - 1) + (3 - 1)..]
+    );
+}
