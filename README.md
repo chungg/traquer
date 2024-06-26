@@ -38,8 +38,8 @@ encouraged.
 
 ## types of indicators
 
-90+ indicators available across 5 categories. Even across categories, indicators often
-behave quite similarly depending on window size and classfication/api may change
+100+ indicators available across 5 categories. Even across categories, indicators often
+behave quite similarly depending on window size. The classfication/api may change
 (if egregiously wrong).
 
 ### momentum
