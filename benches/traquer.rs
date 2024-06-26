@@ -287,6 +287,9 @@ fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("sig-momentum-qqe", |b| {
         b.iter(|| black_box(momentum::qqe(&stats.close, 6, 3).collect::<Vec<_>>()))
     });
+    c.bench_function("sig-momentum-deli", |b| {
+        b.iter(|| black_box(momentum::deli(&stats.high, &stats.low, 16).collect::<Vec<_>>()))
+    });
     c.bench_function("sig-trend-aroon", |b| {
         b.iter(|| black_box(trend::aroon(&stats.high, &stats.low, 16).collect::<Vec<(f64, f64)>>()))
     });
@@ -316,6 +319,17 @@ fn criterion_benchmark(c: &mut Criterion) {
                     .collect::<Vec<(f64, f64)>>(),
             )
         })
+    });
+    c.bench_function("sig-trend-atr_stop", |b| {
+        b.iter(|| {
+            black_box(
+                trend::atr_stop(&stats.high, &stats.low, &stats.close, 6, None)
+                    .collect::<Vec<f64>>(),
+            )
+        })
+    });
+    c.bench_function("sig-trend-alligator", |b| {
+        b.iter(|| black_box(trend::alligator(&stats.close, 13, 0, 8, 0, 5, 0).collect::<Vec<_>>()))
     });
     c.bench_function("sig-volume-bw_mfi", |b| {
         b.iter(|| {

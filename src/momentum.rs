@@ -192,13 +192,6 @@ pub fn elder_ray<'a>(
     izip!(high, low, close_ma).map(|(h, l, c)| (h - c, l - c))
 }
 
-/// Williams Alligator
-///
-/// ## Sources
-///
-/// [[1]](https://www.investopedia.com/articles/trading/072115/exploring-williams-alligator-indicator.asp)
-pub fn alligator(_data: &[f64]) {}
-
 /// Williams Percent Range
 ///
 /// Measure the level of a security's close price in relation to its high-low range over a
@@ -1460,4 +1453,49 @@ pub fn qqe(data: &[f64], window: usize, smoothing: usize) -> impl Iterator<Item 
             };
             Some(*state)
         }))
+}
+
+/// Detrended Ehlers Leading Indicator
+///
+/// Computed by subtracting the simple moving average of the detrended synthetic price
+/// from the detrended synthetic price.
+///
+/// ## Usage
+///
+/// Value above zero suggests an uptrend
+///
+/// ## Sources
+///
+/// [[1]](https://www.motivewave.com/studies/detrended_ehlers_leading_indicator.htm)
+/// [[2]](https://www.prorealcode.com/prorealtime-indicators/ehlers-detrended-leading-indicator/)
+///
+/// # Examples
+///
+/// ```
+/// use traquer::momentum;
+///
+/// momentum::deli(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0,2.0,3.0,4.0,5.0,6.0,4.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0,2.0,3.0,4.0,5.0,6.0,4.0],
+///     3).collect::<Vec<f64>>();
+///
+/// ```
+pub fn deli<'a>(high: &'a [f64], low: &'a [f64], window: usize) -> impl Iterator<Item = f64> + 'a {
+    let quotes = high
+        .windows(2)
+        .zip(low.windows(2))
+        .map(|(h, l)| (h[0].max(h[1]) + l[0].min(l[1])) / 2.0)
+        .collect::<Vec<f64>>();
+    let dsp = smooth::ewma(&quotes, window)
+        .zip(smooth::ewma(&quotes, 2 * window))
+        .map(|(ma1, ma2)| ma1 - ma2)
+        .collect::<Vec<f64>>();
+    let ma3 = smooth::ewma(&dsp[2 * window - 1..], window);
+    iter::repeat(f64::NAN).take(2 * window).chain(
+        dsp[2 * window - 1..]
+            .iter()
+            .zip(ma3)
+            .map(|(x, y)| x - y)
+            .collect::<Vec<f64>>(),
+    )
 }
