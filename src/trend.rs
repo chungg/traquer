@@ -914,3 +914,91 @@ pub fn alligator(
         .chain(iter::repeat(f64::NAN).take(max_offset - lips_offset));
     izip!(jaw, teeth, lips)
 }
+
+/// Ichimoku Cloud
+///
+/// Composed of five lines or calculations, two of which comprise a cloud.
+///
+/// ## Usage
+///
+/// Suggests an uptrend when price is above the cloud.
+///
+/// ## Sources
+///
+/// [[1]](https://www.investopedia.com/terms/i/ichimoku-cloud.asp)
+///
+/// # Examples
+///
+/// ```
+/// use traquer::trend;
+///
+/// trend::ichimoku(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     3,2,2,2).collect::<Vec<(f64,f64,f64,f64,f64)>>();
+///
+/// ```
+pub fn ichimoku<'a>(
+    high: &'a [f64],
+    low: &'a [f64],
+    close: &'a [f64],
+    conversion_win: usize,
+    base_win: usize,
+    lead_win: usize,
+    lag_win: usize,
+) -> impl Iterator<Item = (f64, f64, f64, f64, f64)> + 'a {
+    let c_line = iter::repeat(f64::NAN)
+        .take(conversion_win - 1)
+        .chain(
+            high.windows(conversion_win)
+                .zip(low.windows(conversion_win))
+                .map(|(h, l)| {
+                    let hh = h.iter().fold(f64::NAN, |state, &x| state.max(x));
+                    let ll = l.iter().fold(f64::NAN, |state, &x| state.min(x));
+                    (hh + ll) / 2.0
+                }),
+        )
+        .collect::<Vec<f64>>();
+    let b_line = iter::repeat(f64::NAN)
+        .take(base_win - 1)
+        .chain(
+            high.windows(base_win)
+                .zip(low.windows(base_win))
+                .map(|(h, l)| {
+                    let hh = h.iter().fold(f64::NAN, |state, &x| state.max(x));
+                    let ll = l.iter().fold(f64::NAN, |state, &x| state.min(x));
+                    (hh + ll) / 2.0
+                }),
+        )
+        .collect::<Vec<f64>>();
+    let lead_b = iter::repeat(f64::NAN).take(lead_win - 1 + base_win).chain(
+        high.windows(lead_win)
+            .zip(low.windows(lead_win))
+            .map(|(h, l)| {
+                let hh = h.iter().fold(f64::NAN, |state, &x| state.max(x));
+                let ll = l.iter().fold(f64::NAN, |state, &x| state.min(x));
+                (hh + ll) / 2.0
+            }),
+    );
+    let lead_a = iter::repeat(f64::NAN)
+        .take(base_win)
+        .chain(c_line.iter().zip(&b_line).map(|(c, b)| (c + b) / 2.0))
+        .collect::<Vec<f64>>();
+    let lag = close
+        .iter()
+        .skip(lag_win)
+        .copied()
+        .chain(iter::repeat(f64::NAN).take(lag_win));
+    izip!(
+        c_line
+            .into_iter()
+            .chain(iter::repeat(f64::NAN).take(base_win)),
+        b_line
+            .into_iter()
+            .chain(iter::repeat(f64::NAN).take(base_win)),
+        lead_a,
+        lead_b,
+        lag.chain(iter::repeat(f64::NAN).take(base_win)),
+    )
+}

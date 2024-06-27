@@ -10,6 +10,7 @@ use std::iter;
 use itertools::izip;
 
 use crate::smooth;
+use crate::trend::alligator;
 use crate::volatility::_true_range;
 
 /// Relative Strength Index
@@ -1498,4 +1499,48 @@ pub fn deli<'a>(high: &'a [f64], low: &'a [f64], window: usize) -> impl Iterator
             .map(|(x, y)| x - y)
             .collect::<Vec<f64>>(),
     )
+}
+
+/// Gator Oscillator
+///
+/// Extends Alligator indicator to create two histograms: delta between Jaws and Teeth, and
+/// delta between Teeth and Lips line.
+///
+/// ## Usage
+///
+/// Increasing bars on either side of zero line suggests an uptrend.
+///
+/// ## Sources
+///
+/// [[1]](https://admiralmarkets.com/education/articles/forex-indicators/indicate-market-trend-with-the-gator-oscillator)
+///
+/// # Examples
+///
+/// ```
+/// use traquer::momentum;
+///
+/// momentum::gator(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0,2.0,3.0,4.0,5.0,6.0],
+///     6, 4, 4, 3, 3, 2).collect::<Vec<(f64, f64)>>();
+///
+/// ```
+pub fn gator(
+    data: &[f64],
+    jaw_win: usize,
+    jaw_offset: usize,
+    teeth_win: usize,
+    teeth_offset: usize,
+    lips_win: usize,
+    lips_offset: usize,
+) -> impl Iterator<Item = (f64, f64)> + '_ {
+    alligator(
+        data,
+        jaw_win,
+        jaw_offset,
+        teeth_win,
+        teeth_offset,
+        lips_win,
+        lips_offset,
+    )
+    .map(|x| ((x.0 - x.1).abs(), (x.1 - x.2).abs()))
 }
