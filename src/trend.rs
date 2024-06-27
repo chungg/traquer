@@ -801,3 +801,116 @@ pub fn cks<'a>(
             .collect::<Vec<(f64, f64)>>(),
         )
 }
+
+/// ATR Trailing Stop
+///
+/// Adjusts the stop-loss orders according to the asset’s volatility.
+///
+/// ## Usage
+///
+/// Buy signal when prices cross above ATR trailing stop line.
+///
+/// ## Sources
+///
+/// [[1]](https://www.incrediblecharts.com/indicators/atr_average_true_range_trailing_stops.php)
+///
+/// # Examples
+///
+/// ```
+/// use traquer::trend;
+///
+/// trend::atr_stop(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     3, Some(1.0)).collect::<Vec<f64>>();
+///
+/// ```
+pub fn atr_stop<'a>(
+    high: &'a [f64],
+    low: &'a [f64],
+    close: &'a [f64],
+    window: usize,
+    multiplier: Option<f64>,
+) -> impl Iterator<Item = f64> + 'a {
+    let multiplier = multiplier.unwrap_or(3.0);
+
+    iter::repeat(f64::NAN).take(window).chain(
+        izip!(
+            close.windows(window).skip(1),
+            atr(high, low, close, window).skip(window)
+        )
+        .scan((true, 0.0), move |state, (c, atr)| {
+            // state = (uptrend, prev_band)
+            let upper = c[window - 1] + multiplier * atr;
+            let lower = c[window - 1] - multiplier * atr;
+            let mut band: f64 = state.1;
+            if state.0 {
+                band = band.max(lower);
+                *state = if c[window - 1] < band {
+                    (false, upper)
+                } else {
+                    (state.0, band)
+                };
+            } else {
+                band = band.min(upper);
+                *state = if c[window - 1] > band {
+                    (true, lower)
+                } else {
+                    (state.0, band)
+                };
+            }
+            Some(state.1)
+        }),
+    )
+}
+
+/// Williams Alligator
+///
+/// Three smoothed moving averages of median price known as the Jaw, Teeth, and Lips.
+/// Follows the premise that financial markets and individual securities trend
+/// just 15% to 30% of the time while grinding through sideways ranges the
+/// other 70% to 85% of the time.
+///
+/// ## Usage
+///
+/// Lips line crossing above the other lines signals a buying opportunity.
+///
+/// ## Sources
+///
+/// [[1]](https://www.investopedia.com/articles/trading/072115/exploring-williams-alligator-indicator.asp)
+///
+/// # Examples
+///
+/// ```
+/// use traquer::trend;
+///
+/// trend::alligator(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0,2.0,3.0,4.0,5.0,6.0],
+///     6, 4, 4, 3, 3, 2).collect::<Vec<(f64, f64, f64)>>();
+///
+/// ```
+pub fn alligator(
+    data: &[f64],
+    jaw_win: usize,
+    jaw_offset: usize,
+    teeth_win: usize,
+    teeth_offset: usize,
+    lips_win: usize,
+    lips_offset: usize,
+) -> impl Iterator<Item = (f64, f64, f64)> + '_ {
+    let max_offset = jaw_offset.max(teeth_offset).max(lips_offset);
+    let jaw = iter::repeat(f64::NAN)
+        .take(jaw_offset)
+        .chain(smooth::wilder(data, jaw_win))
+        .chain(iter::repeat(f64::NAN).take(max_offset - jaw_offset));
+    let teeth = iter::repeat(f64::NAN)
+        .take(teeth_offset)
+        .chain(smooth::wilder(data, teeth_win))
+        .chain(iter::repeat(f64::NAN).take(max_offset - teeth_offset));
+    let lips = iter::repeat(f64::NAN)
+        .take(lips_offset)
+        .chain(smooth::wilder(data, lips_win))
+        .chain(iter::repeat(f64::NAN).take(max_offset - lips_offset));
+    izip!(jaw, teeth, lips)
+}
