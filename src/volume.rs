@@ -671,3 +671,37 @@ pub fn vwma<'a>(
             }),
     )
 }
+
+/// Volume Price Trend
+///
+/// Consists of a cumulative volume line that adds or subtracts a multiple of the
+/// percentage change in a share price’s trend and current volume.
+///
+/// ## Usage
+///
+/// Increasing value suggests an uptrend.
+///
+/// ## Sources
+///
+/// [[1]](https://www.investopedia.com/ask/answers/030315/what-volume-price-trend-indicator-vpt-formula-and-how-it-calculated.asp)
+///
+/// # Examples
+///
+/// ```
+/// use traquer::volume;
+///
+/// volume::vwma(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0], 3).collect::<Vec<f64>>();
+///
+/// ```
+pub fn vpt<'a>(data: &'a [f64], volume: &'a [f64]) -> impl Iterator<Item = f64> + 'a {
+    iter::once(f64::NAN).chain(
+        data.windows(2)
+            .zip(&volume[1..])
+            .scan(0.0, |state, (w, v)| {
+                *state += v * (w[1] - w[0]) / w[0];
+                Some(*state)
+            }),
+    )
+}
