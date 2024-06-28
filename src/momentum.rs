@@ -55,6 +55,69 @@ pub fn rsi(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
     )
 }
 
+/// Connors RSI
+///
+/// A variation of RSI that would adapt better to short-term changes. Designed to use
+/// shorter lookback periods to capture more volatile and faster-moving action. Factors in
+/// duration of trend and relative magnitude of change in addtion to RSI's price momentum.
+///
+/// ## Usage
+///
+/// Usually, a value above 90 suggests overbought and a value below 10, oversold.
+///
+/// ## Sources
+///
+/// [[1]](https://alvarezquanttrading.com/wp-content/uploads/2016/05/ConnorsRSIGuidebook.pdf)
+/// [[2]](https://alvarezquanttrading.com/blog/connorsrsi-analysis/)
+///
+/// # Examples
+///
+/// ```
+/// use traquer::momentum;
+///
+/// momentum::crsi(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     3, 2, 6).collect::<Vec<f64>>();
+///
+/// ```
+pub fn crsi(
+    data: &[f64],
+    rsi_win: usize,
+    streak_win: usize,
+    rank_win: usize,
+) -> impl Iterator<Item = f64> + '_ {
+    let rsi_series = rsi(data, rsi_win);
+    let (streaks, returns): (Vec<f64>, Vec<f64>) = data
+        .windows(2)
+        .scan((0.0, 0.0_f64), |state, w| {
+            let streak = if w[1] == w[0] {
+                0.0
+            } else if (w[1] - w[0]).signum() == state.1.signum() {
+                state.0 + (w[1] - w[0]).signum()
+            } else {
+                (w[1] - w[0]).signum()
+            };
+            *state = (streak, (w[1] - w[0]) / w[0]);
+            Some(*state)
+        })
+        .unzip();
+    let streak_rsi = iter::once(f64::NAN).chain(rsi(&streaks, streak_win));
+    let rank = iter::repeat(f64::NAN)
+        .take(rank_win)
+        .chain(returns.windows(rank_win).map(|w| {
+            let curr_ret = w[rank_win - 1];
+            w.iter()
+                .rev()
+                .fold(0, |acc, &x| if x < curr_ret { acc + 1 } else { acc }) as f64
+                / (rank_win - 1) as f64
+                * 100.0
+        }));
+    izip!(rsi_series, streak_rsi, rank)
+        .map(|(x, y, z)| (x + y + z) / 3.0)
+        .collect::<Vec<f64>>()
+        .into_iter()
+}
+
 /// Moving Average Convergence/Divergence
 ///
 /// Shows the convergence and divergence of the two moving averages, indicating changes in
@@ -243,7 +306,7 @@ pub fn wpr<'a>(
 /// Percent Price Oscillator
 ///
 /// Measure the difference between two moving averages as a percentage of the larger
-/// moving average. Effectively same as Chande's Range Action Verification Index.
+/// moving average. Effectively same as Chande's Range Action Verification Index (RAVI).
 ///
 /// ## Usage
 ///
@@ -597,6 +660,37 @@ pub fn tii(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
     )
 }
 
+fn stoch<'a>(
+    high: &'a [f64],
+    low: &'a [f64],
+    close: &'a [f64],
+    window: usize,
+    smooth_win: usize,
+) -> impl Iterator<Item = (f64, f64)> + 'a {
+    let fast_k = smooth::sma(
+        &izip!(
+            high.windows(window),
+            low.windows(window),
+            &close[(window - 1)..]
+        )
+        .map(|(h, l, c)| {
+            let hh = h.iter().fold(f64::NAN, |state, &x| state.max(x));
+            let ll = l.iter().fold(f64::NAN, |state, &x| state.min(x));
+            100.0 * (c - ll) / (hh - ll)
+        })
+        .collect::<Vec<f64>>(),
+        smooth_win,
+    )
+    .collect::<Vec<f64>>();
+    let k = smooth::sma(&fast_k[smooth_win - 1..], smooth_win).collect::<Vec<f64>>();
+    izip!(
+        iter::repeat(f64::NAN).take(window - 1).chain(fast_k),
+        iter::repeat(f64::NAN)
+            .take((window - 1) + (smooth_win - 1))
+            .chain(k)
+    )
+}
+
 /// Stochastic Oscillator
 ///
 /// Compares a security’s closing price to a range of its highest highs and lowest lows
@@ -628,29 +722,7 @@ pub fn stochastic<'a>(
     close: &'a [f64],
     window: usize,
 ) -> impl Iterator<Item = (f64, f64)> + 'a {
-    let smooth_win = 3;
-    let fast_k = smooth::sma(
-        &izip!(
-            high.windows(window),
-            low.windows(window),
-            &close[(window - 1)..]
-        )
-        .map(|(h, l, c)| {
-            let hh = h.iter().fold(f64::NAN, |state, &x| state.max(x));
-            let ll = l.iter().fold(f64::NAN, |state, &x| state.min(x));
-            100.0 * (c - ll) / (hh - ll)
-        })
-        .collect::<Vec<f64>>(),
-        smooth_win,
-    )
-    .collect::<Vec<f64>>();
-    let k = smooth::sma(&fast_k[smooth_win - 1..], smooth_win).collect::<Vec<f64>>();
-    izip!(
-        iter::repeat(f64::NAN).take(window - 1).chain(fast_k),
-        iter::repeat(f64::NAN)
-            .take((window - 1) + (smooth_win - 1))
-            .chain(k)
-    )
+    stoch(high, low, close, window, 3)
 }
 
 fn _stc(series: &[f64], window: usize, smooth: usize) -> impl Iterator<Item = f64> + '_ {
@@ -1543,4 +1615,45 @@ pub fn gator(
         lips_offset,
     )
     .map(|x| ((x.0 - x.1).abs(), (x.1 - x.2).abs()))
+}
+
+/// KDJ Index
+///
+/// Indicator consisting of three components: K-line which is a smoothed version of price;
+/// D-line which is a smoother version of K-line; and J-line which is a derivative of K and D
+/// lines. Effectively stochastic indicator with additional J-line.
+///
+/// ## Usage
+///
+/// Suggests an uptrend when J line crosses above K and D lines
+///
+/// ## Sources
+///
+/// [[1]](https://market-bulls.com/kdj-indicator/)
+/// [[2]](https://www.liberatedstocktrader.com/kdj-indicator/)
+///
+/// # Examples
+///
+/// ```
+/// use traquer::momentum;
+///
+/// momentum::kdj(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     3, 2, None, Some(1.0)).collect::<Vec<(f64, f64, f64)>>();
+///
+/// ```
+pub fn kdj<'a>(
+    high: &'a [f64],
+    low: &'a [f64],
+    close: &'a [f64],
+    k_win: usize,
+    d_win: usize,
+    k_factor: Option<f64>,
+    d_factor: Option<f64>,
+) -> impl Iterator<Item = (f64, f64, f64)> + 'a {
+    let k_factor = k_factor.unwrap_or(3.0);
+    let d_factor = d_factor.unwrap_or(2.0);
+    stoch(high, low, close, k_win, d_win).map(move |(k, d)| (k, d, k_factor * k - d_factor * d))
 }
