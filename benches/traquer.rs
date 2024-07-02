@@ -296,6 +296,16 @@ fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("sig-momentum-gator", |b| {
         b.iter(|| black_box(momentum::gator(&stats.close, 13, 0, 8, 0, 5, 0).collect::<Vec<_>>()))
     });
+    c.bench_function("sig-momentum-crsi", |b| {
+        b.iter(|| black_box(momentum::crsi(&stats.close, 10, 6, 16).collect::<Vec<_>>()))
+    });
+    c.bench_function("sig-momentum-kdj", |b| {
+        b.iter(|| {
+            black_box(
+                momentum::kdj(&stats.high, &stats.low, &stats.close, 16, 3).collect::<Vec<_>>(),
+            )
+        })
+    });
     c.bench_function("sig-trend-aroon", |b| {
         b.iter(|| black_box(trend::aroon(&stats.high, &stats.low, 16).collect::<Vec<(f64, f64)>>()))
     });

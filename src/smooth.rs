@@ -224,7 +224,7 @@ pub fn pwma(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
         }))
 }
 
-/// Welles Wilder's Moving Average
+/// Welles Wilder's Moving Average (aka Smoothed MA aka Running MA)
 ///
 /// Developed by J. Welles Wilder Jr. A type of moving average that uses a smoothing
 /// formula to reduce the lag and volatility associated with traditional moving averages.
@@ -247,9 +247,8 @@ pub fn wilder(data: &[f64], window: usize) -> Box<dyn Iterator<Item = f64> + '_>
         iter::repeat(f64::NAN)
             .take(window - 1)
             .chain(data[window - 1..].iter().scan(initial, move |state, x| {
-                let ma = (*state * (window - 1) as f64 + x) / window as f64;
-                *state = ma;
-                Some(ma)
+                *state = (*state * (window - 1) as f64 + x) / window as f64;
+                Some(*state)
             })),
     )
 }
