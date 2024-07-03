@@ -143,9 +143,6 @@ fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("sig-momentum-pmo", |b| {
         b.iter(|| black_box(momentum::pmo(&stats.close, 10, 6).collect::<Vec<f64>>()))
     });
-    c.bench_function("sig-trend-dpo", |b| {
-        b.iter(|| black_box(trend::dpo(&stats.close, 16, None).collect::<Vec<f64>>()))
-    });
     c.bench_function("sig-volatility-vhf", |b| {
         b.iter(|| {
             black_box(
@@ -543,6 +540,9 @@ fn criterion_benchmark(c: &mut Criterion) {
     });
     c.bench_function("ma-mama", |b| {
         b.iter(|| black_box(smooth::mama(&stats.close, None, None).collect::<Vec<(f64, f64)>>()))
+    });
+    c.bench_function("ma-t3", |b| {
+        b.iter(|| black_box(smooth::t3(&stats.close, 6, None).collect::<Vec<f64>>()))
     });
 }
 
