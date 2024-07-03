@@ -847,3 +847,45 @@ pub fn mama(
             }),
         )
 }
+
+/// T3 Moving Average
+///
+/// Another moving average leveraging EMA of EMAs to reduce noise.
+///
+/// ## Sources
+///
+/// [[1]](https://theforexgeek.com/t3-moving-average/)
+///
+/// # Examples
+///
+/// ```
+/// use traquer::smooth;
+///
+/// smooth::t3(
+///     &vec![1.0,2.0,3.0,4.0,5.0,2.0,3.0,4.0,2.0,3.0,4.0,2.0,3.0,4.0],
+///     3, None).collect::<Vec<f64>>();
+/// ```
+pub fn t3(data: &[f64], window: usize, factor: Option<f64>) -> impl Iterator<Item = f64> + '_ {
+    let factor = factor.unwrap_or(0.7).clamp(0.0, 1.0);
+    let ma = ewma(data, window).collect::<Vec<f64>>();
+    let ma2 = ewma(&ma[window - 1..], window).collect::<Vec<f64>>();
+    let ma3 = ewma(&ma2[window - 1..], window).collect::<Vec<f64>>();
+    let ma4 = ewma(&ma3[window - 1..], window).collect::<Vec<f64>>();
+    let ma5 = ewma(&ma4[window - 1..], window).collect::<Vec<f64>>();
+    let ma6 = ewma(&ma5[window - 1..], window).collect::<Vec<f64>>();
+    let c1 = -factor.powi(3);
+    let c2 = 3.0 * factor.powi(2) + 3.0 * factor.powi(3);
+    let c3 = -3.0 * factor - 6.0 * factor.powi(2) - 3.0 * factor.powi(3);
+    let c4 = 1.0 + 3.0 * factor + 3.0 * factor.powi(2) + factor.powi(3);
+
+    dbg!(ma2.len(), ma3.len(), ma4.len(), ma5.len(), ma6.len());
+    iter::repeat(f64::NAN).take((window - 1) * 2).chain(
+        izip!(
+            ma3,
+            iter::repeat(f64::NAN).take(window - 1).chain(ma4),
+            iter::repeat(f64::NAN).take((window - 1) * 2).chain(ma5),
+            iter::repeat(f64::NAN).take((window - 1) * 3).chain(ma6)
+        )
+        .map(move |(e3, e4, e5, e6)| c1 * e6 + c2 * e5 + c3 * e4 + c4 * e3),
+    )
+}
