@@ -1,6 +1,6 @@
 [package]
 name = "traquer"
-version = "0.4.0"
+version = "0.5.0"
 edition = "2021"
 description = "technical analysis library"
 license = "Apache-2.0"
@@ -13,9 +13,11 @@ categories = ["finance"]
 itertools = "0.13.0"
 
 [dev-dependencies]
+chrono = "0.4.38"
 criterion = "0.5.1"
 serde = { version = "1.0.203", features = ["derive"] }
-serde_json = "1.0.117"
+serde_json = "1.0.120"
+ureq = { version = "2.9.7", features = ["json"] }
 
 [[bench]]
 name = "traquer"

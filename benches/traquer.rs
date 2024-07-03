@@ -42,8 +42,32 @@ fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("sig-volume-kvo", |b| {
         b.iter(|| {
             black_box(
-                volume::kvo(&stats.high, &stats.low, &stats.close, &stats.volume, 10, 16)
-                    .collect::<Vec<f64>>(),
+                volume::kvo(
+                    &stats.high,
+                    &stats.low,
+                    &stats.close,
+                    &stats.volume,
+                    10,
+                    16,
+                    Some(false),
+                )
+                .collect::<Vec<f64>>(),
+            )
+        })
+    });
+    c.bench_function("sig-volume-kvo-alt", |b| {
+        b.iter(|| {
+            black_box(
+                volume::kvo(
+                    &stats.high,
+                    &stats.low,
+                    &stats.close,
+                    &stats.volume,
+                    10,
+                    16,
+                    Some(true),
+                )
+                .collect::<Vec<f64>>(),
             )
         })
     });
