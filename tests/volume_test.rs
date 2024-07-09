@@ -36,8 +36,55 @@ fn test_twiggs() {
 #[test]
 fn test_kvo() {
     let stats = common::test_data();
-    let result = volume::kvo(&stats.high, &stats.low, &stats.close, &stats.volume, 10, 16)
-        .collect::<Vec<_>>();
+    let result = volume::kvo(
+        &stats.high,
+        &stats.low,
+        &stats.close,
+        &stats.volume,
+        10,
+        16,
+        Some(false),
+    )
+    .collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
+    assert_eq!(
+        vec![
+            -47653124.52312139,
+            -38871537.60795313,
+            -56551756.57617685,
+            -80719127.50187302,
+            -91381485.15827936,
+            -102487748.59386584,
+            -103133145.86686252,
+            -76544074.74621749,
+            -76362373.25709169,
+            -84632468.62962747,
+            -54766782.00020293,
+            -53496835.81130403,
+            -60063221.578486785,
+            -36156452.68826012,
+            -39470196.1311378,
+            -81568025.19964269,
+            -163166676.59742773,
+            -90486708.71792603
+        ],
+        result[16..]
+    );
+}
+
+#[test]
+fn test_kvo_alt() {
+    let stats = common::test_data();
+    let result = volume::kvo(
+        &stats.high,
+        &stats.low,
+        &stats.close,
+        &stats.volume,
+        10,
+        16,
+        None,
+    )
+    .collect::<Vec<_>>();
     assert_eq!(stats.close.len(), result.len());
     assert_eq!(
         vec![

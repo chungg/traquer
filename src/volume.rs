@@ -16,6 +16,29 @@ fn vforce<'a>(
     volume: &'a [f64],
 ) -> impl Iterator<Item = f64> + 'a {
     izip!(&high[1..], &low[1..], &close[1..], &volume[1..]).scan(
+        (high[0], low[0], close[0], 0.0, 0.0, 0.0),
+        |state, (h, l, c, v)| {
+            // state = (h, l, c, trend, cm, dm)
+            let trend = ((h + l + c) - (state.0 + state.1 + state.2)).signum();
+            let dm = h - l;
+            let cm = if trend == state.3 {
+                state.4 + dm
+            } else {
+                state.5 + dm
+            };
+            *state = (*h, *l, *c, trend, cm, dm);
+            Some(v * (2.0 * ((dm / cm) - 1.0)) * trend * 100.0)
+        },
+    )
+}
+
+fn vforce_alt<'a>(
+    high: &'a [f64],
+    low: &'a [f64],
+    close: &'a [f64],
+    volume: &'a [f64],
+) -> impl Iterator<Item = f64> + 'a {
+    izip!(&high[1..], &low[1..], &close[1..], &volume[1..]).scan(
         (high[0], low[0], close[0], 0.0),
         |state, (h, l, c, v)| {
             let trend = ((h + l + c) - (state.0 + state.1 + state.2)).signum();
@@ -30,8 +53,8 @@ fn vforce<'a>(
 /// Developed by Stephen Klinger. It helps determine the long-term trend of money flow
 /// while remaining sensitive enough to detect short-term fluctuations.
 ///
-/// Note: This is different from formula defined in source. The vforce value is simply
-/// volume * trend
+/// An alt algorithm is available which computes the vforce value as simply
+/// volume * trend. This behaviour matches some existing popular tools.
 ///
 /// ## Usage
 ///
@@ -51,7 +74,7 @@ fn vforce<'a>(
 ///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
 ///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
 ///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
-///     3, 6).collect::<Vec<f64>>();
+///     3, 6, None).collect::<Vec<f64>>();
 ///
 /// ```
 pub fn kvo<'a>(
@@ -61,8 +84,13 @@ pub fn kvo<'a>(
     volume: &'a [f64],
     short: usize,
     long: usize,
+    alt: Option<bool>,
 ) -> impl Iterator<Item = f64> + 'a {
-    let vf = vforce(high, low, close, volume).collect::<Vec<f64>>();
+    let vf = if alt.unwrap_or(true) {
+        vforce_alt(high, low, close, volume).collect::<Vec<f64>>()
+    } else {
+        vforce(high, low, close, volume).collect::<Vec<f64>>()
+    };
     let short_ma = smooth::ewma(&vf, short);
     let long_ma = smooth::ewma(&vf, long);
     iter::once(f64::NAN).chain(
