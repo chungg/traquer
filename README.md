@@ -16,7 +16,7 @@ that you can beat the market.
 
 ## types of indicators
 
-100+ indicators available across 5 categories. Even across categories, indicators often
+130+ indicators available across multiple categories. Even across categories, indicators often
 behave quite similarly depending on window size. The classfication/api may change
 (if egregiously wrong).
 
@@ -43,6 +43,13 @@ the indicator, it may be a momentum indicator or trend indicator.
 Provides moving average functions. Often used to track trend, levels of support, breakouts, etc...
 The results are in the same scale as input data and are often used as a signal line for input data.
 
+### correlation
+Signals that compare two or more variables and their relationship to one another.
+
+## statistic
+A set of common statistical functions that can describe features of a dataset or infer
+conclusions such as prediction accuracy or patterns.
+
 ## installation
 1. (optional) https://rustup.rs/
 2. (optional) cargo new <lib name>
@@ -64,7 +71,7 @@ encouraged.
 - cargo test
 - cargo bench
 - cargo run --example file_json
--
+
 ## todo
 - handle div by zero scenarios
 - allow other numeric types rather than just f64

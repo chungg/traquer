@@ -514,6 +514,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("sig-volatility-cc_hv", |b| {
         b.iter(|| black_box(volatility::cc_hv(&stats.close, 16).collect::<Vec<_>>()))
     });
+
     c.bench_function("ma-ewma", |b| {
         b.iter(|| black_box(smooth::ewma(&stats.close, 16).collect::<Vec<f64>>()))
     });
@@ -579,6 +580,88 @@ fn criterion_benchmark(c: &mut Criterion) {
     });
     c.bench_function("ma-t3", |b| {
         b.iter(|| black_box(smooth::t3(&stats.close, 6, None).collect::<Vec<f64>>()))
+    });
+
+    c.bench_function("correlation-pcc", |b| {
+        b.iter(|| black_box(correlation::pcc(&stats.close, &stats.close, 16).collect::<Vec<_>>()))
+    });
+    c.bench_function("correlation-rsq", |b| {
+        b.iter(|| black_box(correlation::rsq(&stats.close, &stats.close, 16).collect::<Vec<_>>()))
+    });
+    c.bench_function("correlation-beta", |b| {
+        b.iter(|| black_box(correlation::beta(&stats.close, &stats.close, 16).collect::<Vec<_>>()))
+    });
+    c.bench_function("correlation-rsc", |b| {
+        b.iter(|| black_box(correlation::rsc(&stats.close, &stats.close).collect::<Vec<_>>()))
+    });
+    c.bench_function("correlation-perf", |b| {
+        b.iter(|| black_box(correlation::perf(&stats.close, &stats.close, 16).collect::<Vec<_>>()))
+    });
+
+    c.bench_function("stats-dist-variance", |b| {
+        b.iter(|| {
+            black_box(statistic::distribution::variance(&stats.close, 16).collect::<Vec<_>>())
+        })
+    });
+    c.bench_function("stats-dist-std_dev", |b| {
+        b.iter(|| black_box(statistic::distribution::std_dev(&stats.close, 16).collect::<Vec<_>>()))
+    });
+    c.bench_function("stats-dist-zscore", |b| {
+        b.iter(|| black_box(statistic::distribution::zscore(&stats.close, 16).collect::<Vec<_>>()))
+    });
+
+    c.bench_function("stats-dist-mad", |b| {
+        b.iter(|| black_box(statistic::distribution::mad(&stats.close, 16).collect::<Vec<_>>()))
+    });
+    c.bench_function("stats-dist-cv", |b| {
+        b.iter(|| black_box(statistic::distribution::cv(&stats.close, 16).collect::<Vec<_>>()))
+    });
+    c.bench_function("stats-dist-kurtosis", |b| {
+        b.iter(|| {
+            black_box(statistic::distribution::kurtosis(&stats.close, 16).collect::<Vec<_>>())
+        })
+    });
+    c.bench_function("stats-dist-skew", |b| {
+        b.iter(|| black_box(statistic::distribution::skew(&stats.close, 16).collect::<Vec<_>>()))
+    });
+    c.bench_function("stats-dist-median", |b| {
+        b.iter(|| black_box(statistic::distribution::median(&stats.close, 16).collect::<Vec<_>>()))
+    });
+    c.bench_function("stats-dist-quantile", |b| {
+        b.iter(|| {
+            black_box(statistic::distribution::quantile(&stats.close, 16, 90.0).collect::<Vec<_>>())
+        })
+    });
+
+    c.bench_function("stats-regress-mse", |b| {
+        b.iter(|| {
+            black_box(statistic::regression::mse(&stats.close, &stats.open).collect::<Vec<_>>())
+        })
+    });
+    c.bench_function("stats-regress-rmse", |b| {
+        b.iter(|| {
+            black_box(statistic::regression::rmse(&stats.close, &stats.open).collect::<Vec<_>>())
+        })
+    });
+    c.bench_function("stats-regress-mae", |b| {
+        b.iter(|| {
+            black_box(statistic::regression::mae(&stats.close, &stats.open).collect::<Vec<_>>())
+        })
+    });
+    c.bench_function("stats-regress-mape", |b| {
+        b.iter(|| {
+            black_box(statistic::regression::mape(&stats.close, &stats.open).collect::<Vec<_>>())
+        })
+    });
+    c.bench_function("stats-regress-smape", |b| {
+        b.iter(|| {
+            black_box(statistic::regression::smape(&stats.close, &stats.open).collect::<Vec<_>>())
+        })
+    });
+    c.bench_function("stats-regress-mda", |b| {
+        b.iter(|| {
+            black_box(statistic::regression::mda(&stats.close, &stats.open).collect::<Vec<_>>())
+        })
     });
 }
 
