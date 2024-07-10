@@ -752,3 +752,82 @@ pub fn wcp<'a>(
 ) -> impl Iterator<Item = f64> + 'a {
     izip!(high, low, close).map(|(h, l, c)| (h + l + 2.0 * c) / 4.0)
 }
+
+/// Close-to-Close Historical Volatility
+///
+/// The simplest volatility estimator. Calculated using only stock's closing prices. Value is annualised.
+///
+/// ## Usage
+///
+/// Higher value implies increase volatility.
+///
+/// ## Sources
+///
+/// [[1]](https://harbourfronts.com/close-close-historical-volatility-calculation-volatility-analysis-python/)
+///
+/// # Examples
+///
+/// ```
+/// use traquer::volatility;
+///
+/// volatility::cc_hv(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     3).collect::<Vec<f64>>();
+///
+/// ```
+pub fn cc_hv(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
+    iter::repeat(f64::NAN).take(window).chain(
+        data.windows(2)
+            .map(|w| (w[1] / w[0]).ln().powi(2))
+            .collect::<Vec<f64>>()
+            .windows(window)
+            .map(|w| (w.iter().sum::<f64>() * 252.0 / window as f64).sqrt())
+            .collect::<Vec<f64>>(),
+    )
+}
+
+/// Garman-Klass-Yang-Zhang Historical Volatility
+///
+/// Extends Garman-Klass volatility estimator by taking into consideration overnight jumps. Value
+/// is annualised.
+///
+/// ## Usage
+///
+/// Higher value implies increase volatility.
+///
+/// ## Sources
+///
+/// [[1]](https://harbourfronts.com/garman-klass-yang-zhang-historical-volatility-calculation-volatility-analysis-python/)
+///
+/// # Examples
+///
+/// ```
+/// use traquer::volatility;
+///
+/// volatility::gkyz_hv(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     3).collect::<Vec<f64>>();
+///
+/// ```
+pub fn gkyz_hv<'a>(
+    open: &'a [f64],
+    high: &'a [f64],
+    low: &'a [f64],
+    close: &'a [f64],
+    window: usize,
+) -> impl Iterator<Item = f64> + 'a {
+    iter::repeat(f64::NAN).take(window).chain(
+        izip!(&open[1..], &high[1..], &low[1..], &close[1..], close)
+            .map(|(o, h, l, c, c0)| {
+                (o / c0).ln().powi(2) + 0.5 * (h / l).ln().powi(2)
+                    - (2.0 * 2_f64.ln() - 1.0) * (c / o).ln().powi(2)
+            })
+            .collect::<Vec<f64>>()
+            .windows(window)
+            .map(|w| (w.iter().sum::<f64>() * 252.0 / window as f64).sqrt())
+            .collect::<Vec<f64>>(),
+    )
+}
