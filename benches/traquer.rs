@@ -226,7 +226,7 @@ fn criterion_benchmark(c: &mut Criterion) {
         b.iter(|| black_box(volume::tvi(&stats.close, &stats.volume, 0.5).collect::<Vec<f64>>()))
     });
     c.bench_function("sig-volume-vpt", |b| {
-        b.iter(|| black_box(volume::vpt(&stats.close, &stats.volume, 0.5).collect::<Vec<f64>>()))
+        b.iter(|| black_box(volume::vpt(&stats.close, &stats.volume).collect::<Vec<f64>>()))
     });
     c.bench_function("sig-trend-supertrend", |b| {
         b.iter(|| {
@@ -323,7 +323,8 @@ fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("sig-momentum-kdj", |b| {
         b.iter(|| {
             black_box(
-                momentum::kdj(&stats.high, &stats.low, &stats.close, 16, 3).collect::<Vec<_>>(),
+                momentum::kdj(&stats.high, &stats.low, &stats.close, 16, 3, None, None)
+                    .collect::<Vec<_>>(),
             )
         })
     });
@@ -501,6 +502,17 @@ fn criterion_benchmark(c: &mut Criterion) {
         b.iter(|| {
             black_box(volatility::wcp(&stats.high, &stats.low, &stats.close).collect::<Vec<f64>>())
         })
+    });
+    c.bench_function("sig-volatility-gkyz_hv", |b| {
+        b.iter(|| {
+            black_box(
+                volatility::gkyz_hv(&stats.open, &stats.high, &stats.low, &stats.close, 16)
+                    .collect::<Vec<_>>(),
+            )
+        })
+    });
+    c.bench_function("sig-volatility-cc_hv", |b| {
+        b.iter(|| black_box(volatility::cc_hv(&stats.close, 16).collect::<Vec<_>>()))
     });
     c.bench_function("ma-ewma", |b| {
         b.iter(|| black_box(smooth::ewma(&stats.close, 16).collect::<Vec<f64>>()))
