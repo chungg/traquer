@@ -1,5 +1,6 @@
 #![doc = include_str!("../README.md")]
 
+pub mod correlation;
 pub mod momentum;
 pub mod smooth;
 pub mod trend;
