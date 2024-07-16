@@ -11,7 +11,11 @@ pub struct SecStats {
 }
 
 pub fn test_data() -> SecStats {
-    let data = fs::read_to_string("./tests/rddt.input").expect("Unable to read file");
+    test_data_path("./tests/rddt.input")
+}
+
+pub fn test_data_path(path: &str) -> SecStats {
+    let data = fs::read_to_string(path).expect("Unable to read file");
     let stats: SecStats = serde_json::from_str(&data).expect("JSON does not have correct format.");
     stats
 }
