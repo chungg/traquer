@@ -10,6 +10,7 @@ use std::iter;
 use itertools::izip;
 
 use crate::smooth;
+use crate::statistic::distribution::{_std_dev as unpadded_std_dev, std_dev as padded_std_dev};
 
 /// Mass Index
 ///
@@ -254,9 +255,7 @@ pub fn std_dev(
     deviations: Option<f64>,
 ) -> impl Iterator<Item = f64> + '_ {
     let devs = deviations.unwrap_or(2.0);
-    iter::repeat(f64::NAN)
-        .take(window - 1)
-        .chain(smooth::std_dev(data, window).map(move |x| x * devs))
+    padded_std_dev(data, window).map(move |x| x * devs)
 }
 
 /// Bollinger Bands
@@ -516,7 +515,7 @@ pub fn relative_vol(
     smoothing: usize,
 ) -> impl Iterator<Item = f64> + '_ {
     let (gain, loss): (Vec<f64>, Vec<f64>) = izip!(
-        smooth::std_dev(close, window),
+        unpadded_std_dev(close, window),
         &close[window - 1..],
         &close[window - 2..close.len() - 1]
     )

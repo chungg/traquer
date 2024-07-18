@@ -9,6 +9,8 @@ use std::collections::VecDeque;
 use std::f64::consts::PI;
 use std::iter;
 
+use crate::statistic::distribution::_std_dev;
+
 /// Moving average types
 pub enum MaMode {
     SMA,
@@ -278,13 +280,6 @@ pub fn hull(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
     .into_iter()
 }
 
-pub(crate) fn std_dev(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
-    data.windows(window).map(move |w| {
-        let mean = w.iter().sum::<f64>() / window as f64;
-        (w.iter().map(|x| (x - mean).powi(2)).sum::<f64>() / window as f64).sqrt()
-    })
-}
-
 /// Volatility Index Dynamic Average (VIDYA)
 ///
 /// A type of moving average that uses a combination of short-term and long-term
@@ -301,7 +296,7 @@ pub(crate) fn std_dev(data: &[f64], window: usize) -> impl Iterator<Item = f64> 
 /// ```
 pub fn vidya(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
     let alpha = 2.0 / (window + 1) as f64;
-    let std5 = std_dev(data, 5).collect::<Vec<f64>>();
+    let std5 = _std_dev(data, 5).collect::<Vec<f64>>();
     let std20 = sma(&std5, 20).collect::<Vec<f64>>();
     let offset = (5 - 1) + (20 - 1);
     iter::repeat(f64::NAN).take(offset).chain(
