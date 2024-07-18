@@ -4,6 +4,7 @@
 //! shape, centre, or dispersion of the
 //! distribution[[1]](https://en.wikipedia.org/wiki/Probability_distribution)
 use std::cmp::Ordering;
+use std::collections::HashMap;
 use std::iter;
 
 /// Variance
@@ -308,4 +309,34 @@ pub fn quantile(data: &[f64], window: usize, q: f64) -> impl Iterator<Item = f64
                 }
             }
         }))
+}
+
+pub(crate) fn cov_stdev<'a>(x: &'a [usize], y: &'a [usize]) -> (f64, f64, f64) {
+    let x_avg = x.iter().fold(0.0, |acc, &x| acc + x as f64) / x.len() as f64;
+    let y_avg = y.iter().fold(0.0, |acc, &y| acc + y as f64) / y.len() as f64;
+    (
+        x.iter().zip(y).fold(0.0, |acc, (&xi, &yi)| {
+            acc + (xi as f64 - x_avg) * (yi as f64 - y_avg)
+        }) / (x.len() - 1) as f64,
+        (x.iter()
+            .fold(0.0, |acc, &xi| acc + (xi as f64 - x_avg).powi(2))
+            / (x.len() - 1) as f64)
+            .sqrt(),
+        (y.iter()
+            .fold(0.0, |acc, &yi| acc + (yi as f64 - y_avg).powi(2))
+            / (y.len() - 1) as f64)
+            .sqrt(),
+    )
+}
+
+pub(crate) fn rank(data: &[f64]) -> impl Iterator<Item = usize> + '_ {
+    let mut values = data.to_vec();
+    values.sort_unstable_by(|a, b| a.partial_cmp(b).unwrap());
+    let mut rank_map: HashMap<u64, usize> = HashMap::new();
+
+    for (rank, element) in values.iter().enumerate() {
+        rank_map.entry(element.to_bits()).or_insert(rank);
+    }
+    data.iter()
+        .map(move |x| rank_map.get(&x.to_bits()).unwrap().to_owned())
 }

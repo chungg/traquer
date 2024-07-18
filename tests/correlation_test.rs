@@ -158,3 +158,49 @@ fn test_rsc() {
         result
     );
 }
+
+#[test]
+fn test_krcc() {
+    let stats = common::test_data();
+    let stats2 = common::test_data_path("./tests/sp500.input");
+    let result = correlation::krcc(&stats.close, &stats2.close, 16).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
+    assert_eq!(
+        vec![
+            0.45,
+            0.55,
+            0.6166666666666667,
+            0.6833333333333333,
+            0.6666666666666666,
+            0.6166666666666667,
+            0.65,
+            0.65,
+            0.6,
+            0.5833333333333334,
+            0.5166666666666667,
+            0.43333333333333335,
+            0.2833333333333333,
+            0.31666666666666665,
+            0.36666666666666664,
+            0.5,
+            0.6166666666666667,
+            0.6833333333333333,
+            0.7166666666666667
+        ],
+        result[16 - 1..]
+    );
+    let result = correlation::krcc(
+        &vec![7.1, 7.1, 7.2, 8.3, 9.4, 10.5, 11.4],
+        &vec![2.8, 2.9, 2.8, 2.6, 3.5, 4.6, 5.0],
+        7,
+    )
+    .collect::<Vec<_>>();
+    assert_eq!(0.55, result[7 - 1]);
+    let result = correlation::krcc(
+        &vec![7.1, 7.1, 7.2, 8.3, 9.4, 10.5, 11.4],
+        &vec![2.8, 2.8, 2.8, 2.6, 3.5, 4.6, 5.0],
+        7,
+    )
+    .collect::<Vec<_>>();
+    assert_eq!(0.6324555320336759, result[7 - 1]);
+}
