@@ -8,6 +8,7 @@ use std::iter;
 use itertools::izip;
 
 use crate::smooth;
+use crate::statistic::distribution::{cov_stdev, rank};
 
 /// Pearson Correlation Coefficient
 ///
@@ -231,4 +232,106 @@ pub fn perf<'a>(
 /// ```
 pub fn rsc<'a>(series1: &'a [f64], series2: &'a [f64]) -> impl Iterator<Item = f64> + 'a {
     series1.iter().zip(series2).map(|(x, y)| x / y)
+}
+
+/// Spearman's Rank Correlation Coefficient
+///
+/// Assesses how well the relationship between two variables can be described using a monotonic
+/// function. Similar to Pearson correlation except uses rank value.
+///
+/// ## Usage
+///
+/// A value between 0 and 1 implies a positive correlation; 0, no correlation; and between 0 and
+/// -1, a negative correlation.
+///
+/// ## Sources
+///
+/// [[1]](https://en.wikipedia.org/wiki/Spearman%27s_rank_correlation_coefficient)
+///
+/// # Examples
+///
+/// ```
+/// use traquer::correlation;
+///
+/// correlation::srcc(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     6).collect::<Vec<f64>>();
+///
+/// ```
+pub fn srcc<'a>(
+    series1: &'a [f64],
+    series2: &'a [f64],
+    window: usize,
+) -> impl Iterator<Item = f64> + 'a {
+    iter::repeat(f64::NAN).take(window - 1).chain(
+        series1
+            .windows(window)
+            .zip(series2.windows(window))
+            .map(|(x_win, y_win)| {
+                let (cov_xy, std_x, std_y) = cov_stdev(
+                    &rank(x_win).collect::<Vec<usize>>(),
+                    &rank(y_win).collect::<Vec<usize>>(),
+                );
+                cov_xy / (std_x * std_y)
+            }),
+    )
+}
+
+/// Kendall's Rank Correlation Coefficient
+///
+/// Meausres the similarity of the orderings of the data when ranked by each of the quantities by
+/// computing the number of concordant and disconcordant pairs. This computes Tau-b matching
+/// logic in scipy.
+///
+/// ## Usage
+///
+/// A value between 0 and 1 implies a positive correlation; 0, no correlation; and between 0 and
+/// -1, a negative correlation.
+///
+/// ## Sources
+///
+/// [[1]](https://en.wikipedia.org/wiki/Kendall_rank_correlation_coefficient)
+/// [[2]](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.kendalltau.html)
+///
+/// # Examples
+///
+/// ```
+/// use traquer::correlation;
+///
+/// correlation::krcc(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     6).collect::<Vec<f64>>();
+///
+/// ```
+pub fn krcc<'a>(
+    series1: &'a [f64],
+    series2: &'a [f64],
+    window: usize,
+) -> impl Iterator<Item = f64> + 'a {
+    iter::repeat(f64::NAN).take(window - 1).chain(
+        series1
+            .windows(window)
+            .zip(series2.windows(window))
+            .map(move |(x_win, y_win)| {
+                let mut nc = 0.0;
+                let mut x_tie = 0.0;
+                let mut y_tie = 0.0;
+                let mut xy_tie = 0.0;
+
+                for i in 0..window - 1 {
+                    for j in i + 1..window {
+                        nc += ((x_win[i] - x_win[j]).signum() == (y_win[i] - y_win[j]).signum()
+                            && x_win[i] != x_win[j]) as u8 as f64;
+                        xy_tie += (x_win[i] == x_win[j] && y_win[i] == y_win[j]) as u8 as f64;
+                        x_tie += (x_win[i] == x_win[j]) as u8 as f64;
+                        y_tie += (y_win[i] == y_win[j]) as u8 as f64;
+                    }
+                }
+                let tot = (window * (window - 1)) as f64 * 0.5;
+                let nd = tot - nc - x_tie - y_tie + xy_tie;
+                (nc - nd) / ((tot - x_tie) * (tot - y_tie)).sqrt()
+            }),
+    )
 }

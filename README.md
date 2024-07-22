@@ -46,7 +46,7 @@ The results are in the same scale as input data and are often used as a signal l
 ### correlation
 Signals that compare two or more variables and their relationship to one another.
 
-## statistic
+### statistic
 A set of common statistical functions that can describe features of a dataset or infer
 conclusions such as prediction accuracy or patterns.
 

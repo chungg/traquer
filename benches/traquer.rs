@@ -597,6 +597,12 @@ fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("correlation-perf", |b| {
         b.iter(|| black_box(correlation::perf(&stats.close, &stats.close, 16).collect::<Vec<_>>()))
     });
+    c.bench_function("correlation-srcc", |b| {
+        b.iter(|| black_box(correlation::srcc(&stats.close, &stats.close, 16).collect::<Vec<_>>()))
+    });
+    c.bench_function("correlation-krcc", |b| {
+        b.iter(|| black_box(correlation::krcc(&stats.close, &stats.close, 16).collect::<Vec<_>>()))
+    });
 
     c.bench_function("stats-dist-variance", |b| {
         b.iter(|| {
