@@ -873,7 +873,6 @@ pub fn t3(data: &[f64], window: usize, factor: Option<f64>) -> impl Iterator<Ite
     let c3 = -3.0 * factor - 6.0 * factor.powi(2) - 3.0 * factor.powi(3);
     let c4 = 1.0 + 3.0 * factor + 3.0 * factor.powi(2) + factor.powi(3);
 
-    dbg!(ma2.len(), ma3.len(), ma4.len(), ma5.len(), ma6.len());
     iter::repeat(f64::NAN).take((window - 1) * 2).chain(
         izip!(
             ma3,
