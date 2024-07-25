@@ -359,7 +359,7 @@ pub fn vma(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
     )
 }
 
-/// Linear Regression Forecast aka Time Series Forecast
+/// Linear Regression Forecast (aka Time Series Forecast aka Least Squares Moving Average)
 ///
 /// A type of moving average that incorporates the slope and intercept of a linear regression
 /// line to make predictions.
