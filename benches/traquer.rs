@@ -377,6 +377,9 @@ fn criterion_benchmark(c: &mut Criterion) {
             )
         })
     });
+    c.bench_function("sig-trend-hurst", |b| {
+        b.iter(|| black_box(trend::hurst(&stats.close, 100, None).collect::<Vec<_>>()))
+    });
     c.bench_function("sig-volume-bw_mfi", |b| {
         b.iter(|| {
             black_box(volume::bw_mfi(&stats.high, &stats.low, &stats.volume).collect::<Vec<f64>>())

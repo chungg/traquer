@@ -32,3 +32,16 @@ pub fn vec_eq(v1: &[f64], v2: &[f64]) -> bool {
             v1, v2
         )
 }
+
+#[allow(dead_code)]
+pub fn vec_close(v1: &[f64], v2: &[f64]) -> bool {
+    ((v1.len() == v2.len())
+        && v1
+            .iter()
+            .zip(v2)
+            .all(|(x, y)| (x.is_nan() && y.is_nan()) || ((x - y).abs() < 1e-8)))
+        || panic!(
+            "assertion `left == right` failed\n left: {:?},\n right: {:?}",
+            v1, v2
+        )
+}

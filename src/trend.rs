@@ -1002,3 +1002,98 @@ pub fn ichimoku<'a>(
         lag.chain(iter::repeat(f64::NAN).take(base_win)),
     )
 }
+
+fn hurst_rs(data: &[f64]) -> f64 {
+    let avg = data.iter().sum::<f64>() / data.len() as f64;
+    let mut max_z = f64::MIN;
+    let mut min_z = f64::MAX;
+    let mut dev_cumsum = 0.0;
+    let mut var = 0.0;
+    for x in data {
+        let dev = x - avg;
+        var += dev.powi(2);
+        dev_cumsum += dev;
+        max_z = max_z.max(dev_cumsum);
+        min_z = min_z.min(dev_cumsum);
+    }
+
+    let r = max_z - min_z;
+    let s = (var / (data.len() - 1) as f64).sqrt();
+    r / s
+}
+
+fn linreg(x: &[f64], y: &[f64]) -> f64 {
+    let x_avg = x.iter().fold(0.0, |acc, &x| acc + x) / x.len() as f64;
+    let y_avg = y.iter().fold(0.0, |acc, &y| acc + y) / y.len() as f64;
+    let mut covar = 0.0;
+    let mut var = 0.0;
+    for (&xi, &yi) in x.iter().zip(y) {
+        covar += (xi - x_avg) * (yi - y_avg);
+        var += (xi - x_avg).powi(2);
+    }
+    covar / var
+}
+
+/// Hurst Exponent
+///
+/// Measures the long-term memory of time series, and the rate at which these decrease as the
+/// lag between pairs of values increases.
+///
+/// Configured to accept delta / return values as input rather than price. Window size should be
+/// significantly larger than min_win size to ensure enough datapoints are computed for estimation
+/// or else values less than 0 or greater than 1 may result.
+///
+/// ## Usage
+///
+/// A value above 0.5 suggests a positive autocorrelation or that there is a trend and
+/// it will continue (either up or down). A value below 0.5 suggests it will mean-revert
+/// or that it will break trend.
+///
+/// ## Sources
+///
+/// [[1]](https://en.wikipedia.org/wiki/Hurst_exponent)
+/// [[2]](https://github.com/Mottl/hurst/)
+/// [[3]](https://mahowald.github.io/hurst/)
+///
+/// # Examples
+///
+/// ```
+/// use traquer::trend;
+///
+/// trend::hurst(&vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0], 5, None).collect::<Vec<f64>>();
+///
+/// ```
+pub fn hurst(
+    data: &[f64],
+    window: usize,
+    min_win: Option<usize>,
+) -> impl Iterator<Item = f64> + '_ {
+    // create sub window sizes
+    let mut win_sizes = Vec::new();
+    let mut win = (min_win.unwrap_or(4) as f64).log10();
+    loop {
+        let win_size = 10.0_f64.powf(win) as usize;
+        if win_size >= window {
+            break;
+        }
+        win_sizes.push(win_size);
+        win += 0.25;
+    }
+    win_sizes.push(window);
+    let win_size_log10 = win_sizes
+        .iter()
+        .map(|&x| (x as f64).log10())
+        .collect::<Vec<_>>();
+
+    iter::repeat(f64::NAN)
+        .take(window - 1)
+        .chain(data.windows(window).map(move |w| {
+            let mut rs_vals = Vec::new();
+            for &x in win_sizes.iter() {
+                let chunks = w.chunks_exact(x);
+                let cnt = chunks.len();
+                rs_vals.push((chunks.fold(0.0, |acc, x| acc + hurst_rs(x)) / cnt as f64).log10());
+            }
+            linreg(&win_size_log10, &rs_vals)
+        }))
+}
