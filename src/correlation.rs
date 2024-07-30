@@ -8,7 +8,7 @@ use std::iter;
 use itertools::izip;
 
 use crate::smooth;
-use crate::statistic::distribution::{cov_stdev, rank};
+use crate::statistic::distribution::{cov_stdev, rank, RankMode};
 
 /// Pearson Correlation Coefficient
 ///
@@ -270,8 +270,8 @@ pub fn srcc<'a>(
             .zip(series2.windows(window))
             .map(|(x_win, y_win)| {
                 let (cov_xy, std_x, std_y) = cov_stdev(
-                    &rank(x_win).collect::<Vec<usize>>(),
-                    &rank(y_win).collect::<Vec<usize>>(),
+                    &rank(x_win, None).collect::<Vec<f64>>(),
+                    &rank(y_win, None).collect::<Vec<f64>>(),
                 );
                 cov_xy / (std_x * std_y)
             }),
@@ -332,6 +332,71 @@ pub fn krcc<'a>(
                 let tot = (window * (window - 1)) as f64 * 0.5;
                 let nd = tot - nc - x_tie - y_tie + xy_tie;
                 (nc - nd) / ((tot - x_tie) * (tot - y_tie)).sqrt()
+            }),
+    )
+}
+
+/// Hoeffding's D
+///
+/// A test based on the population measure of deviation from independence. More
+/// resource-intensive compared to other correlation functions but may handle non-monotonic
+/// relationships better.
+///
+/// ## Usage
+///
+/// Generates a measure that ranges from -0.5 to 1, where the higher the number is, the
+/// more strongly dependent the two sequences are on each other.
+///
+/// ## Sources
+///
+/// [[1]](https://github.com/Dicklesworthstone/hoeffdings_d_explainer)
+///
+/// # Examples
+///
+/// ```
+/// use traquer::correlation;
+///
+/// correlation::hoeffd(
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     6).collect::<Vec<f64>>();
+///
+/// ```
+pub fn hoeffd<'a>(
+    series1: &'a [f64],
+    series2: &'a [f64],
+    window: usize,
+) -> impl Iterator<Item = f64> + 'a {
+    iter::repeat(f64::NAN).take(window - 1).chain(
+        series1
+            .windows(window)
+            .zip(series2.windows(window))
+            .map(move |(x_win, y_win)| {
+                let rank_x = rank(x_win, Some(RankMode::Average)).collect::<Vec<f64>>();
+                let rank_y = rank(y_win, Some(RankMode::Average)).collect::<Vec<f64>>();
+                let mut q = vec![1.0; window];
+                for i in 0..window {
+                    for j in 0..window {
+                        q[i] += (rank_x[j] < rank_x[i] && rank_y[j] < rank_y[i]) as u8 as f64;
+                        q[i] +=
+                            0.25 * (rank_x[j] == rank_x[i] && rank_y[j] == rank_y[i]) as u8 as f64;
+                        q[i] += 0.5
+                            * ((rank_x[j] == rank_x[i] && rank_y[j] < rank_y[i])
+                                || (rank_x[j] < rank_x[i] && rank_y[j] == rank_y[i]))
+                                as u8 as f64;
+                    }
+                    q[i] -= 0.25; // accounts for when comparing to itself
+                }
+                let d1 = q.iter().fold(0.0, |acc, x| acc + (x - 1.0) * (x - 2.0));
+                let d2 = rank_x.iter().zip(&rank_y).fold(0.0, |acc, (x, y)| {
+                    acc + (x - 1.0) * (x - 2.0) * (y - 1.0) * (y - 2.0)
+                });
+                let d3 = izip!(q, rank_x, rank_y).fold(0.0, |acc, (q, x, y)| {
+                    acc + (x - 2.0) * (y - 2.0) * (q - 1.0)
+                });
+                30.0 * (((window - 2) * (window - 3)) as f64 * d1 + d2
+                    - 2. * (window - 2) as f64 * d3)
+                    / (window * (window - 1) * (window - 2) * (window - 3) * (window - 4)) as f64
             }),
     )
 }

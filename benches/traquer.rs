@@ -606,6 +606,11 @@ fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("correlation-krcc", |b| {
         b.iter(|| black_box(correlation::krcc(&stats.close, &stats.close, 16).collect::<Vec<_>>()))
     });
+    c.bench_function("correlation-hoeffd", |b| {
+        b.iter(|| {
+            black_box(correlation::hoeffd(&stats.close, &stats.close, 16).collect::<Vec<_>>())
+        })
+    });
 
     c.bench_function("stats-dist-variance", |b| {
         b.iter(|| {
@@ -639,6 +644,17 @@ fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("stats-dist-quantile", |b| {
         b.iter(|| {
             black_box(statistic::distribution::quantile(&stats.close, 16, 90.0).collect::<Vec<_>>())
+        })
+    });
+    c.bench_function("stats-dist-rank", |b| {
+        b.iter(|| {
+            black_box(
+                statistic::distribution::rank(
+                    &stats.close,
+                    Some(statistic::distribution::RankMode::Min),
+                )
+                .collect::<Vec<_>>(),
+            )
         })
     });
 
