@@ -270,8 +270,8 @@ pub fn srcc<'a>(
             .zip(series2.windows(window))
             .map(|(x_win, y_win)| {
                 let (cov_xy, std_x, std_y) = cov_stdev(
-                    &rank(x_win).collect::<Vec<usize>>(),
-                    &rank(y_win).collect::<Vec<usize>>(),
+                    &rank(x_win, None).collect::<Vec<f64>>(),
+                    &rank(y_win, None).collect::<Vec<f64>>(),
                 );
                 cov_xy / (std_x * std_y)
             }),
@@ -335,3 +335,15 @@ pub fn krcc<'a>(
             }),
     )
 }
+
+// /// Hoeffding's D
+// /// ## Sources
+// ///
+// /// [[1]](https://github.com/Dicklesworthstone/hoeffdings_d_explainer)
+// ///
+// pub fn hoeffd(
+//     series1: &'a [f64],
+//     series2: &'a [f64],
+//     window: usize,
+// ) -> impl Iterator<Item = f64> + 'a {
+// }

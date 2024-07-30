@@ -669,6 +669,17 @@ fn criterion_benchmark(c: &mut Criterion) {
             black_box(statistic::regression::mda(&stats.close, &stats.open).collect::<Vec<_>>())
         })
     });
+    c.bench_function("blah", |b| {
+        b.iter(|| {
+            black_box(
+                statistic::distribution::rank(
+                    &stats.close,
+                    Some(statistic::distribution::RankMode::Max),
+                )
+                .collect::<Vec<_>>(),
+            )
+        })
+    });
 }
 
 criterion_group!(benches, criterion_benchmark);
