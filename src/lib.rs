@@ -2,6 +2,7 @@
 
 pub mod correlation;
 pub mod momentum;
+pub mod performance;
 pub mod smooth;
 pub mod statistic;
 pub mod trend;
