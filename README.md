@@ -60,7 +60,7 @@ conclusions such as prediction accuracy or patterns.
 ```rust
 use traquer::smooth;
 
-smooth::ewma(&vec![1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
+smooth::ewma(&[1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
 ```
 
 ## contributing
