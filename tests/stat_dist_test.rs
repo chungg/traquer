@@ -359,3 +359,32 @@ fn test_median_odd() {
         result[15 - 1..]
     );
 }
+
+#[test]
+fn test_rank() {
+    let input = &[0., 2., 3., 2., 0., 2.];
+    assert_eq!(
+        rank(input, Some(RankMode::Min)).collect::<Vec<_>>(),
+        rank(input, None).collect::<Vec<_>>()
+    );
+    assert_eq!(
+        vec![1., 3., 6., 3., 1., 3.],
+        rank(input, None).collect::<Vec<_>>()
+    );
+    assert_eq!(
+        vec![2., 5., 6., 5., 2., 5.],
+        rank(input, Some(RankMode::Max)).collect::<Vec<_>>()
+    );
+    assert_eq!(
+        vec![1., 3., 6., 4., 2., 5.],
+        rank(input, Some(RankMode::Ordinal)).collect::<Vec<_>>()
+    );
+    assert_eq!(
+        vec![1.5, 4.0, 6.0, 4.0, 1.5, 4.0],
+        rank(input, Some(RankMode::Average)).collect::<Vec<_>>()
+    );
+    assert_eq!(
+        vec![1., 2., 3., 2., 1., 2.],
+        rank(input, Some(RankMode::Dense)).collect::<Vec<_>>()
+    );
+}
