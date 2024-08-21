@@ -4,7 +4,6 @@
 //! shape, centre, or dispersion of the
 //! distribution[[1]](https://en.wikipedia.org/wiki/Probability_distribution)
 use std::cmp::Ordering;
-use std::collections::HashMap;
 use std::iter;
 
 /// Variance
@@ -333,18 +332,18 @@ pub enum RankMode {
     Ordinal,
 }
 
-// trait SortExt<T> {
-//     // probably move this somewhere in future
-//     fn argsort(&self) -> Vec<usize>;
-// }
-//
-// impl<T: PartialOrd + Clone> SortExt<T> for Vec<T> {
-//     fn argsort(&self) -> Vec<usize> {
-//         let mut indices = (0..self.len()).collect::<Vec<_>>();
-//         indices.sort_by(|&a, &b| self[a].partial_cmp(&self[b]).unwrap());
-//         indices
-//     }
-// }
+trait SortExt<T> {
+    // probably move this somewhere in future
+    fn argsort(&self) -> Vec<usize>;
+}
+
+impl<T: PartialOrd + Clone> SortExt<T> for [T] {
+    fn argsort(&self) -> Vec<usize> {
+        let mut indices = (0..self.len()).collect::<Vec<_>>();
+        indices.sort_unstable_by(|&a, &b| self[a].partial_cmp(&self[b]).unwrap());
+        indices
+    }
+}
 
 /// Rank
 ///
@@ -377,74 +376,72 @@ pub enum RankMode {
 ///     Some(distribution::RankMode::Ordinal)
 /// ).collect::<Vec<_>>();
 /// ```
-pub fn rank(data: &[f64], mode: Option<RankMode>) -> Box<dyn Iterator<Item = f64> + '_> {
-    let mut values = data.to_vec();
+pub fn rank(data: &[f64], mode: Option<RankMode>) -> impl Iterator<Item = f64> + '_ {
+    let mut result = vec![0.; data.len()];
+    let indices = data.argsort();
 
     match mode {
         Some(RankMode::Ordinal) => {
-            // argsort().argsort().iter().map(|&x| (x + 1) as f64) saves memory but is slower
-            values.sort_unstable_by(|a, b| a.partial_cmp(b).unwrap());
-            let mut rank_map: HashMap<u64, (f64, f64)> = HashMap::new();
-            values.iter().enumerate().for_each(|(rank, element)| {
-                rank_map
-                    .entry(element.to_bits())
-                    .or_insert((rank as f64, 0.));
-            });
-            Box::new(data.iter().map(move |x| {
-                let entry = rank_map.get(&x.to_bits()).unwrap().to_owned();
-                rank_map.insert(x.to_bits(), (entry.0, entry.1 + 1.));
-                entry.0 + entry.1 + 1.
-            }))
+            (1..=data.len())
+                .zip(indices)
+                .for_each(|(i, val)| result[val] = i as f64);
         }
         _ => {
-            values.sort_unstable_by(|a, b| a.partial_cmp(b).unwrap());
-            let mut rank_map: HashMap<u64, f64> = HashMap::new();
-
-            match mode {
-                Some(RankMode::Average) => {
-                    let mut start_idx = 0;
-                    for (idx, &element) in values.iter().enumerate().skip(1) {
-                        if element != values[start_idx] {
-                            rank_map.insert(
-                                values[start_idx].to_bits(),
-                                (start_idx..idx).sum::<usize>() as f64 / (idx - start_idx) as f64,
-                            );
-                            start_idx = idx;
-                        }
+            let mut sorted = indices.iter().map(|&i| data[i]);
+            let x1 = sorted.next().unwrap();
+            let uniq_indices = iter::once(true)
+                .chain(sorted.scan(x1, |state, x| {
+                    let result = *state != x;
+                    *state = x;
+                    Some(result)
+                }))
+                .collect::<Vec<bool>>();
+            let ranks: Box<dyn Iterator<Item = f64>> = match mode {
+                Some(RankMode::Dense) => Box::new(uniq_indices.iter().scan(0, |state, &take| {
+                    if take {
+                        *state += 1;
                     }
-                    rank_map.insert(
-                        values[start_idx].to_bits(),
-                        (start_idx..values.len()).sum::<usize>() as f64
-                            / (values.len() - start_idx) as f64,
-                    );
-                }
-                Some(RankMode::Max) => {
-                    let size = values.len() - 1;
-                    values.iter().rev().enumerate().for_each(|(rank, element)| {
-                        rank_map
-                            .entry(element.to_bits())
-                            .or_insert((size - rank) as f64);
-                    });
-                }
-                Some(RankMode::Dense) => {
-                    let mut rank = 0.0;
-                    values.iter().for_each(|element| {
-                        if let std::collections::hash_map::Entry::Vacant(e) =
-                            rank_map.entry(element.to_bits())
-                        {
-                            e.insert(rank);
-                            rank += 1.0;
+                    Some(*state as f64)
+                })),
+                Some(RankMode::Average) | Some(RankMode::Max) => {
+                    let counts = uniq_indices
+                        .iter()
+                        .enumerate()
+                        .filter_map(|(i, &take)| if take { Some(i) } else { None })
+                        .chain(iter::once(data.len()))
+                        .collect::<Vec<usize>>();
+                    match mode {
+                        Some(RankMode::Average) => {
+                            Box::new(uniq_indices.iter().scan(0, move |state, &take| {
+                                if take {
+                                    *state += 1;
+                                }
+                                Some((1 + counts[*state] + counts[*state - 1]) as f64 / 2.)
+                            }))
                         }
-                    });
+                        _ => Box::new(uniq_indices.iter().scan(0, move |state, &take| {
+                            if take {
+                                *state += 1;
+                            }
+                            Some(counts[*state] as f64)
+                        })),
+                    }
                 }
-                _ => values.iter().enumerate().for_each(|(rank, element)| {
-                    rank_map.entry(element.to_bits()).or_insert(rank as f64);
-                }),
+                _ => Box::new(
+                    (1..=data.len())
+                        .zip(uniq_indices)
+                        .scan(1, |state, (rank, take)| {
+                            if take {
+                                *state = rank;
+                                Some(rank as f64)
+                            } else {
+                                Some(*state as f64)
+                            }
+                        }),
+                ),
             };
-            Box::new(
-                data.iter()
-                    .map(move |x| rank_map.get(&x.to_bits()).unwrap().to_owned() + 1.),
-            )
+            ranks.zip(indices).for_each(|(i, val)| result[val] = i);
         }
     }
+    result.into_iter()
 }
