@@ -5,6 +5,8 @@
 //! determing causal relationships.[[1]](https://en.wikipedia.org/wiki/Regression_analysis)
 use std::iter;
 
+use num_traits::cast::ToPrimitive;
+
 /// Mean Squared Error
 ///
 /// Measures average squared difference between estimated and actual values.
@@ -24,12 +26,14 @@ use std::iter;
 ///
 /// regression::mse(&vec![1.0,2.0,3.0,4.0,5.0], &vec![1.0,2.0,3.0,4.0,5.0]).collect::<Vec<f64>>();
 /// ```
-pub fn mse<'a>(data: &'a [f64], estimate: &'a [f64]) -> impl Iterator<Item = f64> + 'a {
+pub fn mse<'a, N: ToPrimitive>(data: &'a [N], estimate: &'a [N]) -> impl Iterator<Item = f64> + 'a {
     data.iter()
         .enumerate()
         .zip(estimate)
         .scan(0.0, |state, ((cnt, observe), est)| {
-            *state += (observe - est).powi(2).max(0.0);
+            *state += (observe.to_f64().unwrap() - est.to_f64().unwrap())
+                .powi(2)
+                .max(0.0);
             Some(*state / (cnt + 1) as f64)
         })
 }
@@ -53,12 +57,17 @@ pub fn mse<'a>(data: &'a [f64], estimate: &'a [f64]) -> impl Iterator<Item = f64
 ///
 /// regression::rmse(&vec![1.0,2.0,3.0,4.0,5.0], &vec![1.0,2.0,3.0,4.0,5.0]).collect::<Vec<f64>>();
 /// ```
-pub fn rmse<'a>(data: &'a [f64], estimate: &'a [f64]) -> impl Iterator<Item = f64> + 'a {
+pub fn rmse<'a, N: ToPrimitive>(
+    data: &'a [N],
+    estimate: &'a [N],
+) -> impl Iterator<Item = f64> + 'a {
     data.iter()
         .enumerate()
         .zip(estimate)
         .scan(0.0, |state, ((cnt, observe), est)| {
-            *state += (observe - est).powi(2).max(0.0);
+            *state += (observe.to_f64().unwrap() - est.to_f64().unwrap())
+                .powi(2)
+                .max(0.0);
             Some((*state / (cnt + 1) as f64).sqrt())
         })
 }
@@ -83,12 +92,14 @@ pub fn rmse<'a>(data: &'a [f64], estimate: &'a [f64]) -> impl Iterator<Item = f6
 ///
 /// regression::mae(&vec![1.0,2.0,3.0,4.0,5.0], &vec![1.0,2.0,3.0,4.0,5.0]).collect::<Vec<f64>>();
 /// ```
-pub fn mae<'a>(data: &'a [f64], estimate: &'a [f64]) -> impl Iterator<Item = f64> + 'a {
+pub fn mae<'a, N: ToPrimitive>(data: &'a [N], estimate: &'a [N]) -> impl Iterator<Item = f64> + 'a {
     data.iter()
         .enumerate()
         .zip(estimate)
         .scan(0.0, |state, ((cnt, observe), est)| {
-            *state += (observe - est).abs().max(0.0);
+            *state += (observe.to_f64().unwrap() - est.to_f64().unwrap())
+                .abs()
+                .max(0.0);
             Some(*state / (cnt + 1) as f64)
         })
 }
@@ -112,12 +123,18 @@ pub fn mae<'a>(data: &'a [f64], estimate: &'a [f64]) -> impl Iterator<Item = f64
 ///
 /// regression::mape(&vec![1.0,2.0,3.0,4.0,5.0], &vec![1.0,2.0,3.0,4.0,5.0]).collect::<Vec<f64>>();
 /// ```
-pub fn mape<'a>(data: &'a [f64], estimate: &'a [f64]) -> impl Iterator<Item = f64> + 'a {
+pub fn mape<'a, N: ToPrimitive>(
+    data: &'a [N],
+    estimate: &'a [N],
+) -> impl Iterator<Item = f64> + 'a {
     data.iter()
         .enumerate()
         .zip(estimate)
         .scan(0.0, |state, ((cnt, observe), est)| {
-            *state += ((observe - est) / observe).abs().max(0.0);
+            *state += ((observe.to_f64().unwrap() - est.to_f64().unwrap())
+                / observe.to_f64().unwrap())
+            .abs()
+            .max(0.0);
             Some(100.0 * *state / (cnt + 1) as f64)
         })
 }
@@ -142,12 +159,17 @@ pub fn mape<'a>(data: &'a [f64], estimate: &'a [f64]) -> impl Iterator<Item = f6
 ///
 /// regression::smape(&vec![1.0,2.0,3.0,4.0,5.0], &vec![1.0,2.0,3.0,4.0,5.0]).collect::<Vec<f64>>();
 /// ```
-pub fn smape<'a>(data: &'a [f64], estimate: &'a [f64]) -> impl Iterator<Item = f64> + 'a {
+pub fn smape<'a, N: ToPrimitive>(
+    data: &'a [N],
+    estimate: &'a [N],
+) -> impl Iterator<Item = f64> + 'a {
     data.iter()
         .enumerate()
         .zip(estimate)
         .scan(0.0, |state, ((cnt, observe), est)| {
-            *state += ((observe - est).abs() / ((observe.abs() + est.abs()) / 2.0)).max(0.0);
+            *state += ((observe.to_f64().unwrap() - est.to_f64().unwrap()).abs()
+                / ((observe.to_f64().unwrap().abs() + est.to_f64().unwrap().abs()) / 2.0))
+                .max(0.0);
             Some(100.0 * *state / (cnt + 1) as f64)
         })
 }
@@ -172,12 +194,13 @@ pub fn smape<'a>(data: &'a [f64], estimate: &'a [f64]) -> impl Iterator<Item = f
 ///
 /// regression::mda(&vec![1.0,2.0,3.0,4.0,5.0], &vec![1.0,2.0,3.0,4.0,5.0]).collect::<Vec<f64>>();
 /// ```
-pub fn mda<'a>(data: &'a [f64], estimate: &'a [f64]) -> impl Iterator<Item = f64> + 'a {
+pub fn mda<'a, N: ToPrimitive>(data: &'a [N], estimate: &'a [N]) -> impl Iterator<Item = f64> + 'a {
     iter::once(f64::NAN).chain(data[1..].iter().enumerate().zip(&estimate[1..]).scan(
-        (0.0, data[0]),
+        (0.0, data[0].to_f64().unwrap()),
         |state, ((cnt, observe), est)| {
-            let dir = ((observe - state.1).signum() == (est - state.1).signum()) as u8 as f64;
-            *state = (state.0 + dir, *observe);
+            let dir = ((observe.to_f64().unwrap() - state.1).signum()
+                == (est.to_f64().unwrap() - state.1).signum()) as u8 as f64;
+            *state = (state.0 + dir, observe.to_f64().unwrap());
             Some(state.0 / (cnt + 1) as f64)
         },
     ))
