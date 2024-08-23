@@ -328,7 +328,7 @@ pub fn vidya<N: ToPrimitive>(data: &[N], window: usize) -> impl Iterator<Item = 
                 *state = alpha * (s5 / s20) * (d.to_f64().unwrap() - *state) + *state;
                 Some(*state)
             }),
-            // TODO: investigate why faster with collect().iter() than without
+            // TODO: investigate why faster with collect().iter() than without, same for: fbands
         )
         .collect::<Vec<f64>>()
         .into_iter()
