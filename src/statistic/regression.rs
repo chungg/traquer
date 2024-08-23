@@ -26,7 +26,7 @@ use num_traits::cast::ToPrimitive;
 ///
 /// regression::mse(&vec![1.0,2.0,3.0,4.0,5.0], &vec![1.0,2.0,3.0,4.0,5.0]).collect::<Vec<f64>>();
 /// ```
-pub fn mse<'a, N: ToPrimitive>(data: &'a [N], estimate: &'a [N]) -> impl Iterator<Item = f64> + 'a {
+pub fn mse<'a, T: ToPrimitive>(data: &'a [T], estimate: &'a [T]) -> impl Iterator<Item = f64> + 'a {
     data.iter()
         .enumerate()
         .zip(estimate)
@@ -57,9 +57,9 @@ pub fn mse<'a, N: ToPrimitive>(data: &'a [N], estimate: &'a [N]) -> impl Iterato
 ///
 /// regression::rmse(&vec![1.0,2.0,3.0,4.0,5.0], &vec![1.0,2.0,3.0,4.0,5.0]).collect::<Vec<f64>>();
 /// ```
-pub fn rmse<'a, N: ToPrimitive>(
-    data: &'a [N],
-    estimate: &'a [N],
+pub fn rmse<'a, T: ToPrimitive>(
+    data: &'a [T],
+    estimate: &'a [T],
 ) -> impl Iterator<Item = f64> + 'a {
     data.iter()
         .enumerate()
@@ -92,7 +92,7 @@ pub fn rmse<'a, N: ToPrimitive>(
 ///
 /// regression::mae(&vec![1.0,2.0,3.0,4.0,5.0], &vec![1.0,2.0,3.0,4.0,5.0]).collect::<Vec<f64>>();
 /// ```
-pub fn mae<'a, N: ToPrimitive>(data: &'a [N], estimate: &'a [N]) -> impl Iterator<Item = f64> + 'a {
+pub fn mae<'a, T: ToPrimitive>(data: &'a [T], estimate: &'a [T]) -> impl Iterator<Item = f64> + 'a {
     data.iter()
         .enumerate()
         .zip(estimate)
@@ -123,9 +123,9 @@ pub fn mae<'a, N: ToPrimitive>(data: &'a [N], estimate: &'a [N]) -> impl Iterato
 ///
 /// regression::mape(&vec![1.0,2.0,3.0,4.0,5.0], &vec![1.0,2.0,3.0,4.0,5.0]).collect::<Vec<f64>>();
 /// ```
-pub fn mape<'a, N: ToPrimitive>(
-    data: &'a [N],
-    estimate: &'a [N],
+pub fn mape<'a, T: ToPrimitive>(
+    data: &'a [T],
+    estimate: &'a [T],
 ) -> impl Iterator<Item = f64> + 'a {
     data.iter()
         .enumerate()
@@ -159,9 +159,9 @@ pub fn mape<'a, N: ToPrimitive>(
 ///
 /// regression::smape(&vec![1.0,2.0,3.0,4.0,5.0], &vec![1.0,2.0,3.0,4.0,5.0]).collect::<Vec<f64>>();
 /// ```
-pub fn smape<'a, N: ToPrimitive>(
-    data: &'a [N],
-    estimate: &'a [N],
+pub fn smape<'a, T: ToPrimitive>(
+    data: &'a [T],
+    estimate: &'a [T],
 ) -> impl Iterator<Item = f64> + 'a {
     data.iter()
         .enumerate()
@@ -194,7 +194,7 @@ pub fn smape<'a, N: ToPrimitive>(
 ///
 /// regression::mda(&vec![1.0,2.0,3.0,4.0,5.0], &vec![1.0,2.0,3.0,4.0,5.0]).collect::<Vec<f64>>();
 /// ```
-pub fn mda<'a, N: ToPrimitive>(data: &'a [N], estimate: &'a [N]) -> impl Iterator<Item = f64> + 'a {
+pub fn mda<'a, T: ToPrimitive>(data: &'a [T], estimate: &'a [T]) -> impl Iterator<Item = f64> + 'a {
     iter::once(f64::NAN).chain(data[1..].iter().enumerate().zip(&estimate[1..]).scan(
         (0.0, data[0].to_f64().unwrap()),
         |state, ((cnt, observe), est)| {

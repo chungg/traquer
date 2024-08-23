@@ -40,9 +40,9 @@ use crate::statistic::distribution::{cov_stdev, rank, RankMode};
 ///     6).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn pcc<'a, N: ToPrimitive>(
-    series1: &'a [N],
-    series2: &'a [N],
+pub fn pcc<'a, T: ToPrimitive>(
+    series1: &'a [T],
+    series2: &'a [T],
     window: usize,
 ) -> impl Iterator<Item = f64> + 'a {
     iter::repeat(f64::NAN).take(window - 1).chain(
@@ -96,9 +96,9 @@ pub fn pcc<'a, N: ToPrimitive>(
 ///     6).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn rsq<'a, N: ToPrimitive>(
-    series1: &'a [N],
-    series2: &'a [N],
+pub fn rsq<'a, T: ToPrimitive>(
+    series1: &'a [T],
+    series2: &'a [T],
     window: usize,
 ) -> impl Iterator<Item = f64> + 'a {
     pcc(series1, series2, window).map(|x| x.powi(2))
@@ -129,9 +129,9 @@ pub fn rsq<'a, N: ToPrimitive>(
 ///     2).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn beta<'a, N: ToPrimitive>(
-    series1: &'a [N],
-    series2: &'a [N],
+pub fn beta<'a, T: ToPrimitive>(
+    series1: &'a [T],
+    series2: &'a [T],
     window: usize,
 ) -> impl Iterator<Item = f64> + 'a {
     iter::repeat(f64::NAN).take((window - 1) * 2 + 1).chain(
@@ -194,9 +194,9 @@ pub fn beta<'a, N: ToPrimitive>(
 ///     2).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn perf<'a, N: ToPrimitive>(
-    series1: &'a [N],
-    series2: &'a [N],
+pub fn perf<'a, T: ToPrimitive>(
+    series1: &'a [T],
+    series2: &'a [T],
     window: usize,
 ) -> impl Iterator<Item = f64> + 'a {
     izip!(
@@ -232,9 +232,9 @@ pub fn perf<'a, N: ToPrimitive>(
 ///     ).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn rsc<'a, N: ToPrimitive>(
-    series1: &'a [N],
-    series2: &'a [N],
+pub fn rsc<'a, T: ToPrimitive>(
+    series1: &'a [T],
+    series2: &'a [T],
 ) -> impl Iterator<Item = f64> + 'a {
     series1
         .iter()
@@ -267,9 +267,9 @@ pub fn rsc<'a, N: ToPrimitive>(
 ///     6).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn srcc<'a, N: ToPrimitive + PartialOrd + Clone>(
-    series1: &'a [N],
-    series2: &'a [N],
+pub fn srcc<'a, T: ToPrimitive + PartialOrd + Clone>(
+    series1: &'a [T],
+    series2: &'a [T],
     window: usize,
 ) -> impl Iterator<Item = f64> + 'a {
     iter::repeat(f64::NAN).take(window - 1).chain(
@@ -313,9 +313,9 @@ pub fn srcc<'a, N: ToPrimitive + PartialOrd + Clone>(
 ///     6).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn krcc<'a, N: ToPrimitive>(
-    series1: &'a [N],
-    series2: &'a [N],
+pub fn krcc<'a, T: ToPrimitive>(
+    series1: &'a [T],
+    series2: &'a [T],
     window: usize,
 ) -> impl Iterator<Item = f64> + 'a {
     iter::repeat(f64::NAN).take(window - 1).chain(
@@ -375,9 +375,9 @@ pub fn krcc<'a, N: ToPrimitive>(
 ///     6).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn hoeffd<'a, N: ToPrimitive + PartialOrd + Clone>(
-    series1: &'a [N],
-    series2: &'a [N],
+pub fn hoeffd<'a, T: ToPrimitive + PartialOrd + Clone>(
+    series1: &'a [T],
+    series2: &'a [T],
     window: usize,
 ) -> impl Iterator<Item = f64> + 'a {
     iter::repeat(f64::NAN).take(window - 1).chain(
