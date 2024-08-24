@@ -7,6 +7,7 @@
 use std::iter;
 
 use itertools::{izip, multiunzip};
+use num_traits::cast::ToPrimitive;
 
 use crate::momentum::_swing;
 use crate::smooth;
@@ -41,23 +42,23 @@ use crate::volatility::{_true_range, atr};
 ///     6).collect::<Vec<(f64,f64)>>();
 ///
 /// ```
-pub fn shinohara<'a>(
-    high: &'a [f64],
-    low: &'a [f64],
-    close: &'a [f64],
+pub fn shinohara<'a, T: ToPrimitive>(
+    high: &'a [T],
+    low: &'a [T],
+    close: &'a [T],
     window: usize,
 ) -> impl Iterator<Item = (f64, f64)> + 'a {
     let high_win = high
         .windows(window)
-        .map(|w| w.iter().sum())
+        .map(|w| w.iter().filter_map(|x| x.to_f64()).sum())
         .collect::<Vec<f64>>();
     let low_win = low
         .windows(window)
-        .map(|w| w.iter().sum())
+        .map(|w| w.iter().filter_map(|x| x.to_f64()).sum())
         .collect::<Vec<f64>>();
     let close_win = close
         .windows(window)
-        .map(|w| w.iter().sum())
+        .map(|w| w.iter().filter_map(|x| x.to_f64()).sum())
         .collect::<Vec<f64>>();
     // NOTE: using close rather than open for weak ratio described above
     let weak_ratio = izip!(&high_win, &low_win, &close_win)
@@ -102,10 +103,10 @@ pub fn shinohara<'a>(
 ///     3, 6).collect::<Vec<(f64,f64,f64)>>();
 ///
 /// ```
-pub fn adx<'a>(
-    high: &'a [f64],
-    low: &'a [f64],
-    close: &'a [f64],
+pub fn adx<'a, T: ToPrimitive>(
+    high: &'a [T],
+    low: &'a [T],
+    close: &'a [T],
     window: usize,
     smoothing: usize,
 ) -> impl Iterator<Item = (f64, f64, f64)> + 'a {
@@ -118,6 +119,13 @@ pub fn adx<'a>(
             &close[..close.len() - 1],
         )
         .map(|(prevh, h, prevl, l, prevc)| {
+            let (prevh, h, prevl, l, prevc) = (
+                prevh.to_f64().unwrap(),
+                h.to_f64().unwrap(),
+                prevl.to_f64().unwrap(),
+                l.to_f64().unwrap(),
+                prevc.to_f64().unwrap(),
+            );
             let dm_pos = if h - prevh > prevl - l {
                 f64::max(0.0, h - prevh)
             } else {
@@ -177,10 +185,10 @@ pub fn adx<'a>(
 ///     6).collect::<Vec<(f64,f64)>>();
 ///
 /// ```
-pub fn vortex<'a>(
-    high: &'a [f64],
-    low: &'a [f64],
-    close: &'a [f64],
+pub fn vortex<'a, T: ToPrimitive>(
+    high: &'a [T],
+    low: &'a [T],
+    close: &'a [T],
     window: usize,
 ) -> impl Iterator<Item = (f64, f64)> + 'a {
     iter::repeat((f64::NAN, f64::NAN)).take(window).chain(
@@ -192,6 +200,13 @@ pub fn vortex<'a>(
             &close[..close.len() - 1],
         )
         .map(|(prevh, h, prevl, l, prevc)| {
+            let (prevh, h, prevl, l, prevc) = (
+                prevh.to_f64().unwrap(),
+                h.to_f64().unwrap(),
+                prevl.to_f64().unwrap(),
+                l.to_f64().unwrap(),
+                prevc.to_f64().unwrap(),
+            );
             let vm_pos = (h - prevl).abs();
             let vm_neg = (l - prevh).abs();
             let tr = (h - l).max(f64::abs(h - prevc)).max(f64::abs(l - prevc));
@@ -239,11 +254,11 @@ pub fn vortex<'a>(
 ///     0.5).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn asi<'a>(
-    open: &'a [f64],
-    high: &'a [f64],
-    low: &'a [f64],
-    close: &'a [f64],
+pub fn asi<'a, T: ToPrimitive>(
+    open: &'a [T],
+    high: &'a [T],
+    low: &'a [T],
+    close: &'a [T],
     limit: f64,
 ) -> impl Iterator<Item = f64> + 'a {
     iter::once(f64::NAN).chain(_swing(open, high, low, close, limit).scan(0.0, |acc, x| {
@@ -276,15 +291,16 @@ pub fn asi<'a>(
 ///     6).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn ulcer(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
-    let highest = data
-        .windows(window)
-        .map(|w| w.iter().fold(f64::NAN, |state, &x| state.max(x)));
+pub fn ulcer<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f64> + '_ {
+    let highest = data.windows(window).map(|w| {
+        w.iter()
+            .fold(f64::NAN, |state, x| state.max(x.to_f64().unwrap()))
+    });
     iter::repeat(f64::NAN).take(window - 1).chain(
         smooth::sma(
             &highest
                 .zip(data.iter().skip(window - 1))
-                .map(|(high, c)| (100.0 * (c - high) / high).powi(2))
+                .map(|(high, c)| (100.0 * (c.to_f64().unwrap() - high) / high).powi(2))
                 .collect::<Vec<f64>>(),
             window,
         )
@@ -318,10 +334,10 @@ pub fn ulcer(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
 ///     6, 3.0).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn supertrend<'a>(
-    high: &'a [f64],
-    low: &'a [f64],
-    close: &'a [f64],
+pub fn supertrend<'a, T: ToPrimitive>(
+    high: &'a [T],
+    low: &'a [T],
+    close: &'a [T],
     window: usize,
     multiplier: f64,
 ) -> impl Iterator<Item = f64> + 'a {
@@ -332,6 +348,11 @@ pub fn supertrend<'a>(
         .scan(
             (f64::NAN, f64::NAN, f64::MIN_POSITIVE, 1),
             |state, (h, l, c, tr)| {
+                let (h, l, c) = (
+                    h.to_f64().unwrap(),
+                    l.to_f64().unwrap(),
+                    c.to_f64().unwrap(),
+                );
                 let (prevlower, prevupper, prevc, prevdir) = state;
                 let mut lower = (h + l) / 2.0 - multiplier * tr;
                 let mut upper = (h + l) / 2.0 + multiplier * tr;
@@ -341,14 +362,14 @@ pub fn supertrend<'a>(
                 if prevc < prevupper && *prevupper < upper {
                     upper = *prevupper;
                 }
-                let dir = if c > prevupper {
+                let dir = if c > *prevupper {
                     1
-                } else if c < prevlower {
+                } else if c < *prevlower {
                     -1
                 } else {
                     *prevdir
                 };
-                *state = (lower, upper, *c, dir);
+                *state = (lower, upper, c, dir);
                 if dir > 0 {
                     Some(lower)
                 } else {
@@ -389,10 +410,10 @@ pub fn supertrend<'a>(
 ///     6).collect::<Vec<(f64, f64)>>();
 ///
 /// ```
-pub fn rwi<'a>(
-    high: &'a [f64],
-    low: &'a [f64],
-    close: &'a [f64],
+pub fn rwi<'a, T: ToPrimitive>(
+    high: &'a [T],
+    low: &'a [T],
+    close: &'a [T],
     window: usize,
 ) -> impl Iterator<Item = (f64, f64)> + 'a {
     // looks back n number of periods *including* current. other libs may not include current.
@@ -411,8 +432,12 @@ pub fn rwi<'a>(
             for i in 2..=window {
                 tr_sum += tr[window - i];
                 let denom = (tr_sum / (i - 1) as f64) * ((i - 1) as f64).sqrt();
-                rwi_high = rwi_high.max((h[window - 1] - l[window - i]) / denom);
-                rwi_low = rwi_low.max((h[window - i] - l[window - 1]) / denom);
+                rwi_high = rwi_high.max(
+                    (h[window - 1].to_f64().unwrap() - l[window - i].to_f64().unwrap()) / denom,
+                );
+                rwi_low = rwi_low.max(
+                    (h[window - i].to_f64().unwrap() - l[window - 1].to_f64().unwrap()) / denom,
+                );
             }
             (rwi_high, rwi_low)
         })
@@ -444,9 +469,9 @@ pub fn rwi<'a>(
 ///     None, None).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn psar<'a>(
-    high: &'a [f64],
-    low: &'a [f64],
+pub fn psar<'a, T: ToPrimitive>(
+    high: &'a [T],
+    low: &'a [T],
     af: Option<f64>,
     af_max: Option<f64>,
 ) -> impl Iterator<Item = f64> + 'a {
@@ -454,34 +479,50 @@ pub fn psar<'a>(
     let mut af = af_inc;
     let af_max = af_max.unwrap_or(0.2);
     let mut fall = true;
-    let mut sar = high[0];
-    let mut ep = low[0];
+    let mut sar = high[0].to_f64().unwrap();
+    let mut ep = low[0].to_f64().unwrap();
 
     let mut flip: bool;
     let mut result = Vec::with_capacity(high.len() - 1);
     for i in 0..high.len() - 1 {
         sar = sar + af * (ep - sar);
         if fall {
-            flip = high[i + 1] > sar;
-            if low[i + 1] < ep {
-                ep = low[i + 1];
+            flip = high[i + 1].to_f64().unwrap() > sar;
+            if low[i + 1].to_f64().unwrap() < ep {
+                ep = low[i + 1].to_f64().unwrap();
                 af = f64::min(af + af_inc, af_max);
             }
-            sar = f64::max(f64::max(high[std::cmp::max(i, 1) - 1], high[i + 1]), sar)
+            sar = f64::max(
+                f64::max(
+                    high[std::cmp::max(i, 1) - 1].to_f64().unwrap(),
+                    high[i + 1].to_f64().unwrap(),
+                ),
+                sar,
+            )
         } else {
-            flip = low[i + 1] < sar;
-            if high[i + 1] > ep {
-                ep = high[i + 1];
+            flip = low[i + 1].to_f64().unwrap() < sar;
+            if high[i + 1].to_f64().unwrap() > ep {
+                ep = high[i + 1].to_f64().unwrap();
                 af = f64::min(af + af_inc, af_max);
             }
-            sar = f64::min(f64::min(low[std::cmp::max(i, 1) - 1], low[i + 1]), sar)
+            sar = f64::min(
+                f64::min(
+                    low[std::cmp::max(i, 1) - 1].to_f64().unwrap(),
+                    low[i + 1].to_f64().unwrap(),
+                ),
+                sar,
+            )
         }
 
         if flip {
             sar = ep;
             af = af_inc;
             fall = !fall;
-            ep = if fall { low[i + 1] } else { high[i + 1] };
+            ep = if fall {
+                low[i + 1].to_f64().unwrap()
+            } else {
+                high[i + 1].to_f64().unwrap()
+            };
         }
         result.push(sar);
     }
@@ -507,8 +548,8 @@ pub fn psar<'a>(
 ///     6, Some(smooth::MaMode::SMA)).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn dpo(
-    data: &[f64],
+pub fn dpo<T: ToPrimitive>(
+    data: &[T],
     window: usize,
     mamode: Option<smooth::MaMode>,
 ) -> impl Iterator<Item = f64> + '_ {
@@ -518,7 +559,7 @@ pub fn dpo(
         data[window - lag - 1..]
             .iter()
             .zip(ma.skip(window - 1))
-            .map(|(x, y)| x - y),
+            .map(|(x, y)| x.to_f64().unwrap() - y),
     )
 }
 
@@ -546,29 +587,35 @@ pub fn dpo(
 ///     3).collect::<Vec<(f64, f64)>>();
 ///
 /// ```
-pub fn aroon<'a>(
-    high: &'a [f64],
-    low: &'a [f64],
+pub fn aroon<'a, T: ToPrimitive>(
+    high: &'a [T],
+    low: &'a [T],
     window: usize,
 ) -> impl Iterator<Item = (f64, f64)> + 'a {
     iter::repeat((f64::NAN, f64::NAN)).take(window).chain(
         high.windows(window + 1)
             .zip(low.windows(window + 1))
             .map(move |(h, l)| {
-                let (hh, _) = h.iter().enumerate().fold((0, h[0]), |state, (idx, x)| {
-                    if x >= &state.1 {
-                        (idx, *x)
-                    } else {
-                        state
-                    }
-                });
-                let (ll, _) = l.iter().enumerate().fold((0, l[0]), |state, (idx, x)| {
-                    if x <= &state.1 {
-                        (idx, *x)
-                    } else {
-                        state
-                    }
-                });
+                let (hh, _) =
+                    h.iter()
+                        .enumerate()
+                        .fold((0, h[0].to_f64().unwrap()), |state, (idx, x)| {
+                            if x.to_f64().unwrap() >= state.1 {
+                                (idx, x.to_f64().unwrap())
+                            } else {
+                                state
+                            }
+                        });
+                let (ll, _) =
+                    l.iter()
+                        .enumerate()
+                        .fold((0, l[0].to_f64().unwrap()), |state, (idx, x)| {
+                            if x.to_f64().unwrap() <= state.1 {
+                                (idx, x.to_f64().unwrap())
+                            } else {
+                                state
+                            }
+                        });
                 (
                     hh as f64 / window as f64 * 100.0,
                     ll as f64 / window as f64 * 100.0,
@@ -604,10 +651,10 @@ pub fn aroon<'a>(
 ///     3, Some(3.0)).collect::<Vec<(f64, f64)>>();
 ///
 /// ```
-pub fn chandelier<'a>(
-    high: &'a [f64],
-    low: &'a [f64],
-    close: &'a [f64],
+pub fn chandelier<'a, T: ToPrimitive>(
+    high: &'a [T],
+    low: &'a [T],
+    close: &'a [T],
     window: usize,
     multiplier: Option<f64>,
 ) -> impl Iterator<Item = (f64, f64)> + 'a {
@@ -619,8 +666,12 @@ pub fn chandelier<'a>(
             atr(high, low, close, window).skip(window)
         )
         .map(move |(h, l, atr)| {
-            let hh = h.iter().fold(f64::NAN, |state, &x| state.max(x));
-            let ll = l.iter().fold(f64::NAN, |state, &x| state.min(x));
+            let hh = h
+                .iter()
+                .fold(f64::NAN, |state, x| state.max(x.to_f64().unwrap()));
+            let ll = l
+                .iter()
+                .fold(f64::NAN, |state, x| state.min(x.to_f64().unwrap()));
             (hh - multiplier * atr, ll + multiplier * atr)
         }),
     )
@@ -650,29 +701,36 @@ pub fn chandelier<'a>(
 ///     Some(3.0)).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn zigzag<'a>(
-    high: &'a [f64],
-    low: &'a [f64],
+pub fn zigzag<'a, T: ToPrimitive>(
+    high: &'a [T],
+    low: &'a [T],
     distance: Option<f64>,
 ) -> impl Iterator<Item = f64> + 'a {
     let distance = distance.unwrap_or(5.0);
     let mut result: Vec<f64> = vec![f64::NAN; high.len()];
 
-    let mut startxy: (usize, f64) = (0, low[0]);
-    let mut endxy: (usize, f64) = (high.len() - 1, *high.last().unwrap());
+    let mut startxy: (usize, f64) = (0, low[0].to_f64().unwrap());
+    let mut endxy: (usize, f64) = (high.len() - 1, high.last().unwrap().to_f64().unwrap());
 
     // get initial trend
-    result[0] = low[0];
+    result[0] = low[0].to_f64().unwrap();
     for idx in 1..high.len() {
-        if (high[0] - low[idx]) / high[0] * 100.0 >= distance {
-            result[0] = high[0];
-            startxy = (0, high[0]);
-            endxy = (idx, low[idx]);
+        if (high[0].to_f64().unwrap() - low[idx].to_f64().unwrap()) / high[0].to_f64().unwrap()
+            * 100.0
+            >= distance
+        {
+            result[0] = high[0].to_f64().unwrap();
+            startxy = (0, high[0].to_f64().unwrap());
+            endxy = (idx, low[idx].to_f64().unwrap());
             break;
-        } else if (high[idx] - low[0]) / low[0] * 100.0 >= distance {
-            result[0] = low[0];
-            startxy = (0, low[0]);
-            endxy = (idx, high[idx]);
+        } else if (high[idx].to_f64().unwrap() - low[0].to_f64().unwrap())
+            / low[0].to_f64().unwrap()
+            * 100.0
+            >= distance
+        {
+            result[0] = low[0].to_f64().unwrap();
+            startxy = (0, low[0].to_f64().unwrap());
+            endxy = (idx, high[idx].to_f64().unwrap());
             break;
         }
     }
@@ -680,20 +738,26 @@ pub fn zigzag<'a>(
     // handle remaining data
     if endxy.0 < high.len() - 1 {
         for i in endxy.0..high.len() {
-            if endxy.1 > startxy.1 && high[i] > endxy.1 {
+            if endxy.1 > startxy.1 && high[i].to_f64().unwrap() > endxy.1 {
                 // same trend but greater distance, extend trend.
-                endxy = (i, high[i]);
-            } else if endxy.1 < startxy.1 && (high[i] - endxy.1) / high[i] * 100.0 >= distance {
+                endxy = (i, high[i].to_f64().unwrap());
+            } else if endxy.1 < startxy.1
+                && (high[i].to_f64().unwrap() - endxy.1) / high[i].to_f64().unwrap() * 100.0
+                    >= distance
+            {
                 // opposite trend and significant distance, capture pivot and start new trend.
                 result[endxy.0] = endxy.1;
                 startxy = endxy;
-                endxy = (i, high[i]);
-            } else if endxy.1 < startxy.1 && low[i] < endxy.1 {
-                endxy = (i, low[i]);
-            } else if endxy.1 > startxy.1 && (endxy.1 - low[i]) / low[i] * 100.0 >= distance {
+                endxy = (i, high[i].to_f64().unwrap());
+            } else if endxy.1 < startxy.1 && low[i].to_f64().unwrap() < endxy.1 {
+                endxy = (i, low[i].to_f64().unwrap());
+            } else if endxy.1 > startxy.1
+                && (endxy.1 - low[i].to_f64().unwrap()) / low[i].to_f64().unwrap() * 100.0
+                    >= distance
+            {
                 result[endxy.0] = endxy.1;
                 startxy = endxy;
-                endxy = (i, low[i]);
+                endxy = (i, low[i].to_f64().unwrap());
             }
         }
     }
@@ -702,9 +766,9 @@ pub fn zigzag<'a>(
     if result.last().unwrap().is_nan() {
         let result_size = result.len();
         if startxy.1 > endxy.1 {
-            result[result_size - 1] = *high.last().unwrap();
+            result[result_size - 1] = high.last().unwrap().to_f64().unwrap();
         } else {
-            result[result_size - 1] = *low.last().unwrap();
+            result[result_size - 1] = low.last().unwrap().to_f64().unwrap();
         }
     }
     result.into_iter()
@@ -732,9 +796,11 @@ pub fn zigzag<'a>(
 ///     3).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn decay(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
-    data.iter().scan(0.0, move |state, &x| {
-        *state = (*state - 1.0 / window as f64).max(x).max(0.0);
+pub fn decay<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f64> + '_ {
+    data.iter().scan(0.0, move |state, x| {
+        *state = (*state - 1.0 / window as f64)
+            .max(x.to_f64().unwrap())
+            .max(0.0);
         Some(*state)
     })
 }
@@ -764,10 +830,10 @@ pub fn decay(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
 ///     5, 3, Some(1.0)).collect::<Vec<(f64, f64)>>();
 ///
 /// ```
-pub fn cks<'a>(
-    high: &'a [f64],
-    low: &'a [f64],
-    close: &'a [f64],
+pub fn cks<'a, T: ToPrimitive>(
+    high: &'a [T],
+    low: &'a [T],
+    close: &'a [T],
     win1: usize,
     win2: usize,
     multiplier: Option<f64>,
@@ -783,8 +849,12 @@ pub fn cks<'a>(
             )
             .map(|(h, l, tr)| {
                 (
-                    h.iter().fold(f64::NAN, |state, &x| state.max(x)) - multiplier * tr,
-                    l.iter().fold(f64::NAN, |state, &x| state.min(x)) + multiplier * tr,
+                    h.iter()
+                        .fold(f64::NAN, |state, x| state.max(x.to_f64().unwrap()))
+                        - multiplier * tr,
+                    l.iter()
+                        .fold(f64::NAN, |state, x| state.min(x.to_f64().unwrap()))
+                        + multiplier * tr,
                 )
             })
             .collect::<Vec<(f64, f64)>>()
@@ -826,10 +896,10 @@ pub fn cks<'a>(
 ///     3, Some(1.0)).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn atr_stop<'a>(
-    high: &'a [f64],
-    low: &'a [f64],
-    close: &'a [f64],
+pub fn atr_stop<'a, T: ToPrimitive>(
+    high: &'a [T],
+    low: &'a [T],
+    close: &'a [T],
     window: usize,
     multiplier: Option<f64>,
 ) -> impl Iterator<Item = f64> + 'a {
@@ -842,19 +912,19 @@ pub fn atr_stop<'a>(
         )
         .scan((true, 0.0), move |state, (c, atr)| {
             // state = (uptrend, prev_band)
-            let upper = c[window - 1] + multiplier * atr;
-            let lower = c[window - 1] - multiplier * atr;
+            let upper = c[window - 1].to_f64().unwrap() + multiplier * atr;
+            let lower = c[window - 1].to_f64().unwrap() - multiplier * atr;
             let mut band: f64 = state.1;
             if state.0 {
                 band = band.max(lower);
-                *state = if c[window - 1] < band {
+                *state = if c[window - 1].to_f64().unwrap() < band {
                     (false, upper)
                 } else {
                     (state.0, band)
                 };
             } else {
                 band = band.min(upper);
-                *state = if c[window - 1] > band {
+                *state = if c[window - 1].to_f64().unwrap() > band {
                     (true, lower)
                 } else {
                     (state.0, band)
@@ -890,8 +960,8 @@ pub fn atr_stop<'a>(
 ///     6, 4, 4, 3, 3, 2).collect::<Vec<(f64, f64, f64)>>();
 ///
 /// ```
-pub fn alligator(
-    data: &[f64],
+pub fn alligator<T: ToPrimitive>(
+    data: &[T],
     jaw_win: usize,
     jaw_offset: usize,
     teeth_win: usize,
@@ -939,10 +1009,10 @@ pub fn alligator(
 ///     3,2,2,2).collect::<Vec<(f64,f64,f64,f64,f64)>>();
 ///
 /// ```
-pub fn ichimoku<'a>(
-    high: &'a [f64],
-    low: &'a [f64],
-    close: &'a [f64],
+pub fn ichimoku<'a, T: ToPrimitive>(
+    high: &'a [T],
+    low: &'a [T],
+    close: &'a [T],
     conversion_win: usize,
     base_win: usize,
     lead_win: usize,
@@ -954,8 +1024,12 @@ pub fn ichimoku<'a>(
             high.windows(conversion_win)
                 .zip(low.windows(conversion_win))
                 .map(|(h, l)| {
-                    let hh = h.iter().fold(f64::NAN, |state, &x| state.max(x));
-                    let ll = l.iter().fold(f64::NAN, |state, &x| state.min(x));
+                    let hh = h
+                        .iter()
+                        .fold(f64::NAN, |state, x| state.max(x.to_f64().unwrap()));
+                    let ll = l
+                        .iter()
+                        .fold(f64::NAN, |state, x| state.min(x.to_f64().unwrap()));
                     (hh + ll) / 2.0
                 }),
         )
@@ -966,8 +1040,12 @@ pub fn ichimoku<'a>(
             high.windows(base_win)
                 .zip(low.windows(base_win))
                 .map(|(h, l)| {
-                    let hh = h.iter().fold(f64::NAN, |state, &x| state.max(x));
-                    let ll = l.iter().fold(f64::NAN, |state, &x| state.min(x));
+                    let hh = h
+                        .iter()
+                        .fold(f64::NAN, |state, x| state.max(x.to_f64().unwrap()));
+                    let ll = l
+                        .iter()
+                        .fold(f64::NAN, |state, x| state.min(x.to_f64().unwrap()));
                     (hh + ll) / 2.0
                 }),
         )
@@ -976,8 +1054,12 @@ pub fn ichimoku<'a>(
         high.windows(lead_win)
             .zip(low.windows(lead_win))
             .map(|(h, l)| {
-                let hh = h.iter().fold(f64::NAN, |state, &x| state.max(x));
-                let ll = l.iter().fold(f64::NAN, |state, &x| state.min(x));
+                let hh = h
+                    .iter()
+                    .fold(f64::NAN, |state, x| state.max(x.to_f64().unwrap()));
+                let ll = l
+                    .iter()
+                    .fold(f64::NAN, |state, x| state.min(x.to_f64().unwrap()));
                 (hh + ll) / 2.0
             }),
     );
@@ -988,8 +1070,8 @@ pub fn ichimoku<'a>(
     let lag = close
         .iter()
         .skip(lag_win)
-        .copied()
-        .chain(iter::repeat(f64::NAN).take(lag_win));
+        .filter_map(|x| x.to_f64())
+        .chain(iter::repeat(f64::NAN).take(lag_win + base_win));
     izip!(
         c_line
             .into_iter()
@@ -999,18 +1081,18 @@ pub fn ichimoku<'a>(
             .chain(iter::repeat(f64::NAN).take(base_win)),
         lead_a,
         lead_b,
-        lag.chain(iter::repeat(f64::NAN).take(base_win)),
+        lag
     )
 }
 
-fn hurst_rs(data: &[f64]) -> f64 {
-    let avg = data.iter().sum::<f64>() / data.len() as f64;
+fn hurst_rs<T: ToPrimitive>(data: &[T]) -> f64 {
+    let avg = data.iter().filter_map(|x| x.to_f64()).sum::<f64>() / data.len() as f64;
     let mut max_z = f64::MIN;
     let mut min_z = f64::MAX;
     let mut dev_cumsum = 0.0;
     let mut var = 0.0;
     for x in data {
-        let dev = x - avg;
+        let dev = x.to_f64().unwrap() - avg;
         var += dev.powi(2);
         dev_cumsum += dev;
         max_z = max_z.max(dev_cumsum);
@@ -1063,8 +1145,8 @@ fn linreg(x: &[f64], y: &[f64]) -> f64 {
 /// trend::hurst(&vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0], 5, None).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn hurst(
-    data: &[f64],
+pub fn hurst<T: ToPrimitive>(
+    data: &[T],
     window: usize,
     min_win: Option<usize>,
 ) -> impl Iterator<Item = f64> + '_ {
