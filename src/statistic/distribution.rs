@@ -341,16 +341,21 @@ pub fn quantile<N: ToPrimitive + PartialOrd + Clone>(
         }))
 }
 
-pub(crate) fn cov_stdev<'a>(x: &'a [f64], y: &'a [f64]) -> (f64, f64, f64) {
-    let x_avg = x.iter().fold(0.0, |acc, &x| acc + x) / x.len() as f64;
-    let y_avg = y.iter().fold(0.0, |acc, &y| acc + y) / y.len() as f64;
+pub(crate) fn cov_stdev<'a, N: ToPrimitive>(x: &'a [N], y: &'a [N]) -> (f64, f64, f64) {
+    let x_avg = x.iter().fold(0.0, |acc, x| acc + x.to_f64().unwrap()) / x.len() as f64;
+    let y_avg = y.iter().fold(0.0, |acc, y| acc + y.to_f64().unwrap()) / y.len() as f64;
     (
-        x.iter()
-            .zip(y)
-            .fold(0.0, |acc, (&xi, &yi)| acc + (xi - x_avg) * (yi - y_avg))
-            / (x.len() - 1) as f64,
-        (x.iter().fold(0.0, |acc, &xi| acc + (xi - x_avg).powi(2)) / (x.len() - 1) as f64).sqrt(),
-        (y.iter().fold(0.0, |acc, &yi| acc + (yi - y_avg).powi(2)) / (y.len() - 1) as f64).sqrt(),
+        x.iter().zip(y).fold(0.0, |acc, (xi, yi)| {
+            acc + (xi.to_f64().unwrap() - x_avg) * (yi.to_f64().unwrap() - y_avg)
+        }) / (x.len() - 1) as f64,
+        (x.iter()
+            .fold(0.0, |acc, xi| acc + (xi.to_f64().unwrap() - x_avg).powi(2))
+            / (x.len() - 1) as f64)
+            .sqrt(),
+        (y.iter()
+            .fold(0.0, |acc, yi| acc + (yi.to_f64().unwrap() - y_avg).powi(2))
+            / (y.len() - 1) as f64)
+            .sqrt(),
     )
 }
 

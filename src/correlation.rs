@@ -6,6 +6,7 @@
 use std::iter;
 
 use itertools::izip;
+use num_traits::cast::ToPrimitive;
 
 use crate::smooth;
 use crate::statistic::distribution::{cov_stdev, rank, RankMode};
@@ -39,9 +40,9 @@ use crate::statistic::distribution::{cov_stdev, rank, RankMode};
 ///     6).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn pcc<'a>(
-    series1: &'a [f64],
-    series2: &'a [f64],
+pub fn pcc<'a, N: ToPrimitive>(
+    series1: &'a [N],
+    series2: &'a [N],
     window: usize,
 ) -> impl Iterator<Item = f64> + 'a {
     iter::repeat(f64::NAN).take(window - 1).chain(
@@ -55,6 +56,7 @@ pub fn pcc<'a>(
                 let mut sum_x2 = 0.0;
                 let mut sum_y2 = 0.0;
                 for (x, y) in x_win.iter().zip(y_win) {
+                    let (x, y) = (x.to_f64().unwrap(), y.to_f64().unwrap());
                     sum_xy += x * y;
                     sum_x += x;
                     sum_y += y;
@@ -94,9 +96,9 @@ pub fn pcc<'a>(
 ///     6).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn rsq<'a>(
-    series1: &'a [f64],
-    series2: &'a [f64],
+pub fn rsq<'a, N: ToPrimitive>(
+    series1: &'a [N],
+    series2: &'a [N],
     window: usize,
 ) -> impl Iterator<Item = f64> + 'a {
     pcc(series1, series2, window).map(|x| x.powi(2))
@@ -127,21 +129,21 @@ pub fn rsq<'a>(
 ///     2).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn beta<'a>(
-    series1: &'a [f64],
-    series2: &'a [f64],
+pub fn beta<'a, N: ToPrimitive>(
+    series1: &'a [N],
+    series2: &'a [N],
     window: usize,
 ) -> impl Iterator<Item = f64> + 'a {
     iter::repeat(f64::NAN).take((window - 1) * 2 + 1).chain(
         series1
             .windows(2)
-            .map(|w| w[1] / w[0] - 1.0)
+            .map(|w| w[1].to_f64().unwrap() / w[0].to_f64().unwrap() - 1.0)
             .collect::<Vec<f64>>()
             .windows(window)
             .zip(
                 series2
                     .windows(2)
-                    .map(|w| w[1] / w[0] - 1.0)
+                    .map(|w| w[1].to_f64().unwrap() / w[0].to_f64().unwrap() - 1.0)
                     .collect::<Vec<f64>>()
                     .windows(window),
             )
@@ -192,9 +194,9 @@ pub fn beta<'a>(
 ///     2).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn perf<'a>(
-    series1: &'a [f64],
-    series2: &'a [f64],
+pub fn perf<'a, N: ToPrimitive>(
+    series1: &'a [N],
+    series2: &'a [N],
     window: usize,
 ) -> impl Iterator<Item = f64> + 'a {
     izip!(
@@ -203,7 +205,7 @@ pub fn perf<'a>(
         smooth::sma(series1, window),
         smooth::sma(series2, window)
     )
-    .map(|(x, y, ma_x, ma_y)| x / y * (ma_y / ma_x))
+    .map(|(x, y, ma_x, ma_y)| x.to_f64().unwrap() / y.to_f64().unwrap() * (ma_y / ma_x))
 }
 
 /// Relative Strength Comparison (Price Relative)
@@ -230,8 +232,14 @@ pub fn perf<'a>(
 ///     ).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn rsc<'a>(series1: &'a [f64], series2: &'a [f64]) -> impl Iterator<Item = f64> + 'a {
-    series1.iter().zip(series2).map(|(x, y)| x / y)
+pub fn rsc<'a, N: ToPrimitive>(
+    series1: &'a [N],
+    series2: &'a [N],
+) -> impl Iterator<Item = f64> + 'a {
+    series1
+        .iter()
+        .zip(series2)
+        .map(|(x, y)| x.to_f64().unwrap() / y.to_f64().unwrap())
 }
 
 /// Spearman's Rank Correlation Coefficient
@@ -259,9 +267,9 @@ pub fn rsc<'a>(series1: &'a [f64], series2: &'a [f64]) -> impl Iterator<Item = f
 ///     6).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn srcc<'a>(
-    series1: &'a [f64],
-    series2: &'a [f64],
+pub fn srcc<'a, N: ToPrimitive + PartialOrd + Clone>(
+    series1: &'a [N],
+    series2: &'a [N],
     window: usize,
 ) -> impl Iterator<Item = f64> + 'a {
     iter::repeat(f64::NAN).take(window - 1).chain(
@@ -305,9 +313,9 @@ pub fn srcc<'a>(
 ///     6).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn krcc<'a>(
-    series1: &'a [f64],
-    series2: &'a [f64],
+pub fn krcc<'a, N: ToPrimitive>(
+    series1: &'a [N],
+    series2: &'a [N],
     window: usize,
 ) -> impl Iterator<Item = f64> + 'a {
     iter::repeat(f64::NAN).take(window - 1).chain(
@@ -322,11 +330,16 @@ pub fn krcc<'a>(
 
                 for i in 0..window - 1 {
                     for j in i + 1..window {
-                        nc += ((x_win[i] - x_win[j]).signum() == (y_win[i] - y_win[j]).signum()
-                            && x_win[i] != x_win[j]) as u8 as f64;
-                        xy_tie += (x_win[i] == x_win[j] && y_win[i] == y_win[j]) as u8 as f64;
-                        x_tie += (x_win[i] == x_win[j]) as u8 as f64;
-                        y_tie += (y_win[i] == y_win[j]) as u8 as f64;
+                        let (xi, xj, yi, yj) = (
+                            x_win[i].to_f64().unwrap(),
+                            x_win[j].to_f64().unwrap(),
+                            y_win[i].to_f64().unwrap(),
+                            y_win[j].to_f64().unwrap(),
+                        );
+                        nc += ((xi - xj).signum() == (yi - yj).signum() && xi != xj) as u8 as f64;
+                        xy_tie += (xi == xj && yi == yj) as u8 as f64;
+                        x_tie += (xi == xj) as u8 as f64;
+                        y_tie += (yi == yj) as u8 as f64;
                     }
                 }
                 let tot = (window * (window - 1)) as f64 * 0.5;
@@ -362,9 +375,9 @@ pub fn krcc<'a>(
 ///     6).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn hoeffd<'a>(
-    series1: &'a [f64],
-    series2: &'a [f64],
+pub fn hoeffd<'a, N: ToPrimitive + PartialOrd + Clone>(
+    series1: &'a [N],
+    series2: &'a [N],
     window: usize,
 ) -> impl Iterator<Item = f64> + 'a {
     iter::repeat(f64::NAN).take(window - 1).chain(
