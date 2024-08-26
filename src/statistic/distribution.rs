@@ -24,27 +24,25 @@ use num_traits::cast::ToPrimitive;
 ///
 /// distribution::variance(&vec![1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
 /// ```
-pub fn variance<N: ToPrimitive>(data: &[N], window: usize) -> impl Iterator<Item = f64> + '_ {
+pub fn variance<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f64> + '_ {
     iter::repeat(f64::NAN)
         .take(window - 1)
         .chain(data.windows(window).map(move |w| {
             let mean = w.iter().filter_map(|x| x.to_f64()).sum::<f64>() / window as f64;
             w.iter()
-                .filter_map(|x| x.to_f64())
-                .fold(0.0, |acc, x| acc + (x - mean).powi(2))
+                .fold(0.0, |acc, x| acc + (x.to_f64().unwrap() - mean).powi(2))
                 / window as f64
         }))
 }
 
-pub(crate) fn _std_dev<N: ToPrimitive>(
-    data: &[N],
+pub(crate) fn _std_dev<T: ToPrimitive>(
+    data: &[T],
     window: usize,
 ) -> impl Iterator<Item = f64> + '_ {
     data.windows(window).map(move |w| {
         let mean = w.iter().filter_map(|x| x.to_f64()).sum::<f64>() / window as f64;
         (w.iter()
-            .filter_map(|x| x.to_f64())
-            .fold(0.0, |acc, x| acc + (x - mean).powi(2))
+            .fold(0.0, |acc, x| acc + (x.to_f64().unwrap() - mean).powi(2))
             / window as f64)
             .sqrt()
     })
@@ -65,7 +63,7 @@ pub(crate) fn _std_dev<N: ToPrimitive>(
 ///
 /// distribution::std_dev(&vec![1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
 /// ```
-pub fn std_dev<N: ToPrimitive>(data: &[N], window: usize) -> impl Iterator<Item = f64> + '_ {
+pub fn std_dev<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f64> + '_ {
     iter::repeat(f64::NAN)
         .take(window - 1)
         .chain(_std_dev(data, window))
@@ -90,15 +88,14 @@ pub fn std_dev<N: ToPrimitive>(data: &[N], window: usize) -> impl Iterator<Item 
 ///
 /// distribution::zscore(&vec![1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
 /// ```
-pub fn zscore<N: ToPrimitive>(data: &[N], window: usize) -> impl Iterator<Item = f64> + '_ {
+pub fn zscore<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f64> + '_ {
     iter::repeat(f64::NAN)
         .take(window - 1)
         .chain(data.windows(window).map(move |w| {
             let mean = w.iter().filter_map(|x| x.to_f64()).sum::<f64>() / window as f64;
             let stdev = (w
                 .iter()
-                .filter_map(|x| x.to_f64())
-                .fold(0.0, |acc, x| acc + (x - mean).powi(2))
+                .fold(0.0, |acc, x| acc + (x.to_f64().unwrap() - mean).powi(2))
                 / window as f64)
                 .sqrt();
             (w[window - 1].to_f64().unwrap() - mean) / stdev
@@ -125,14 +122,13 @@ pub fn zscore<N: ToPrimitive>(data: &[N], window: usize) -> impl Iterator<Item =
 ///
 /// distribution::mad(&vec![1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
 /// ```
-pub fn mad<N: ToPrimitive>(data: &[N], window: usize) -> impl Iterator<Item = f64> + '_ {
+pub fn mad<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f64> + '_ {
     iter::repeat(f64::NAN)
         .take(window - 1)
         .chain(data.windows(window).map(move |w| {
             let mean = w.iter().filter_map(|x| x.to_f64()).sum::<f64>() / window as f64;
             w.iter()
-                .filter_map(|x| x.to_f64())
-                .fold(0.0, |acc, x| acc + (x - mean).abs())
+                .fold(0.0, |acc, x| acc + (x.to_f64().unwrap() - mean).abs())
                 / window as f64
         }))
 }
@@ -158,14 +154,13 @@ pub fn mad<N: ToPrimitive>(data: &[N], window: usize) -> impl Iterator<Item = f6
 ///
 /// distribution::cv(&vec![1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
 /// ```
-pub fn cv<N: ToPrimitive>(data: &[N], window: usize) -> impl Iterator<Item = f64> + '_ {
+pub fn cv<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f64> + '_ {
     iter::repeat(f64::NAN)
         .take(window - 1)
         .chain(data.windows(window).map(move |w| {
             let mean = w.iter().filter_map(|x| x.to_f64()).sum::<f64>() / window as f64;
             (w.iter()
-                .filter_map(|x| x.to_f64())
-                .fold(0.0, |acc, x| acc + (x - mean).powi(2))
+                .fold(0.0, |acc, x| acc + (x.to_f64().unwrap() - mean).powi(2))
                 / window as f64)
                 .sqrt()
                 / mean
@@ -192,7 +187,7 @@ pub fn cv<N: ToPrimitive>(data: &[N], window: usize) -> impl Iterator<Item = f64
 ///
 /// distribution::kurtosis(&vec![1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
 /// ```
-pub fn kurtosis<N: ToPrimitive>(data: &[N], window: usize) -> impl Iterator<Item = f64> + '_ {
+pub fn kurtosis<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f64> + '_ {
     let adj1 = ((window + 1) * window * (window - 1)) as f64 / ((window - 2) * (window - 3)) as f64;
     let adj2 = 3.0 * (window - 1).pow(2) as f64 / ((window - 2) * (window - 3)) as f64;
     iter::repeat(f64::NAN)
@@ -201,12 +196,10 @@ pub fn kurtosis<N: ToPrimitive>(data: &[N], window: usize) -> impl Iterator<Item
             let mean = w.iter().filter_map(|x| x.to_f64()).sum::<f64>() / window as f64;
             let k4 = w
                 .iter()
-                .filter_map(|x| x.to_f64())
-                .fold(0.0, |acc, x| acc + (x - mean).powi(4));
+                .fold(0.0, |acc, x| acc + (x.to_f64().unwrap() - mean).powi(4));
             let k2 = w
                 .iter()
-                .filter_map(|x| x.to_f64())
-                .fold(0.0, |acc, x| acc + (x - mean).powi(2));
+                .fold(0.0, |acc, x| acc + (x.to_f64().unwrap() - mean).powi(2));
             adj1 * k4 / k2.powi(2) - adj2
         }))
 }
@@ -238,27 +231,25 @@ pub fn kurtosis<N: ToPrimitive>(data: &[N], window: usize) -> impl Iterator<Item
 ///
 /// distribution::skew(&vec![1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
 /// ```
-pub fn skew<N: ToPrimitive>(data: &[N], window: usize) -> impl Iterator<Item = f64> + '_ {
+pub fn skew<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f64> + '_ {
     iter::repeat(f64::NAN)
         .take(window - 1)
         .chain(data.windows(window).map(move |w| {
             let mean = w.iter().filter_map(|x| x.to_f64()).sum::<f64>() / window as f64;
             let m3 = w
                 .iter()
-                .filter_map(|x| x.to_f64())
-                .fold(0.0, |acc, x| acc + (x - mean).powi(3))
+                .fold(0.0, |acc, x| acc + (x.to_f64().unwrap() - mean).powi(3))
                 / window as f64;
             let m2 = (w
                 .iter()
-                .filter_map(|x| x.to_f64())
-                .fold(0.0, |acc, x| acc + (x - mean).powi(2))
+                .fold(0.0, |acc, x| acc + (x.to_f64().unwrap() - mean).powi(2))
                 / window as f64)
                 .powf(3.0 / 2.0);
             ((window * (window - 1)) as f64).sqrt() / (window - 2) as f64 * m3 / m2
         }))
 }
 
-fn quickselect<N: ToPrimitive + PartialOrd + Clone>(data: &mut [N], k: usize) -> N {
+fn quickselect<T: ToPrimitive + PartialOrd + Clone>(data: &mut [T], k: usize) -> T {
     // iterative solution is faster than recursive
     let mut lo = 0;
     let mut hi = data.len() - 1;
@@ -295,8 +286,8 @@ fn quickselect<N: ToPrimitive + PartialOrd + Clone>(data: &mut [N], k: usize) ->
 ///
 /// distribution::median(&vec![1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
 /// ```
-pub fn median<N: ToPrimitive + PartialOrd + Clone>(
-    data: &[N],
+pub fn median<T: ToPrimitive + PartialOrd + Clone>(
+    data: &[T],
     window: usize,
 ) -> impl Iterator<Item = f64> + '_ {
     quantile(data, window, 50.0)
@@ -314,8 +305,8 @@ pub fn median<N: ToPrimitive + PartialOrd + Clone>(
 ///
 /// distribution::quantile(&vec![1.0,2.0,3.0,4.0,5.0], 3, 90.0).collect::<Vec<f64>>();
 /// ```
-pub fn quantile<N: ToPrimitive + PartialOrd + Clone>(
-    data: &[N],
+pub fn quantile<T: ToPrimitive + PartialOrd + Clone>(
+    data: &[T],
     window: usize,
     q: f64,
 ) -> impl Iterator<Item = f64> + '_ {
@@ -341,7 +332,7 @@ pub fn quantile<N: ToPrimitive + PartialOrd + Clone>(
         }))
 }
 
-pub(crate) fn cov_stdev<'a, N: ToPrimitive>(x: &'a [N], y: &'a [N]) -> (f64, f64, f64) {
+pub(crate) fn cov_stdev<'a, T: ToPrimitive>(x: &'a [T], y: &'a [T]) -> (f64, f64, f64) {
     let x_avg = x.iter().fold(0.0, |acc, x| acc + x.to_f64().unwrap()) / x.len() as f64;
     let y_avg = y.iter().fold(0.0, |acc, y| acc + y.to_f64().unwrap()) / y.len() as f64;
     (
@@ -412,8 +403,8 @@ impl<T: PartialOrd + Clone> SortExt<T> for [T] {
 ///     Some(distribution::RankMode::Ordinal)
 /// ).collect::<Vec<_>>();
 /// ```
-pub fn rank<N: ToPrimitive + PartialOrd + Clone>(
-    data: &[N],
+pub fn rank<T: ToPrimitive + PartialOrd + Clone>(
+    data: &[T],
     mode: Option<RankMode>,
 ) -> impl Iterator<Item = f64> + '_ {
     let mut result = vec![0.; data.len()];
