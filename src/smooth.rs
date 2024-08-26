@@ -37,7 +37,7 @@ pub enum MaMode {
 /// ```
 /// use traquer::smooth;
 ///
-/// smooth::ma(&vec![1.0,2.0,3.0,4.0,5.0], 3, smooth::MaMode::SMA).collect::<Vec<f64>>();
+/// smooth::ma(&[1.0,2.0,3.0,4.0,5.0], 3, smooth::MaMode::SMA).collect::<Vec<f64>>();
 /// ```
 pub fn ma<T: ToPrimitive>(
     data: &[T],
@@ -73,7 +73,7 @@ pub fn ma<T: ToPrimitive>(
 /// ```
 /// use traquer::smooth;
 ///
-/// smooth::ewma(&vec![1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
+/// smooth::ewma(&[1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
 /// ```
 pub fn ewma<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f64> + '_ {
     let initial = data[..window]
@@ -103,7 +103,7 @@ pub fn ewma<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f
 /// ```
 /// use traquer::smooth;
 ///
-/// smooth::sma(&vec![1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
+/// smooth::sma(&[1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
 /// ```
 pub fn sma<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f64> + '_ {
     iter::repeat(f64::NAN).take(window - 1).chain(
@@ -128,7 +128,7 @@ pub fn sma<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f6
 /// ```
 /// use traquer::smooth;
 ///
-/// smooth::dema(&vec![1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
+/// smooth::dema(&[1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
 /// ```
 pub fn dema<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f64> + '_ {
     let ma = ewma(data, window).collect::<Vec<f64>>();
@@ -154,7 +154,7 @@ pub fn dema<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f
 /// ```
 /// use traquer::smooth;
 ///
-/// smooth::tema(&vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0], 3).collect::<Vec<f64>>();
+/// smooth::tema(&[1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0], 3).collect::<Vec<f64>>();
 /// ```
 pub fn tema<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f64> + '_ {
     let ma = ewma(data, window).collect::<Vec<f64>>();
@@ -179,7 +179,7 @@ pub fn tema<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f
 /// ```
 /// use traquer::smooth;
 ///
-/// smooth::wma(&vec![1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
+/// smooth::wma(&[1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
 /// ```
 pub fn wma<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f64> + '_ {
     let denom = (u64::pow(window as u64, 2) + window as u64) as f64 / 2.0;
@@ -210,7 +210,7 @@ pub fn wma<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f6
 /// ```
 /// use traquer::smooth;
 ///
-/// smooth::pwma(&vec![1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
+/// smooth::pwma(&[1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
 /// ```
 pub fn pwma<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f64> + '_ {
     let n = window - 1;
@@ -248,7 +248,7 @@ pub fn pwma<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f
 /// ```
 /// use traquer::smooth;
 ///
-/// smooth::wilder(&vec![1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
+/// smooth::wilder(&[1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
 /// ```
 pub fn wilder<T: ToPrimitive>(data: &[T], window: usize) -> Box<dyn Iterator<Item = f64> + '_> {
     if window == 1 {
@@ -281,7 +281,7 @@ pub fn wilder<T: ToPrimitive>(data: &[T], window: usize) -> Box<dyn Iterator<Ite
 /// ```
 /// use traquer::smooth;
 ///
-/// smooth::hull(&vec![1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
+/// smooth::hull(&[1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
 /// ```
 pub fn hull<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f64> + '_ {
     let ma = wma(data, window);
@@ -306,7 +306,7 @@ pub fn hull<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f
 /// ```
 /// use traquer::smooth;
 ///
-/// smooth::vidya(&vec![1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
+/// smooth::vidya(&[1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
 /// ```
 pub fn vidya<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f64> + '_ {
     let alpha = 2.0 / (window + 1) as f64;
@@ -362,7 +362,7 @@ pub(crate) fn _cmo<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<I
 /// ```
 /// use traquer::smooth;
 ///
-/// smooth::vma(&vec![1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
+/// smooth::vma(&[1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
 /// ```
 pub fn vma<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f64> + '_ {
     let alpha = 2.0 / (window + 1) as f64;
@@ -392,7 +392,7 @@ pub fn vma<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f6
 /// ```
 /// use traquer::smooth;
 ///
-/// smooth::lrf(&vec![1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
+/// smooth::lrf(&[1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
 /// ```
 pub fn lrf<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f64> + '_ {
     let x_sum = (window * (window + 1)) as f64 / 2.0;
@@ -426,7 +426,7 @@ pub fn lrf<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f6
 /// ```
 /// use traquer::smooth;
 ///
-/// smooth::trima(&vec![1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
+/// smooth::trima(&[1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
 /// ```
 pub fn trima<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f64> + '_ {
     let win1 = window.div_ceil(2);
@@ -450,7 +450,7 @@ pub fn trima<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = 
 /// ```
 /// use traquer::smooth;
 ///
-/// smooth::zlma(&vec![1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
+/// smooth::zlma(&[1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
 /// ```
 pub fn zlma<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f64> + '_ {
     let lag = (window - 1) / 2;
@@ -488,7 +488,7 @@ pub fn zlma<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f
 /// ```
 /// use traquer::smooth;
 ///
-/// smooth::kernel(&vec![1.0, 2.0, 3.0, 4.0, 5.0], 3.0).collect::<Vec<f64>>();
+/// smooth::kernel(&[1.0, 2.0, 3.0, 4.0, 5.0], 3.0).collect::<Vec<f64>>();
 /// ```
 pub fn kernel<T: ToPrimitive>(data: &[T], sigma: f64) -> impl Iterator<Item = f64> + '_ {
     let beta = 1.0 / (2.0 * sigma.powi(2));
@@ -527,7 +527,7 @@ pub fn kernel<T: ToPrimitive>(data: &[T], sigma: f64) -> impl Iterator<Item = f6
 /// ```
 /// use traquer::smooth;
 ///
-/// smooth::kama(&vec![1.0, 2.0, 3.0, 4.0, 5.0], 3, Some(2), Some(30)).collect::<Vec<f64>>();
+/// smooth::kama(&[1.0, 2.0, 3.0, 4.0, 5.0], 3, Some(2), Some(30)).collect::<Vec<f64>>();
 /// ```
 pub fn kama<T: ToPrimitive>(
     data: &[T],
@@ -565,7 +565,7 @@ pub fn kama<T: ToPrimitive>(
 /// ```
 /// use traquer::smooth;
 ///
-/// smooth::alma(&vec![1.0, 2.0, 3.0, 4.0, 5.0], 3, 2.0, Some(0.5)).collect::<Vec<f64>>();
+/// smooth::alma(&[1.0, 2.0, 3.0, 4.0, 5.0], 3, 2.0, Some(0.5)).collect::<Vec<f64>>();
 /// ```
 pub fn alma<T: ToPrimitive>(
     data: &[T],
@@ -604,7 +604,7 @@ pub fn alma<T: ToPrimitive>(
 /// ```
 /// use traquer::smooth;
 ///
-/// smooth::mdma(&vec![1.0, 2.0, 3.0, 4.0, 5.0], 3).collect::<Vec<f64>>();
+/// smooth::mdma(&[1.0, 2.0, 3.0, 4.0, 5.0], 3).collect::<Vec<f64>>();
 /// ```
 pub fn mdma<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f64> + '_ {
     let k = 0.6;
@@ -633,7 +633,7 @@ pub fn mdma<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f
 /// ```
 /// use traquer::smooth;
 ///
-/// smooth::hwma(&vec![1.0, 2.0, 3.0, 4.0, 5.0],
+/// smooth::hwma(&[1.0, 2.0, 3.0, 4.0, 5.0],
 ///              Some(0.2), Some(0.1), None).collect::<Vec<f64>>();
 /// ```
 pub fn hwma<T: ToPrimitive>(
@@ -671,7 +671,7 @@ pub fn hwma<T: ToPrimitive>(
 /// ```
 /// use traquer::smooth;
 ///
-/// smooth::fwma(&vec![1.0, 2.0, 3.0, 4.0, 5.0], 3).collect::<Vec<f64>>();
+/// smooth::fwma(&[1.0, 2.0, 3.0, 4.0, 5.0], 3).collect::<Vec<f64>>();
 /// ```
 pub fn fwma<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f64> + '_ {
     let mut denom = 2.0;
@@ -711,7 +711,7 @@ pub fn fwma<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f
 /// ```
 /// use traquer::smooth;
 ///
-/// smooth::ssf(&vec![1.0, 2.0, 3.0, 4.0, 5.0], 3, Some(false)).collect::<Vec<f64>>();
+/// smooth::ssf(&[1.0, 2.0, 3.0, 4.0, 5.0], 3, Some(false)).collect::<Vec<f64>>();
 /// ```
 pub fn ssf<T: ToPrimitive>(
     data: &[T],
@@ -775,7 +775,7 @@ pub fn ssf<T: ToPrimitive>(
 /// ```
 /// use traquer::smooth;
 ///
-/// smooth::mama(&vec![1.0, 2.0, 3.0, 4.0, 5.0], None, Some(0.05)).collect::<Vec<(f64,f64)>>();
+/// smooth::mama(&[1.0, 2.0, 3.0, 4.0, 5.0], None, Some(0.05)).collect::<Vec<(f64,f64)>>();
 /// ```
 pub fn mama<T: ToPrimitive>(
     data: &[T],
@@ -890,7 +890,7 @@ pub fn mama<T: ToPrimitive>(
 /// use traquer::smooth;
 ///
 /// smooth::t3(
-///     &vec![1.0,2.0,3.0,4.0,5.0,2.0,3.0,4.0,2.0,3.0,4.0,2.0,3.0,4.0],
+///     &[1.0,2.0,3.0,4.0,5.0,2.0,3.0,4.0,2.0,3.0,4.0,2.0,3.0,4.0],
 ///     3, None).collect::<Vec<f64>>();
 /// ```
 pub fn t3<T: ToPrimitive>(
