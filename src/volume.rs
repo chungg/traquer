@@ -6,19 +6,33 @@
 use std::iter;
 
 use itertools::izip;
+use num_traits::cast::ToPrimitive;
 
 use crate::smooth;
 
-fn vforce<'a>(
-    high: &'a [f64],
-    low: &'a [f64],
-    close: &'a [f64],
-    volume: &'a [f64],
+fn vforce<'a, T: ToPrimitive, U: ToPrimitive>(
+    high: &'a [T],
+    low: &'a [T],
+    close: &'a [T],
+    volume: &'a [U],
 ) -> impl Iterator<Item = f64> + 'a {
     izip!(&high[1..], &low[1..], &close[1..], &volume[1..]).scan(
-        (high[0], low[0], close[0], 0.0, 0.0, 0.0),
+        (
+            high[0].to_f64().unwrap(),
+            low[0].to_f64().unwrap(),
+            close[0].to_f64().unwrap(),
+            0.0,
+            0.0,
+            0.0,
+        ),
         |state, (h, l, c, v)| {
             // state = (h, l, c, trend, cm, dm)
+            let (h, l, c, v) = (
+                h.to_f64().unwrap(),
+                l.to_f64().unwrap(),
+                c.to_f64().unwrap(),
+                v.to_f64().unwrap(),
+            );
             let trend = ((h + l + c) - (state.0 + state.1 + state.2)).signum();
             let dm = h - l;
             let cm = if trend == state.3 {
@@ -26,23 +40,34 @@ fn vforce<'a>(
             } else {
                 state.5 + dm
             };
-            *state = (*h, *l, *c, trend, cm, dm);
+            *state = (h, l, c, trend, cm, dm);
             Some(v * (2.0 * ((dm / cm) - 1.0)) * trend * 100.0)
         },
     )
 }
 
-fn vforce_alt<'a>(
-    high: &'a [f64],
-    low: &'a [f64],
-    close: &'a [f64],
-    volume: &'a [f64],
+fn vforce_alt<'a, T: ToPrimitive, U: ToPrimitive>(
+    high: &'a [T],
+    low: &'a [T],
+    close: &'a [T],
+    volume: &'a [U],
 ) -> impl Iterator<Item = f64> + 'a {
     izip!(&high[1..], &low[1..], &close[1..], &volume[1..]).scan(
-        (high[0], low[0], close[0], 0.0),
+        (
+            high[0].to_f64().unwrap(),
+            low[0].to_f64().unwrap(),
+            close[0].to_f64().unwrap(),
+            0.0,
+        ),
         |state, (h, l, c, v)| {
+            let (h, l, c, v) = (
+                h.to_f64().unwrap(),
+                l.to_f64().unwrap(),
+                c.to_f64().unwrap(),
+                v.to_f64().unwrap(),
+            );
             let trend = ((h + l + c) - (state.0 + state.1 + state.2)).signum();
-            *state = (*h, *l, *c, trend);
+            *state = (h, l, c, trend);
             Some(v * trend)
         },
     )
@@ -77,11 +102,11 @@ fn vforce_alt<'a>(
 ///     3, 6, None).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn kvo<'a>(
-    high: &'a [f64],
-    low: &'a [f64],
-    close: &'a [f64],
-    volume: &'a [f64],
+pub fn kvo<'a, T: ToPrimitive, U: ToPrimitive>(
+    high: &'a [T],
+    low: &'a [T],
+    close: &'a [T],
+    volume: &'a [U],
     short: usize,
     long: usize,
     alt: Option<bool>,
@@ -101,10 +126,13 @@ pub fn kvo<'a>(
     )
 }
 
-fn wilder_sum(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
-    let initial = data[..(window - 1)].iter().sum::<f64>();
+fn wilder_sum<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f64> + '_ {
+    let initial = data[..(window - 1)]
+        .iter()
+        .filter_map(|x| x.to_f64())
+        .sum::<f64>();
     data[(window - 1)..].iter().scan(initial, move |state, x| {
-        let ma = *state * (window - 1) as f64 / window as f64 + x;
+        let ma = *state * (window - 1) as f64 / window as f64 + x.to_f64().unwrap();
         *state = ma;
         Some(ma)
     })
@@ -138,11 +166,11 @@ fn wilder_sum(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
 ///     6).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn twiggs<'a>(
-    high: &'a [f64],
-    low: &'a [f64],
-    close: &'a [f64],
-    volume: &'a [f64],
+pub fn twiggs<'a, T: ToPrimitive, U: ToPrimitive>(
+    high: &'a [T],
+    low: &'a [T],
+    close: &'a [T],
+    volume: &'a [U],
     window: usize,
 ) -> impl Iterator<Item = f64> + 'a {
     let data = izip!(&high[1..], &low[1..], &close[1..], &volume[1..]);
@@ -150,11 +178,17 @@ pub fn twiggs<'a>(
     iter::repeat(f64::NAN).take(window).chain(
         wilder_sum(
             &data
-                .scan(close[0], |state, (h, l, c, vol)| {
+                .scan(close[0].to_f64().unwrap(), |state, (h, l, c, vol)| {
+                    let (h, l, c, vol) = (
+                        h.to_f64().unwrap(),
+                        l.to_f64().unwrap(),
+                        c.to_f64().unwrap(),
+                        vol.to_f64().unwrap(),
+                    );
                     let range_vol = vol
-                        * ((2.0 * c - f64::min(*l, *state) - f64::max(*h, *state))
-                            / (f64::max(*h, *state) - f64::min(*l, *state)));
-                    *state = *c;
+                        * ((2.0 * c - f64::min(l, *state) - f64::max(h, *state))
+                            / (f64::max(h, *state) - f64::min(l, *state)));
+                    *state = c;
                     Some(range_vol)
                 })
                 .collect::<Vec<f64>>(),
@@ -196,16 +230,22 @@ pub fn twiggs<'a>(
 ///     None).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn ad<'a>(
-    high: &'a [f64],
-    low: &'a [f64],
-    close: &'a [f64],
-    volume: &'a [f64],
+pub fn ad<'a, T: ToPrimitive, U: ToPrimitive>(
+    high: &'a [T],
+    low: &'a [T],
+    close: &'a [T],
+    volume: &'a [U],
     alt: Option<bool>,
 ) -> Box<dyn Iterator<Item = f64> + 'a> {
     if !alt.unwrap_or(false) {
         Box::new(
             izip!(high, low, close, volume).scan(0.0, |state, (h, l, c, vol)| {
+                let (h, l, c, vol) = (
+                    h.to_f64().unwrap(),
+                    l.to_f64().unwrap(),
+                    c.to_f64().unwrap(),
+                    vol.to_f64().unwrap(),
+                );
                 let mfm = ((c - l) - (h - c)) / (h - l);
                 let mfv = mfm * vol;
                 let adl = *state + mfv;
@@ -217,16 +257,22 @@ pub fn ad<'a>(
         // alternate logic to consider prior close like yahoo
         Box::new(iter::once(f64::NAN).chain(
             izip!(&high[1..], &low[1..], &close[1..], &volume[1..]).scan(
-                (close[0], 0.0),
+                (close[0].to_f64().unwrap(), 0.0),
                 |state, (h, l, c, vol)| {
-                    let mfm = if *c > state.0 {
-                        c - f64::min(*l, state.0)
+                    let (h, l, c, vol) = (
+                        h.to_f64().unwrap(),
+                        l.to_f64().unwrap(),
+                        c.to_f64().unwrap(),
+                        vol.to_f64().unwrap(),
+                    );
+                    let mfm = if c > state.0 {
+                        c - f64::min(l, state.0)
                     } else {
-                        c - f64::max(*h, state.0)
+                        c - f64::max(h, state.0)
                     };
                     let mfv = mfm * vol;
                     let adl = state.1 + mfv;
-                    *state = (*c, adl);
+                    *state = (c, adl);
                     Some(adl)
                 },
             ),
@@ -259,15 +305,17 @@ pub fn ad<'a>(
 ///     6).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn elder_force<'a>(
-    close: &'a [f64],
-    volume: &'a [f64],
+pub fn elder_force<'a, T: ToPrimitive, U: ToPrimitive>(
+    close: &'a [T],
+    volume: &'a [U],
     window: usize,
 ) -> impl Iterator<Item = f64> + 'a {
     iter::once(f64::NAN).chain(
         smooth::ewma(
             &izip!(&close[..close.len() - 1], &close[1..], &volume[1..])
-                .map(|(prev, curr, vol)| (curr - prev) * vol)
+                .map(|(prev, curr, vol)| {
+                    (curr.to_f64().unwrap() - prev.to_f64().unwrap()) * vol.to_f64().unwrap()
+                })
                 .collect::<Vec<f64>>(),
             window,
         )
@@ -302,18 +350,25 @@ pub fn elder_force<'a>(
 ///     6).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn mfi<'a>(
-    high: &'a [f64],
-    low: &'a [f64],
-    close: &'a [f64],
-    volume: &'a [f64],
+pub fn mfi<'a, T: ToPrimitive, U: ToPrimitive>(
+    high: &'a [T],
+    low: &'a [T],
+    close: &'a [T],
+    volume: &'a [U],
     window: usize,
 ) -> impl Iterator<Item = f64> + 'a {
     let (pos_mf, neg_mf): (Vec<f64>, Vec<f64>) =
         izip!(&high[1..], &low[1..], &close[1..], &volume[1..])
             .scan(
-                (high[0] + low[0] + close[0]) / 3.0,
+                (high[0].to_f64().unwrap() + low[0].to_f64().unwrap() + close[0].to_f64().unwrap())
+                    / 3.0,
                 |state, (h, l, c, vol)| {
+                    let (h, l, c, vol) = (
+                        h.to_f64().unwrap(),
+                        l.to_f64().unwrap(),
+                        c.to_f64().unwrap(),
+                        vol.to_f64().unwrap(),
+                    );
                     let hlc = (h + l + c) / 3.0;
                     let pos_mf = if hlc > *state { hlc * vol } else { 0.0 };
                     let neg_mf = if hlc < *state { hlc * vol } else { 0.0 };
@@ -361,20 +416,30 @@ pub fn mfi<'a>(
 ///     6).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn cmf<'a>(
-    high: &'a [f64],
-    low: &'a [f64],
-    close: &'a [f64],
-    volume: &'a [f64],
+pub fn cmf<'a, T: ToPrimitive, U: ToPrimitive>(
+    high: &'a [T],
+    low: &'a [T],
+    close: &'a [T],
+    volume: &'a [U],
     window: usize,
 ) -> impl Iterator<Item = f64> + 'a {
     iter::repeat(f64::NAN).take(window - 1).chain(
         izip!(high, low, close, volume)
-            .map(|(h, l, c, vol)| vol * ((c - l) - (h - c)) / (h - l))
+            .map(|(h, l, c, vol)| {
+                let (h, l, c, vol) = (
+                    h.to_f64().unwrap(),
+                    l.to_f64().unwrap(),
+                    c.to_f64().unwrap(),
+                    vol.to_f64().unwrap(),
+                );
+                vol * ((c - l) - (h - c)) / (h - l)
+            })
             .collect::<Vec<f64>>()
             .windows(window)
             .zip(volume.windows(window))
-            .map(|(mfv_win, v_win)| mfv_win.iter().sum::<f64>() / v_win.iter().sum::<f64>())
+            .map(|(mfv_win, v_win)| {
+                mfv_win.iter().sum::<f64>() / v_win.iter().filter_map(|x| x.to_f64()).sum::<f64>()
+            })
             .collect::<Vec<f64>>(),
     )
 }
@@ -403,15 +468,20 @@ pub fn cmf<'a>(
 ///     0.5).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn tvi<'a>(
-    close: &'a [f64],
-    volume: &'a [f64],
+pub fn tvi<'a, T: ToPrimitive, U: ToPrimitive>(
+    close: &'a [T],
+    volume: &'a [U],
     min_tick: f64,
 ) -> impl Iterator<Item = f64> + 'a {
     iter::once(f64::NAN).chain(
         izip!(&close[..close.len() - 1], &close[1..], &volume[1..],).scan(
             (1, 0.0),
             move |state, (prev, curr, vol)| {
+                let (prev, curr, vol) = (
+                    prev.to_f64().unwrap(),
+                    curr.to_f64().unwrap(),
+                    vol.to_f64().unwrap(),
+                );
                 let direction = if curr - prev > min_tick {
                     1
                 } else if prev - curr > min_tick {
@@ -452,19 +522,23 @@ pub fn tvi<'a>(
 ///     6).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn ease<'a>(
-    high: &'a [f64],
-    low: &'a [f64],
-    volume: &'a [f64],
+pub fn ease<'a, T: ToPrimitive, U: ToPrimitive>(
+    high: &'a [T],
+    low: &'a [T],
+    volume: &'a [U],
     window: usize,
 ) -> impl Iterator<Item = f64> + 'a {
     iter::once(f64::NAN).chain(
         smooth::sma(
             &(1..high.len())
                 .map(|i| {
-                    (high[i] + low[i] - high[i - 1] - low[i - 1])
+                    (high[i].to_f64().unwrap() + low[i].to_f64().unwrap()
+                        - high[i - 1].to_f64().unwrap()
+                        - low[i - 1].to_f64().unwrap())
                         / 2.0
-                        / (volume[i] / 100000000.0 / (high[i] - low[i]))
+                        / (volume[i].to_f64().unwrap()
+                            / 100000000.0
+                            / (high[i].to_f64().unwrap() - low[i].to_f64().unwrap()))
                 })
                 .collect::<Vec<f64>>(),
             window,
@@ -496,9 +570,13 @@ pub fn ease<'a>(
 ///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0]).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn obv<'a>(close: &'a [f64], volume: &'a [f64]) -> impl Iterator<Item = f64> + 'a {
+pub fn obv<'a, T: ToPrimitive, U: ToPrimitive>(
+    close: &'a [T],
+    volume: &'a [U],
+) -> impl Iterator<Item = f64> + 'a {
     iter::once(f64::NAN).chain(close.windows(2).enumerate().scan(0.0, |state, (i, pairs)| {
-        *state += (pairs[1] - pairs[0]).signum() * volume[i + 1];
+        *state += (pairs[1].to_f64().unwrap() - pairs[0].to_f64().unwrap()).signum()
+            * volume[i + 1].to_f64().unwrap();
         Some(*state)
     }))
 }
@@ -528,15 +606,14 @@ pub fn obv<'a>(close: &'a [f64], volume: &'a [f64]) -> impl Iterator<Item = f64>
 ///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0]).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn bw_mfi<'a>(
-    high: &'a [f64],
-    low: &'a [f64],
-    volume: &'a [f64],
+pub fn bw_mfi<'a, T: ToPrimitive, U: ToPrimitive>(
+    high: &'a [T],
+    low: &'a [T],
+    volume: &'a [U],
 ) -> impl Iterator<Item = f64> + 'a {
-    high.iter()
-        .zip(low)
-        .zip(volume)
-        .map(|((h, l), vol)| (h - l) / vol * (10.0_f64).powi(6))
+    high.iter().zip(low).zip(volume).map(|((h, l), vol)| {
+        (h.to_f64().unwrap() - l.to_f64().unwrap()) / vol.to_f64().unwrap() * (10.0_f64).powi(6)
+    })
 }
 
 /// Positive Volume Index
@@ -562,12 +639,15 @@ pub fn bw_mfi<'a>(
 ///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0]).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn pvi<'a>(data: &'a [f64], volume: &'a [f64]) -> impl Iterator<Item = f64> + 'a {
+pub fn pvi<'a, T: ToPrimitive, U: ToPrimitive>(
+    data: &'a [T],
+    volume: &'a [U],
+) -> impl Iterator<Item = f64> + 'a {
     iter::once(f64::NAN).chain(data.windows(2).zip(volume.windows(2)).scan(
         100.0,
         |state, (c, vol)| {
-            if vol[1] > vol[0] {
-                *state *= c[1] / c[0];
+            if vol[1].to_f64().unwrap() > vol[0].to_f64().unwrap() {
+                *state *= c[1].to_f64().unwrap() / c[0].to_f64().unwrap();
             }
             Some(*state)
         },
@@ -597,12 +677,15 @@ pub fn pvi<'a>(data: &'a [f64], volume: &'a [f64]) -> impl Iterator<Item = f64> 
 ///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0]).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn nvi<'a>(data: &'a [f64], volume: &'a [f64]) -> impl Iterator<Item = f64> + 'a {
+pub fn nvi<'a, T: ToPrimitive, U: ToPrimitive>(
+    data: &'a [T],
+    volume: &'a [U],
+) -> impl Iterator<Item = f64> + 'a {
     iter::once(f64::NAN).chain(data.windows(2).zip(volume.windows(2)).scan(
         100.0,
         |state, (c, vol)| {
-            if vol[1] < vol[0] {
-                *state *= c[1] / c[0];
+            if vol[1].to_f64().unwrap() < vol[0].to_f64().unwrap() {
+                *state *= c[1].to_f64().unwrap() / c[0].to_f64().unwrap();
             }
             Some(*state)
         },
@@ -633,11 +716,11 @@ pub fn nvi<'a>(data: &'a [f64], volume: &'a [f64]) -> impl Iterator<Item = f64> 
 ///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0], None).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn vwap<'a>(
-    high: &'a [f64],
-    low: &'a [f64],
-    close: &'a [f64],
-    volume: &'a [f64],
+pub fn vwap<'a, T: ToPrimitive, U: ToPrimitive>(
+    high: &'a [T],
+    low: &'a [T],
+    close: &'a [T],
+    volume: &'a [U],
     reset_idx: Option<&'a [usize]>,
 ) -> impl Iterator<Item = f64> + 'a {
     // NOTE: assumes reset_idx is sorted
@@ -645,6 +728,12 @@ pub fn vwap<'a>(
     izip!(high, low, close, volume).enumerate().scan(
         (0.0, 0.0),
         move |state, (idx, (h, l, c, vol))| {
+            let (h, l, c, vol) = (
+                h.to_f64().unwrap(),
+                l.to_f64().unwrap(),
+                c.to_f64().unwrap(),
+                vol.to_f64().unwrap(),
+            );
             let (mut tpv_sum, mut vol_sum) = state;
             if idx == reset_idx[0] {
                 tpv_sum = 0.0;
@@ -682,20 +771,18 @@ pub fn vwap<'a>(
 ///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0], 3).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn vwma<'a>(
-    data: &'a [f64],
-    volume: &'a [f64],
+pub fn vwma<'a, T: ToPrimitive, U: ToPrimitive>(
+    data: &'a [T],
+    volume: &'a [U],
     window: usize,
 ) -> impl Iterator<Item = f64> + 'a {
     iter::repeat(f64::NAN).take(window - 1).chain(
         data.windows(window)
             .zip(volume.windows(window))
             .map(|(data_w, vol_w)| {
-                data_w
-                    .iter()
-                    .zip(vol_w)
-                    .fold(0.0, |acc, (x, v)| acc + x * v)
-                    / vol_w.iter().sum::<f64>()
+                data_w.iter().zip(vol_w).fold(0.0, |acc, (x, v)| {
+                    acc + x.to_f64().unwrap() * v.to_f64().unwrap()
+                }) / vol_w.iter().filter_map(|x| x.to_f64()).sum::<f64>()
             }),
     )
 }
@@ -723,12 +810,16 @@ pub fn vwma<'a>(
 ///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0], 3).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn vpt<'a>(data: &'a [f64], volume: &'a [f64]) -> impl Iterator<Item = f64> + 'a {
+pub fn vpt<'a, T: ToPrimitive, U: ToPrimitive>(
+    data: &'a [T],
+    volume: &'a [U],
+) -> impl Iterator<Item = f64> + 'a {
     iter::once(f64::NAN).chain(
         data.windows(2)
             .zip(&volume[1..])
             .scan(0.0, |state, (w, v)| {
-                *state += v * (w[1] - w[0]) / w[0];
+                *state += v.to_f64().unwrap() * (w[1].to_f64().unwrap() - w[0].to_f64().unwrap())
+                    / w[0].to_f64().unwrap();
                 Some(*state)
             }),
     )
