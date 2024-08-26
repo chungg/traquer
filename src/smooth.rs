@@ -39,7 +39,11 @@ pub enum MaMode {
 ///
 /// smooth::ma(&vec![1.0,2.0,3.0,4.0,5.0], 3, smooth::MaMode::SMA).collect::<Vec<f64>>();
 /// ```
-pub fn ma(data: &[f64], window: usize, mamode: MaMode) -> Box<dyn Iterator<Item = f64> + '_> {
+pub fn ma<N: ToPrimitive>(
+    data: &[N],
+    window: usize,
+    mamode: MaMode,
+) -> Box<dyn Iterator<Item = f64> + '_> {
     match mamode {
         MaMode::SMA => Box::new(sma(data, window)),
         MaMode::EWMA => Box::new(ewma(data, window)),
@@ -307,22 +311,27 @@ pub fn hull<N: ToPrimitive>(data: &[N], window: usize) -> impl Iterator<Item = f
 ///
 /// smooth::vidya(&vec![1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
 /// ```
-pub fn vidya(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
+pub fn vidya<N: ToPrimitive>(data: &[N], window: usize) -> impl Iterator<Item = f64> + '_ {
     let alpha = 2.0 / (window + 1) as f64;
     let std5 = _std_dev(data, 5).collect::<Vec<f64>>();
     let std20 = sma(&std5, 20).collect::<Vec<f64>>();
     let offset = (5 - 1) + (20 - 1);
-    iter::repeat(f64::NAN).take(offset).chain(
-        izip!(
-            std20.into_iter().skip(20 - 1),
-            std5.into_iter().skip(20 - 1),
-            data.iter().skip(offset)
+    iter::repeat(f64::NAN)
+        .take(offset)
+        .chain(
+            izip!(
+                std20.into_iter().skip(20 - 1),
+                std5.into_iter().skip(20 - 1),
+                data.iter().skip(offset)
+            )
+            .scan(0.0, move |state, (s20, s5, d)| {
+                *state = alpha * (s5 / s20) * (d.to_f64().unwrap() - *state) + *state;
+                Some(*state)
+            }),
+            // TODO: investigate why faster with collect().iter() than without
         )
-        .scan(0.0, move |state, (s20, s5, d)| {
-            *state = alpha * (s5 / s20) * (d - *state) + *state;
-            Some(*state)
-        }),
-    )
+        .collect::<Vec<f64>>()
+        .into_iter()
 }
 
 pub(crate) fn _cmo<N: ToPrimitive>(data: &[N], window: usize) -> impl Iterator<Item = f64> + '_ {
