@@ -74,4 +74,3 @@ encouraged.
 
 ## todo
 - handle div by zero scenarios
-- allow other numeric types rather than just f64

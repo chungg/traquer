@@ -38,13 +38,13 @@ use crate::volatility::_true_range;
 ///     6).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn rsi(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
+pub fn rsi<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f64> + '_ {
     let (gain, loss): (Vec<f64>, Vec<f64>) = data
         .windows(2)
         .map(|pair| {
             (
-                f64::max(0.0, pair[1] - pair[0]),
-                f64::min(0.0, pair[1] - pair[0]).abs(),
+                f64::max(0.0, pair[1].to_f64().unwrap() - pair[0].to_f64().unwrap()),
+                f64::min(0.0, pair[1].to_f64().unwrap() - pair[0].to_f64().unwrap()).abs(),
             )
         })
         .unzip();
@@ -81,8 +81,8 @@ pub fn rsi(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
 ///     3, 2, 6).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn crsi(
-    data: &[f64],
+pub fn crsi<T: ToPrimitive>(
+    data: &[T],
     rsi_win: usize,
     streak_win: usize,
     rank_win: usize,
@@ -91,14 +91,15 @@ pub fn crsi(
     let (streaks, returns): (Vec<f64>, Vec<f64>) = data
         .windows(2)
         .scan((0.0, 0.0_f64), |state, w| {
-            let streak = if w[1] == w[0] {
+            let (w0, w1) = (w[0].to_f64().unwrap(), w[1].to_f64().unwrap());
+            let streak = if w1 == w0 {
                 0.0
-            } else if (w[1] - w[0]).signum() == state.1.signum() {
-                state.0 + (w[1] - w[0]).signum()
+            } else if (w1 - w0).signum() == state.1.signum() {
+                state.0 + (w1 - w0).signum()
             } else {
-                (w[1] - w[0]).signum()
+                (w1 - w0).signum()
             };
-            *state = (streak, (w[1] - w[0]) / w[0]);
+            *state = (streak, (w1 - w0) / w0);
             Some(*state)
         })
         .unzip();
@@ -143,7 +144,11 @@ pub fn crsi(
 ///     3, 6).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn macd(close: &[f64], short: usize, long: usize) -> impl Iterator<Item = f64> + '_ {
+pub fn macd<T: ToPrimitive>(
+    close: &[T],
+    short: usize,
+    long: usize,
+) -> impl Iterator<Item = f64> + '_ {
     let short_ma = smooth::ewma(close, short);
     let long_ma = smooth::ewma(close, long);
     short_ma.zip(long_ma).map(|(x, y)| x - y)
@@ -176,7 +181,7 @@ pub fn macd(close: &[f64], short: usize, long: usize) -> impl Iterator<Item = f6
 ///     6).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn cmo(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
+pub fn cmo<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f64> + '_ {
     iter::repeat(f64::NAN)
         .take(window)
         .chain(smooth::_cmo(data, window).map(|x| x * 100.0))
@@ -209,10 +214,10 @@ pub fn cmo(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
 ///     6).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn cfo(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
+pub fn cfo<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f64> + '_ {
     smooth::lrf(data, window)
         .zip(data)
-        .map(|(tsf, x)| 100.0 * (x - tsf) / x)
+        .map(|(tsf, x)| 100.0 * (x.to_f64().unwrap() - tsf) / x.to_f64().unwrap())
 }
 
 /// Elder Ray
@@ -247,14 +252,14 @@ pub fn cfo(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
 ///     3).collect::<Vec<(f64,f64)>>();
 ///
 /// ```
-pub fn elder_ray<'a>(
-    high: &'a [f64],
-    low: &'a [f64],
-    close: &'a [f64],
+pub fn elder_ray<'a, T: ToPrimitive>(
+    high: &'a [T],
+    low: &'a [T],
+    close: &'a [T],
     window: usize,
 ) -> impl Iterator<Item = (f64, f64)> + 'a {
     let close_ma = smooth::ewma(close, window);
-    izip!(high, low, close_ma).map(|(h, l, c)| (h - c, l - c))
+    izip!(high, low, close_ma).map(|(h, l, c)| (h.to_f64().unwrap() - c, l.to_f64().unwrap() - c))
 }
 
 /// Williams Percent Range
@@ -284,10 +289,10 @@ pub fn elder_ray<'a>(
 ///     6).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn wpr<'a>(
-    high: &'a [f64],
-    low: &'a [f64],
-    close: &'a [f64],
+pub fn wpr<'a, T: ToPrimitive>(
+    high: &'a [T],
+    low: &'a [T],
+    close: &'a [T],
     window: usize,
 ) -> impl Iterator<Item = f64> + 'a {
     iter::repeat(f64::NAN).take(window - 1).chain(
@@ -297,9 +302,13 @@ pub fn wpr<'a>(
             &close[(window - 1)..]
         )
         .map(|(h, l, c)| {
-            let hh = h.iter().fold(f64::NAN, |state, &x| state.max(x));
-            let ll = l.iter().fold(f64::NAN, |state, &x| state.min(x));
-            -100.0 * ((hh - c) / (hh - ll))
+            let hh = h
+                .iter()
+                .fold(f64::NAN, |state, x| state.max(x.to_f64().unwrap()));
+            let ll = l
+                .iter()
+                .fold(f64::NAN, |state, x| state.min(x.to_f64().unwrap()));
+            -100.0 * ((hh - c.to_f64().unwrap()) / (hh - ll))
         }),
     )
 }
@@ -323,7 +332,11 @@ pub fn wpr<'a>(
 ///     3, 6).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn ppo(data: &[f64], short: usize, long: usize) -> impl Iterator<Item = f64> + '_ {
+pub fn ppo<T: ToPrimitive>(
+    data: &[T],
+    short: usize,
+    long: usize,
+) -> impl Iterator<Item = f64> + '_ {
     let short_ma = smooth::ewma(data, short);
     let long_ma = smooth::ewma(data, long);
     short_ma.zip(long_ma).map(|(x, y)| 100.0 * (x / y - 1.0))
@@ -351,7 +364,11 @@ pub fn ppo(data: &[f64], short: usize, long: usize) -> impl Iterator<Item = f64>
 ///     3, 6).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn apo(data: &[f64], short: usize, long: usize) -> impl Iterator<Item = f64> + '_ {
+pub fn apo<T: ToPrimitive>(
+    data: &[T],
+    short: usize,
+    long: usize,
+) -> impl Iterator<Item = f64> + '_ {
     let short_ma = smooth::ewma(data, short);
     let long_ma = smooth::ewma(data, long);
     short_ma.zip(long_ma).map(|(x, y)| x - y)
@@ -379,13 +396,15 @@ pub fn apo(data: &[f64], short: usize, long: usize) -> impl Iterator<Item = f64>
 ///     6, 3).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn pmo(data: &[f64], win1: usize, win2: usize) -> impl Iterator<Item = f64> + '_ {
+pub fn pmo<T: ToPrimitive>(data: &[T], win1: usize, win2: usize) -> impl Iterator<Item = f64> + '_ {
     iter::repeat(f64::NAN).take(win1).chain(
         smooth::ewma(
             &smooth::ewma(
                 &data
                     .windows(2)
-                    .map(|pair| 1000.0 * (pair[1] / pair[0] - 1.0))
+                    .map(|pair| {
+                        1000.0 * (pair[1].to_f64().unwrap() / pair[0].to_f64().unwrap() - 1.0)
+                    })
                     .collect::<Vec<f64>>(),
                 win1,
             )
@@ -421,10 +440,10 @@ pub fn pmo(data: &[f64], win1: usize, win2: usize) -> impl Iterator<Item = f64> 
 ///     2, 4, 8).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn ultimate<'a>(
-    high: &'a [f64],
-    low: &'a [f64],
-    close: &'a [f64],
+pub fn ultimate<'a, T: ToPrimitive>(
+    high: &'a [T],
+    low: &'a [T],
+    close: &'a [T],
     win1: usize,
     win2: usize,
     win3: usize,
@@ -436,9 +455,15 @@ pub fn ultimate<'a>(
         &close[1..],
     )
     .map(|(h, l, prevc, c)| {
+        let (h, l, prevc, c) = (
+            h.to_f64().unwrap(),
+            l.to_f64().unwrap(),
+            prevc.to_f64().unwrap(),
+            c.to_f64().unwrap(),
+        );
         (
-            c - f64::min(*l, *prevc),
-            f64::max(*h, *prevc) - f64::min(*l, *prevc),
+            c - f64::min(l, prevc),
+            f64::max(h, prevc) - f64::min(l, prevc),
         )
     })
     .collect::<Vec<(f64, f64)>>();
@@ -489,17 +514,17 @@ pub fn ultimate<'a>(
 ///     6).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn pgo<'a>(
-    high: &'a [f64],
-    low: &'a [f64],
-    close: &'a [f64],
+pub fn pgo<'a, T: ToPrimitive>(
+    high: &'a [T],
+    low: &'a [T],
+    close: &'a [T],
     window: usize,
 ) -> impl Iterator<Item = f64> + 'a {
     let tr = _true_range(high, low, close).collect::<Vec<f64>>();
     let atr = iter::once(f64::NAN).chain(smooth::ewma(&tr, window));
     let sma_close = smooth::sma(close, window);
     izip!(close, sma_close, atr)
-        .map(|(c, c_ma, tr_ma)| (c - c_ma) / tr_ma)
+        .map(|(c, c_ma, tr_ma)| (c.to_f64().unwrap() - c_ma) / tr_ma)
         .collect::<Vec<f64>>()
         .into_iter()
 }
@@ -573,11 +598,11 @@ pub(crate) fn _swing<'a, T: ToPrimitive>(
 ///     0.5).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn si<'a>(
-    open: &'a [f64],
-    high: &'a [f64],
-    low: &'a [f64],
-    close: &'a [f64],
+pub fn si<'a, T: ToPrimitive>(
+    open: &'a [T],
+    high: &'a [T],
+    low: &'a [T],
+    close: &'a [T],
     limit: f64,
 ) -> impl Iterator<Item = f64> + 'a {
     iter::once(f64::NAN).chain(_swing(open, high, low, close, limit))
@@ -606,7 +631,7 @@ pub fn si<'a>(
 ///     3).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn trix(close: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
+pub fn trix<T: ToPrimitive>(close: &[T], window: usize) -> impl Iterator<Item = f64> + '_ {
     let ema3 = smooth::ewma(
         &smooth::ewma(
             &smooth::ewma(close, window).collect::<Vec<f64>>()[window - 1..],
@@ -646,13 +671,13 @@ pub fn trix(close: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
 ///     6).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn tii(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
+pub fn tii<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f64> + '_ {
     let win = window.div_ceil(2);
     iter::repeat(f64::NAN).take(win - 1).chain(
         smooth::sma(data, window)
             .zip(data)
             .map(|(avg, actual)| {
-                let dev: f64 = actual - avg;
+                let dev: f64 = actual.to_f64().unwrap() - avg;
                 (dev.max(0.0), dev.min(0.0).abs())
             })
             .collect::<Vec<(f64, f64)>>()
@@ -670,10 +695,10 @@ pub fn tii(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
     )
 }
 
-fn stoch<'a>(
-    high: &'a [f64],
-    low: &'a [f64],
-    close: &'a [f64],
+fn stoch<'a, T: ToPrimitive>(
+    high: &'a [T],
+    low: &'a [T],
+    close: &'a [T],
     window: usize,
     smooth_win: usize,
 ) -> impl Iterator<Item = (f64, f64)> + 'a {
@@ -684,9 +709,13 @@ fn stoch<'a>(
             &close[(window - 1)..]
         )
         .map(|(h, l, c)| {
-            let hh = h.iter().fold(f64::NAN, |state, &x| state.max(x));
-            let ll = l.iter().fold(f64::NAN, |state, &x| state.min(x));
-            100.0 * (c - ll) / (hh - ll)
+            let hh = h
+                .iter()
+                .fold(f64::NAN, |state, x| state.max(x.to_f64().unwrap()));
+            let ll = l
+                .iter()
+                .fold(f64::NAN, |state, x| state.min(x.to_f64().unwrap()));
+            100.0 * (c.to_f64().unwrap() - ll) / (hh - ll)
         })
         .collect::<Vec<f64>>(),
         smooth_win,
@@ -726,16 +755,20 @@ fn stoch<'a>(
 ///     3).collect::<Vec<(f64, f64)>>();
 ///
 /// ```
-pub fn stochastic<'a>(
-    high: &'a [f64],
-    low: &'a [f64],
-    close: &'a [f64],
+pub fn stochastic<'a, T: ToPrimitive>(
+    high: &'a [T],
+    low: &'a [T],
+    close: &'a [T],
     window: usize,
 ) -> impl Iterator<Item = (f64, f64)> + 'a {
     stoch(high, low, close, window, 3)
 }
 
-fn _stc(series: &[f64], window: usize, smooth: usize) -> impl Iterator<Item = f64> + '_ {
+fn _stc<T: ToPrimitive>(
+    series: &[T],
+    window: usize,
+    smooth: usize,
+) -> impl Iterator<Item = f64> + '_ {
     smooth::wilder(
         &series
             .windows(window)
@@ -743,10 +776,10 @@ fn _stc(series: &[f64], window: usize, smooth: usize) -> impl Iterator<Item = f6
                 let mut hh = f64::NAN;
                 let mut ll = f64::NAN;
                 for x in w {
-                    hh = hh.max(*x);
-                    ll = ll.min(*x);
+                    hh = hh.max(x.to_f64().unwrap());
+                    ll = ll.min(x.to_f64().unwrap());
                 }
-                100.0 * (w.last().unwrap() - ll) / (hh - ll)
+                100.0 * (w[w.len() - 1].to_f64().unwrap() - ll) / (hh - ll)
             })
             .collect::<Vec<f64>>(),
         smooth,
@@ -779,8 +812,8 @@ fn _stc(series: &[f64], window: usize, smooth: usize) -> impl Iterator<Item = f6
 ///     2, 3, 5).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn stc(
-    close: &[f64],
+pub fn stc<T: ToPrimitive>(
+    close: &[T],
     window: usize,
     short: usize,
     long: usize,
@@ -833,22 +866,22 @@ pub fn stc(
 ///     6).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn relative_vigor<'a>(
-    open: &'a [f64],
-    high: &'a [f64],
-    low: &'a [f64],
-    close: &'a [f64],
+pub fn relative_vigor<'a, T: ToPrimitive>(
+    open: &'a [T],
+    high: &'a [T],
+    low: &'a [T],
+    close: &'a [T],
     window: usize,
 ) -> impl Iterator<Item = f64> + 'a {
     let close_open = open
         .iter()
         .zip(close)
-        .map(|(o, c)| c - o)
+        .map(|(o, c)| c.to_f64().unwrap() - o.to_f64().unwrap())
         .collect::<Vec<f64>>();
     let high_low = high
         .iter()
         .zip(low)
-        .map(|(h, l)| h - l)
+        .map(|(h, l)| h.to_f64().unwrap() - l.to_f64().unwrap())
         .collect::<Vec<f64>>();
 
     let numerator = close_open
@@ -891,15 +924,15 @@ pub fn relative_vigor<'a>(
 ///     6).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn fisher<'a>(
-    high: &'a [f64],
-    low: &'a [f64],
+pub fn fisher<'a, T: ToPrimitive>(
+    high: &'a [T],
+    low: &'a [T],
     window: usize,
 ) -> impl Iterator<Item = f64> + 'a {
     let hl2 = high
         .iter()
         .zip(low)
-        .map(|(h, l)| (h + l) / 2.0)
+        .map(|(h, l)| (h.to_f64().unwrap() + l.to_f64().unwrap()) / 2.0)
         .collect::<Vec<f64>>();
     iter::repeat(f64::NAN).take(window - 1).chain(
         hl2.windows(window)
@@ -945,8 +978,8 @@ pub fn fisher<'a>(
 ///     2, 3).collect::<Vec<(f64, f64)>>();
 ///
 /// ```
-pub fn rainbow(
-    data: &[f64],
+pub fn rainbow<T: ToPrimitive>(
+    data: &[T],
     window: usize,
     lookback: usize,
 ) -> impl Iterator<Item = (f64, f64)> + '_ {
@@ -970,11 +1003,12 @@ pub fn rainbow(
             let mut hlookback = f64::MIN;
             let mut llookback = f64::MAX;
             ((i - (lookback - 1)).max(0)..=i).for_each(|x| {
-                let val = data[x];
+                let val = data[x].to_f64().unwrap();
                 hlookback = hlookback.max(val);
                 llookback = llookback.min(val);
             });
-            let osc = 100.0 * (data[i] - total / 10.0) / (hlookback - llookback).max(0.000001);
+            let osc = 100.0 * (data[i].to_f64().unwrap() - total / 10.0)
+                / (hlookback - llookback).max(0.000001);
             let band = 100.0 * (hsma - lsma) / (hlookback - llookback).max(0.000001);
             (osc, band)
         }))
@@ -1002,8 +1036,8 @@ pub fn rainbow(
 ///     2, 3, 6).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn coppock(
-    data: &[f64],
+pub fn coppock<T: ToPrimitive>(
+    data: &[T],
     window: usize,
     short: usize,
     long: usize,
@@ -1011,7 +1045,12 @@ pub fn coppock(
     iter::repeat(f64::NAN).take(long).chain(
         smooth::wma(
             &(long..data.len())
-                .map(|x| 100.0 * (data[x] / data[x - short] + data[x] / data[x - long] - 2.0))
+                .map(|x| {
+                    100.0
+                        * (data[x].to_f64().unwrap() / data[x - short].to_f64().unwrap()
+                            + data[x].to_f64().unwrap() / data[x - long].to_f64().unwrap()
+                            - 2.0)
+                })
                 .collect::<Vec<f64>>(),
             window,
         )
@@ -1042,10 +1081,10 @@ pub fn coppock(
 ///     6).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn roc(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
+pub fn roc<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f64> + '_ {
     iter::repeat(f64::NAN).take(window - 1).chain(
         data.windows(window)
-            .map(|w| 100.0 * (w[w.len() - 1] / w[0] - 1.0)),
+            .map(|w| 100.0 * (w[w.len() - 1].to_f64().unwrap() / w[0].to_f64().unwrap() - 1.0)),
     )
 }
 
@@ -1074,16 +1113,19 @@ pub fn roc(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
 ///     3).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn bal_power<'a>(
-    open: &'a [f64],
-    high: &'a [f64],
-    low: &'a [f64],
-    close: &'a [f64],
+pub fn bal_power<'a, T: ToPrimitive>(
+    open: &'a [T],
+    high: &'a [T],
+    low: &'a [T],
+    close: &'a [T],
     window: usize,
 ) -> impl Iterator<Item = f64> + 'a {
     smooth::ewma(
         &izip!(open, high, low, close)
-            .map(|(o, h, l, c)| (c - o) / (h - l))
+            .map(|(o, h, l, c)| {
+                (c.to_f64().unwrap() - o.to_f64().unwrap())
+                    / (h.to_f64().unwrap() - l.to_f64().unwrap())
+            })
             .collect::<Vec<f64>>(),
         window,
     )
@@ -1114,10 +1156,10 @@ pub fn bal_power<'a>(
 ///     6).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn disparity(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
+pub fn disparity<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f64> + '_ {
     data.iter()
         .zip(smooth::ewma(data, window))
-        .map(|(x, ma)| 100.0 * (x - ma) / ma)
+        .map(|(x, ma)| 100.0 * (x.to_f64().unwrap() - ma) / ma)
 }
 
 /// Quick Stick
@@ -1147,15 +1189,15 @@ pub fn disparity(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ 
 ///     6).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn qstick<'a>(
-    open: &'a [f64],
-    close: &'a [f64],
+pub fn qstick<'a, T: ToPrimitive>(
+    open: &'a [T],
+    close: &'a [T],
     window: usize,
 ) -> impl Iterator<Item = f64> + 'a {
     let q = close
         .iter()
         .zip(open.iter())
-        .map(|(c, o)| c - o)
+        .map(|(c, o)| c.to_f64().unwrap() - o.to_f64().unwrap())
         .collect::<Vec<f64>>();
     smooth::ewma(&q, window).collect::<Vec<f64>>().into_iter()
 }
@@ -1182,7 +1224,7 @@ pub fn qstick<'a>(
 ///     6).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn cog(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
+pub fn cog<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f64> + '_ {
     let weights: Vec<f64> = (1..=window).map(|x| x as f64).collect();
     iter::repeat(f64::NAN)
         .take(window - 1)
@@ -1190,9 +1232,9 @@ pub fn cog(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
             -w.iter()
                 .rev()
                 .zip(weights.iter())
-                .map(|(e, i)| e * i)
+                .map(|(e, i)| e.to_f64().unwrap() * i)
                 .sum::<f64>()
-                / w.iter().sum::<f64>()
+                / w.iter().filter_map(|x| x.to_f64()).sum::<f64>()
         }))
 }
 
@@ -1224,10 +1266,14 @@ pub fn cog(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
 ///     6).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn psych(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
+pub fn psych<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f64> + '_ {
     iter::repeat(f64::NAN).take(window).chain(
         data.windows(2)
-            .map(|pair| (pair[1] - pair[0]).signum().max(0.0))
+            .map(|pair| {
+                (pair[1].to_f64().unwrap() - pair[0].to_f64().unwrap())
+                    .signum()
+                    .max(0.0)
+            })
             .collect::<Vec<f64>>()
             .windows(window)
             .map(|w| w.iter().sum::<f64>() * 100.0 / window as f64)
@@ -1258,15 +1304,15 @@ pub fn psych(data: &[f64], window: usize) -> impl Iterator<Item = f64> + '_ {
 ///     3, 6, 3).collect::<Vec<(f64,f64)>>();
 ///
 /// ```
-pub fn tsi(
-    data: &[f64],
+pub fn tsi<T: ToPrimitive>(
+    data: &[T],
     short: usize,
     long: usize,
     signal: usize,
 ) -> impl Iterator<Item = (f64, f64)> + '_ {
     let diffs = data
         .windows(2)
-        .map(|pair| pair[1] - pair[0])
+        .map(|pair| pair[1].to_f64().unwrap() - pair[0].to_f64().unwrap())
         .collect::<Vec<f64>>();
     let long_diff = smooth::ewma(&diffs, long)
         .skip(long - 1)
@@ -1312,7 +1358,7 @@ pub fn tsi(
 /// momentum::special_k(&vec![1.0; 50]).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn special_k(data: &[f64]) -> impl Iterator<Item = f64> + '_ {
+pub fn special_k<T: ToPrimitive>(data: &[T]) -> impl Iterator<Item = f64> + '_ {
     const ROCS: [usize; 12] = [10, 15, 20, 30, 50, 65, 75, 100, 195, 265, 390, 530];
     const PERIODS: [usize; 12] = [10, 10, 10, 15, 50, 65, 75, 100, 130, 130, 130, 195];
     const MULTIPLIERS: [f64; 12] = [1.0, 2.0, 3.0, 4.0, 1.0, 2.0, 3.0, 4.0, 1.0, 2.0, 3.0, 4.0];
@@ -1340,8 +1386,8 @@ pub fn special_k(data: &[f64]) -> impl Iterator<Item = f64> + '_ {
 /// momentum::kst(&vec![1.0; 50], Some([10, 15, 25, 30]), None).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn kst(
-    data: &[f64],
+pub fn kst<T: ToPrimitive>(
+    data: &[T],
     rocs: Option<[usize; 4]>,
     windows: Option<[usize; 4]>,
 ) -> impl Iterator<Item = f64> + '_ {
@@ -1351,8 +1397,8 @@ pub fn kst(
     prings(data, &rocs, &periods, &MULTIPLIERS)
 }
 
-fn prings<'a, 'b>(
-    data: &'a [f64],
+fn prings<'a, 'b, T: ToPrimitive>(
+    data: &'a [T],
     rocs: &'b [usize],
     periods: &'b [usize],
     multipliers: &'b [f64],
@@ -1362,7 +1408,7 @@ fn prings<'a, 'b>(
         let roc_win = roc_win + 1;
         let roc = data
             .windows(roc_win)
-            .map(|w| 100.0 * (w[roc_win - 1] / w[0] - 1.0))
+            .map(|w| 100.0 * (w[roc_win - 1].to_f64().unwrap() / w[0].to_f64().unwrap() - 1.0))
             .collect::<Vec<f64>>();
         if !roc.is_empty() {
             smooth::sma(&roc, *ma_win)
@@ -1401,8 +1447,8 @@ fn prings<'a, 'b>(
 ///     2, 3, 2).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn derivative(
-    data: &[f64],
+pub fn derivative<T: ToPrimitive>(
+    data: &[T],
     win1: usize,
     win2: usize,
     signal: usize,
@@ -1440,20 +1486,24 @@ pub fn derivative(
 /// ```
 /// use traquer::momentum;
 ///
-/// momentum::derivative(
-///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0,2.0,3.0,4.0,5.0,6.0,4.0],
-///     2, 3, 2).collect::<Vec<f64>>();
+/// momentum::cci(
+///     &[1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0,2.0,3.0,4.0,5.0,6.0,4.0],
+///     &[1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0,2.0,3.0,4.0,5.0,6.0,4.0],
+///     &[1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0,2.0,3.0,4.0,5.0,6.0,4.0],
+///     6).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn cci<'a>(
-    high: &'a [f64],
-    low: &'a [f64],
-    close: &'a [f64],
+pub fn cci<'a, T: ToPrimitive>(
+    high: &'a [T],
+    low: &'a [T],
+    close: &'a [T],
     window: usize,
 ) -> impl Iterator<Item = f64> + 'a {
     iter::repeat(f64::NAN).take(window - 1).chain(
         izip!(high, low, close)
-            .map(|(h, l, c)| (h + l + c) / 3.0)
+            .map(|(h, l, c)| {
+                (h.to_f64().unwrap() + l.to_f64().unwrap() + c.to_f64().unwrap()) / 3.0
+            })
             .collect::<Vec<f64>>()
             .windows(window)
             .map(|w| {
@@ -1490,7 +1540,11 @@ pub fn cci<'a>(
 ///     3, 3).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn qqe(data: &[f64], window: usize, smoothing: usize) -> impl Iterator<Item = f64> + '_ {
+pub fn qqe<T: ToPrimitive>(
+    data: &[T],
+    window: usize,
+    smoothing: usize,
+) -> impl Iterator<Item = f64> + '_ {
     let qqe_factor = 4.236;
     let rsi_vals = rsi(data, window).skip(window).collect::<Vec<f64>>();
     let rsi_ma = smooth::ewma(&rsi_vals, smoothing)
@@ -1563,11 +1617,19 @@ pub fn qqe(data: &[f64], window: usize, smoothing: usize) -> impl Iterator<Item 
 ///     3).collect::<Vec<f64>>();
 ///
 /// ```
-pub fn deli<'a>(high: &'a [f64], low: &'a [f64], window: usize) -> impl Iterator<Item = f64> + 'a {
+pub fn deli<'a, T: ToPrimitive>(
+    high: &'a [T],
+    low: &'a [T],
+    window: usize,
+) -> impl Iterator<Item = f64> + 'a {
     let quotes = high
         .windows(2)
         .zip(low.windows(2))
-        .map(|(h, l)| (h[0].max(h[1]) + l[0].min(l[1])) / 2.0)
+        .map(|(h, l)| {
+            (h[0].to_f64().unwrap().max(h[1].to_f64().unwrap())
+                + l[0].to_f64().unwrap().min(l[1].to_f64().unwrap()))
+                / 2.0
+        })
         .collect::<Vec<f64>>();
     let dsp = smooth::ewma(&quotes, window)
         .zip(smooth::ewma(&quotes, 2 * window))
@@ -1606,8 +1668,8 @@ pub fn deli<'a>(high: &'a [f64], low: &'a [f64], window: usize) -> impl Iterator
 ///     6, 4, 4, 3, 3, 2).collect::<Vec<(f64, f64)>>();
 ///
 /// ```
-pub fn gator(
-    data: &[f64],
+pub fn gator<T: ToPrimitive>(
+    data: &[T],
     jaw_win: usize,
     jaw_offset: usize,
     teeth_win: usize,
@@ -1654,10 +1716,10 @@ pub fn gator(
 ///     3, 2, None, Some(1.0)).collect::<Vec<(f64, f64, f64)>>();
 ///
 /// ```
-pub fn kdj<'a>(
-    high: &'a [f64],
-    low: &'a [f64],
-    close: &'a [f64],
+pub fn kdj<'a, T: ToPrimitive>(
+    high: &'a [T],
+    low: &'a [T],
+    close: &'a [T],
     k_win: usize,
     d_win: usize,
     k_factor: Option<f64>,
