@@ -24,7 +24,7 @@ use num_traits::cast::ToPrimitive;
 /// ```
 /// use traquer::statistic::regression;
 ///
-/// regression::mse(&vec![1.0,2.0,3.0,4.0,5.0], &vec![1.0,2.0,3.0,4.0,5.0]).collect::<Vec<f64>>();
+/// regression::mse(&[1.0,2.0,3.0,4.0,5.0], &[1.0,2.0,3.0,4.0,5.0]).collect::<Vec<f64>>();
 /// ```
 pub fn mse<'a, T: ToPrimitive>(data: &'a [T], estimate: &'a [T]) -> impl Iterator<Item = f64> + 'a {
     data.iter()
@@ -55,7 +55,7 @@ pub fn mse<'a, T: ToPrimitive>(data: &'a [T], estimate: &'a [T]) -> impl Iterato
 /// ```
 /// use traquer::statistic::regression;
 ///
-/// regression::rmse(&vec![1.0,2.0,3.0,4.0,5.0], &vec![1.0,2.0,3.0,4.0,5.0]).collect::<Vec<f64>>();
+/// regression::rmse(&[1.0,2.0,3.0,4.0,5.0], &[1.0,2.0,3.0,4.0,5.0]).collect::<Vec<f64>>();
 /// ```
 pub fn rmse<'a, T: ToPrimitive>(
     data: &'a [T],
@@ -90,7 +90,7 @@ pub fn rmse<'a, T: ToPrimitive>(
 /// ```
 /// use traquer::statistic::regression;
 ///
-/// regression::mae(&vec![1.0,2.0,3.0,4.0,5.0], &vec![1.0,2.0,3.0,4.0,5.0]).collect::<Vec<f64>>();
+/// regression::mae(&[1.0,2.0,3.0,4.0,5.0], &[1.0,2.0,3.0,4.0,5.0]).collect::<Vec<f64>>();
 /// ```
 pub fn mae<'a, T: ToPrimitive>(data: &'a [T], estimate: &'a [T]) -> impl Iterator<Item = f64> + 'a {
     data.iter()
@@ -121,7 +121,7 @@ pub fn mae<'a, T: ToPrimitive>(data: &'a [T], estimate: &'a [T]) -> impl Iterato
 /// ```
 /// use traquer::statistic::regression;
 ///
-/// regression::mape(&vec![1.0,2.0,3.0,4.0,5.0], &vec![1.0,2.0,3.0,4.0,5.0]).collect::<Vec<f64>>();
+/// regression::mape(&[1.0,2.0,3.0,4.0,5.0], &[1.0,2.0,3.0,4.0,5.0]).collect::<Vec<f64>>();
 /// ```
 pub fn mape<'a, T: ToPrimitive>(
     data: &'a [T],
@@ -157,7 +157,7 @@ pub fn mape<'a, T: ToPrimitive>(
 /// ```
 /// use traquer::statistic::regression;
 ///
-/// regression::smape(&vec![1.0,2.0,3.0,4.0,5.0], &vec![1.0,2.0,3.0,4.0,5.0]).collect::<Vec<f64>>();
+/// regression::smape(&[1.0,2.0,3.0,4.0,5.0], &[1.0,2.0,3.0,4.0,5.0]).collect::<Vec<f64>>();
 /// ```
 pub fn smape<'a, T: ToPrimitive>(
     data: &'a [T],
@@ -192,7 +192,7 @@ pub fn smape<'a, T: ToPrimitive>(
 /// ```
 /// use traquer::statistic::regression;
 ///
-/// regression::mda(&vec![1.0,2.0,3.0,4.0,5.0], &vec![1.0,2.0,3.0,4.0,5.0]).collect::<Vec<f64>>();
+/// regression::mda(&[1.0,2.0,3.0,4.0,5.0], &[1.0,2.0,3.0,4.0,5.0]).collect::<Vec<f64>>();
 /// ```
 pub fn mda<'a, T: ToPrimitive>(data: &'a [T], estimate: &'a [T]) -> impl Iterator<Item = f64> + 'a {
     iter::once(f64::NAN).chain(data[1..].iter().enumerate().zip(&estimate[1..]).scan(

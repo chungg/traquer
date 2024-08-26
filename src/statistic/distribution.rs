@@ -22,7 +22,7 @@ use num_traits::cast::ToPrimitive;
 /// ```
 /// use traquer::statistic::distribution;
 ///
-/// distribution::variance(&vec![1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
+/// distribution::variance(&[1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
 /// ```
 pub fn variance<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f64> + '_ {
     iter::repeat(f64::NAN)
@@ -61,7 +61,7 @@ pub(crate) fn _std_dev<T: ToPrimitive>(
 /// ```
 /// use traquer::statistic::distribution;
 ///
-/// distribution::std_dev(&vec![1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
+/// distribution::std_dev(&[1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
 /// ```
 pub fn std_dev<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f64> + '_ {
     iter::repeat(f64::NAN)
@@ -86,7 +86,7 @@ pub fn std_dev<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item 
 /// ```
 /// use traquer::statistic::distribution;
 ///
-/// distribution::zscore(&vec![1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
+/// distribution::zscore(&[1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
 /// ```
 pub fn zscore<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f64> + '_ {
     iter::repeat(f64::NAN)
@@ -120,7 +120,7 @@ pub fn zscore<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item =
 /// ```
 /// use traquer::statistic::distribution;
 ///
-/// distribution::mad(&vec![1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
+/// distribution::mad(&[1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
 /// ```
 pub fn mad<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f64> + '_ {
     iter::repeat(f64::NAN)
@@ -152,7 +152,7 @@ pub fn mad<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f6
 /// ```
 /// use traquer::statistic::distribution;
 ///
-/// distribution::cv(&vec![1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
+/// distribution::cv(&[1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
 /// ```
 pub fn cv<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f64> + '_ {
     iter::repeat(f64::NAN)
@@ -185,7 +185,7 @@ pub fn cv<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f64
 /// ```
 /// use traquer::statistic::distribution;
 ///
-/// distribution::kurtosis(&vec![1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
+/// distribution::kurtosis(&[1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
 /// ```
 pub fn kurtosis<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f64> + '_ {
     let adj1 = ((window + 1) * window * (window - 1)) as f64 / ((window - 2) * (window - 3)) as f64;
@@ -229,7 +229,7 @@ pub fn kurtosis<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item
 /// ```
 /// use traquer::statistic::distribution;
 ///
-/// distribution::skew(&vec![1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
+/// distribution::skew(&[1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
 /// ```
 pub fn skew<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f64> + '_ {
     iter::repeat(f64::NAN)
@@ -284,7 +284,7 @@ fn quickselect<T: ToPrimitive + PartialOrd + Clone>(data: &mut [T], k: usize) ->
 /// ```
 /// use traquer::statistic::distribution;
 ///
-/// distribution::median(&vec![1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
+/// distribution::median(&[1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
 /// ```
 pub fn median<T: ToPrimitive + PartialOrd + Clone>(
     data: &[T],
@@ -303,7 +303,7 @@ pub fn median<T: ToPrimitive + PartialOrd + Clone>(
 /// ```
 /// use traquer::statistic::distribution;
 ///
-/// distribution::quantile(&vec![1.0,2.0,3.0,4.0,5.0], 3, 90.0).collect::<Vec<f64>>();
+/// distribution::quantile(&[1.0,2.0,3.0,4.0,5.0], 3, 90.0).collect::<Vec<f64>>();
 /// ```
 pub fn quantile<T: ToPrimitive + PartialOrd + Clone>(
     data: &[T],
