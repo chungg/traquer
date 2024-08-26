@@ -805,9 +805,9 @@ pub fn vwma<'a, T: ToPrimitive, U: ToPrimitive>(
 /// ```
 /// use traquer::volume;
 ///
-/// volume::vwma(
+/// volume::vpt(
 ///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
-///     &vec![1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0], 3).collect::<Vec<f64>>();
+///     &vec![1,2,3,4,5,6,4,5]).collect::<Vec<f64>>();
 ///
 /// ```
 pub fn vpt<'a, T: ToPrimitive, U: ToPrimitive>(
