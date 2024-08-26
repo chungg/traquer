@@ -8,6 +8,7 @@
 use std::iter;
 
 use itertools::izip;
+use num_traits::cast::ToPrimitive;
 
 use crate::smooth;
 use crate::trend::alligator;
@@ -503,11 +504,11 @@ pub fn pgo<'a>(
         .into_iter()
 }
 
-pub(crate) fn _swing<'a>(
-    open: &'a [f64],
-    high: &'a [f64],
-    low: &'a [f64],
-    close: &'a [f64],
+pub(crate) fn _swing<'a, T: ToPrimitive>(
+    open: &'a [T],
+    high: &'a [T],
+    low: &'a [T],
+    close: &'a [T],
     limit: f64,
 ) -> impl Iterator<Item = f64> + 'a {
     izip!(
@@ -519,6 +520,15 @@ pub(crate) fn _swing<'a>(
         &close[1..],
     )
     .map(move |(prevo, o, h, l, prevc, c)| {
+        let (prevo, o, h, l, prevc, c) = (
+            prevo.to_f64().unwrap(),
+            o.to_f64().unwrap(),
+            h.to_f64().unwrap(),
+            l.to_f64().unwrap(),
+            prevc.to_f64().unwrap(),
+            c.to_f64().unwrap(),
+        );
+
         let r1 = (h - prevc).abs();
         let r2 = (l - prevc).abs();
         let r3 = h - l;
