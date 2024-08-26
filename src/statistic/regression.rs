@@ -1,4 +1,4 @@
-//! Regression functions
+//! Regression Functions
 //!
 //! Provides functions for estimating the relationships between a dependent variable
 //! and one or more independent variables. Potentially useful for forecasting and
