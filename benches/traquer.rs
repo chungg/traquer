@@ -665,6 +665,14 @@ fn criterion_benchmark(c: &mut Criterion) {
             )
         })
     });
+    c.bench_function("stats-dist-sample_entropy", |b| {
+        b.iter(|| {
+            black_box(
+                statistic::distribution::sample_entropy(&stats.close, 16, None, None)
+                    .collect::<Vec<_>>(),
+            )
+        })
+    });
 
     c.bench_function("stats-regress-mse", |b| {
         b.iter(|| {

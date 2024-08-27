@@ -196,18 +196,18 @@ pub fn approx_entropy<T: ToPrimitive>(
         let win_len = ts.len() - m + 1;
         let mut cm = 0.0;
         for i in 0..win_len {
-            let mut count = 0.0;
+            let mut count = 0;
             for j in 0..win_len {
                 count += (ts[i..i + m]
                     .iter()
                     .zip(&ts[j..j + m])
                     .map(|(x, y)| (x.to_f64().unwrap() - y.to_f64().unwrap()).abs())
                     .fold(f64::NAN, f64::max)
-                    <= tol) as u8 as f64;
+                    <= tol) as u8;
                 // any() is faster when tolerance is very low and slower when high.
-                // finding max is consistently in between.
+                // finding max is faster for default.
             }
-            cm += (count / win_len as f64).ln();
+            cm += (count as f64 / win_len as f64).ln();
         }
         cm / win_len as f64
     }
@@ -219,6 +219,56 @@ pub fn approx_entropy<T: ToPrimitive>(
             (phi(w, run_length + 1, tolerance) - phi(w, run_length, tolerance)).abs()
         }),
     )
+}
+
+/// Sample Entropy
+///
+/// A measure of complexity but it does not include self-similar patterns as approximate entropy does.
+///
+/// ## Sources
+///
+/// [[1]](https://en.wikipedia.org/wiki/Sample_entropy)
+/// [[2]](https://www.mdpi.com/1099-4300/21/6/541)
+///
+/// # Examples
+///
+/// ```
+/// use traquer::statistic::distribution;
+///
+/// distribution::sample_entropy(
+///     &[1.0,2.0,3.0,4.0,5.0], 3, Some(2), Some(0.1)
+/// ).collect::<Vec<f64>>();
+/// ```
+pub fn sample_entropy<T: ToPrimitive>(
+    data: &[T],
+    window: usize,
+    run_length: Option<usize>,
+    tolerance: Option<f64>,
+) -> impl Iterator<Item = f64> + '_ {
+    fn matches<T: ToPrimitive>(ts: &[T], m: usize, tol: f64) -> f64 {
+        let win_len = ts.len() - m + 1;
+        let mut count = 0;
+        for i in 0..win_len {
+            for j in (i + 1)..win_len {
+                count += (ts[i..i + m]
+                    .iter()
+                    .zip(ts[j..j + m].iter())
+                    .map(|(x, y)| (x.to_f64().unwrap() - y.to_f64().unwrap()).abs())
+                    .fold(f64::NAN, f64::max)
+                    <= tol) as u8;
+            }
+        }
+        // double count for both (i<->j). not really necessary as used in ratio.
+        2.0 * count as f64 + f64::EPSILON
+    }
+
+    let run_length = run_length.unwrap_or(2);
+    let tolerance = tolerance.unwrap_or_else(|| _std_dev(data, data.len()).last().unwrap() * 0.2);
+    iter::repeat(f64::NAN)
+        .take(window - 1)
+        .chain(data.windows(window).map(move |w| {
+            -(matches(w, run_length + 1, tolerance) / (matches(w, run_length, tolerance))).ln()
+        }))
 }
 
 /// Kurtosis
