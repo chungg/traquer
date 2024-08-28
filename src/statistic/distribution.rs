@@ -167,6 +167,60 @@ pub fn cv<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f64
         }))
 }
 
+/// Approximate Entropy
+///
+/// A measure used to quantify the amount of regularity and the unpredictability of fluctuations
+/// over time-series data.
+///
+/// ## Sources
+///
+/// [[1]](https://en.wikipedia.org/wiki/Approximate_entropy)
+/// [[2]](https://www.nature.com/articles/s41598-019-49320-9)
+///
+/// # Examples
+///
+/// ```
+/// use traquer::statistic::distribution;
+///
+/// distribution::approx_entropy(
+///     &[1.0,2.0,3.0,4.0,5.0], 3, Some(2), Some(0.1)
+/// ).collect::<Vec<f64>>();
+/// ```
+pub fn approx_entropy<T: ToPrimitive>(
+    data: &[T],
+    window: usize,
+    run_length: Option<usize>,
+    tolerance: Option<f64>,
+) -> impl Iterator<Item = f64> + '_ {
+    fn phi<T: ToPrimitive>(ts: &[T], m: usize, tol: f64) -> f64 {
+        let win_len = ts.len() - m + 1;
+        let mut cm = 0.0;
+        for i in 0..win_len {
+            let mut count = 0.0;
+            for j in 0..win_len {
+                count += (ts[i..i + m]
+                    .iter()
+                    .zip(&ts[j..j + m])
+                    .map(|(x, y)| (x.to_f64().unwrap() - y.to_f64().unwrap()).abs())
+                    .fold(f64::NAN, f64::max)
+                    <= tol) as u8 as f64;
+                // any() is faster when tolerance is very low and slower when high.
+                // finding max is consistently in between.
+            }
+            cm += (count / win_len as f64).ln();
+        }
+        cm / win_len as f64
+    }
+
+    let run_length = run_length.unwrap_or(2);
+    let tolerance = tolerance.unwrap_or_else(|| _std_dev(data, data.len()).last().unwrap() * 0.2);
+    iter::repeat(f64::NAN).take(window - 1).chain(
+        data.windows(window).map(move |w| {
+            (phi(w, run_length + 1, tolerance) - phi(w, run_length, tolerance)).abs()
+        }),
+    )
+}
+
 /// Kurtosis
 ///
 /// A measure of the "tailedness" of the probability distribution of a real-valued random
