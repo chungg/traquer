@@ -244,3 +244,46 @@ fn test_hoeffd() {
         result[16 - 1..]
     );
 }
+
+#[test]
+fn test_dcor() {
+    let stats = common::test_data();
+    let stats2 = common::test_data_path("./tests/sp500.input");
+    let ln_ret1 = stats
+        .close
+        .iter()
+        .zip(&stats.close[1..])
+        .map(|(x, y)| (y / x).ln())
+        .collect::<Vec<f64>>();
+    let ln_ret2 = stats2
+        .close
+        .iter()
+        .zip(&stats2.close[1..])
+        .map(|(x, y)| (y / x).ln())
+        .collect::<Vec<f64>>();
+    let result = correlation::dcor(&ln_ret1, &ln_ret2, 16).collect::<Vec<_>>();
+    assert_eq!(ln_ret1.len(), result.len());
+    assert_eq!(
+        vec![
+            0.39390614319365574,
+            0.39845847602318907,
+            0.4012684752778961,
+            0.4532725521408008,
+            0.5335623994772698,
+            0.5899262972738498,
+            0.6886450053961184,
+            0.7578847633388898,
+            0.7748853182014356,
+            0.7670646492585647,
+            0.8058436110412499,
+            0.818014456822133,
+            0.8064793069072755,
+            0.687572965245447,
+            0.6362198562198043,
+            0.5628963827860937,
+            0.5699710776508861,
+            0.44892542156220505
+        ],
+        result[16 - 1..]
+    );
+}
