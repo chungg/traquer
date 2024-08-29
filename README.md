@@ -16,7 +16,7 @@ that you can beat the market.
 
 ## types of indicators
 
-130+ indicators available across multiple categories. Even across categories, indicators often
+140+ indicators available across multiple categories. Even across categories, indicators often
 behave quite similarly depending on window size. The classfication/api may change
 (if egregiously wrong).
 
@@ -71,6 +71,3 @@ encouraged.
 - cargo test
 - cargo bench
 - cargo run --example file_json
-
-## todo
-- handle div by zero scenarios
