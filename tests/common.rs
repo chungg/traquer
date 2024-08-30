@@ -7,7 +7,7 @@ pub struct SecStats {
     pub low: Vec<f64>,
     pub open: Vec<f64>,
     pub close: Vec<f64>,
-    pub volume: Vec<f64>,
+    pub volume: Vec<u64>,
 }
 
 pub fn test_data() -> SecStats {
