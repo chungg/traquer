@@ -450,9 +450,14 @@ pub fn dcor<'a, T: ToPrimitive>(
         let n = x.len();
         // flattened NxN distance matrix, where [x_00..x0j, ... ,x_i0..x_ij]
         let mut matrix = vec![0.0; n * n];
+        let mut matrix_sum = 0_f64;
         for i in 0..n {
-            for j in 0..n {
-                matrix[(i * n) + j] = (x[i].to_f64().unwrap() - x[j].to_f64().unwrap()).abs();
+            for j in i..n {
+                let idx = (i * n) + j;
+                let mirror_idx = idx / n + (idx % n) * n;
+                matrix[idx] = (x[i].to_f64().unwrap() - x[j].to_f64().unwrap()).abs();
+                matrix[mirror_idx] = matrix[idx];
+                matrix_sum += matrix[idx] * 2.;
             }
         }
 
@@ -461,18 +466,18 @@ pub fn dcor<'a, T: ToPrimitive>(
             .step_by(n)
             .map(|i| matrix[i..i + n].iter().sum::<f64>() / n as f64)
             .collect();
-        let col_means: Vec<f64> = (0..n)
-            .map(|i| {
-                (i..matrix.len())
-                    .step_by(n)
-                    .fold(0.0, |acc, j| acc + matrix[j])
-                    / n as f64
-            })
-            .collect();
-        let matrix_mean: f64 = matrix.iter().sum::<f64>() / (n * n) as f64;
-        for i in 0..n {
-            for j in 0..n {
-                matrix[(i * n) + j] += -row_means[i] - col_means[j] + matrix_mean;
+        let col_means = &row_means;
+        // undo the double count of mirror line rather than add if clause above
+        matrix_sum -= (0..matrix.len())
+            .step_by(n + 1)
+            .fold(0.0, |acc, x| acc + matrix[x]);
+        let matrix_mean: f64 = matrix_sum / (n * n) as f64;
+        for (i, row_mean) in row_means.iter().enumerate() {
+            for (j, col_mean) in col_means.iter().enumerate().skip(i) {
+                let idx = (i * n) + j;
+                let mirror_idx = idx / n + (idx % n) * n;
+                matrix[idx] += -row_mean - col_mean + matrix_mean;
+                matrix[mirror_idx] = matrix[idx];
             }
         }
         matrix
@@ -492,20 +497,10 @@ pub fn dcor<'a, T: ToPrimitive>(
                     .sum::<f64>()
                     / window.pow(2) as f64)
                     .sqrt();
-                let dvar_x = (centred_x
-                    .iter()
-                    .zip(&centred_x)
-                    .map(|(a, b)| a * b)
-                    .sum::<f64>()
-                    / window.pow(2) as f64)
-                    .sqrt();
-                let dvar_y = (centred_y
-                    .iter()
-                    .zip(&centred_y)
-                    .map(|(a, b)| a * b)
-                    .sum::<f64>()
-                    / window.pow(2) as f64)
-                    .sqrt();
+                let dvar_x =
+                    (centred_x.iter().map(|a| a * a).sum::<f64>() / window.pow(2) as f64).sqrt();
+                let dvar_y =
+                    (centred_y.iter().map(|a| a * a).sum::<f64>() / window.pow(2) as f64).sqrt();
 
                 dcov / (dvar_x * dvar_y).sqrt()
             }),

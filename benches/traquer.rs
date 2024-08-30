@@ -336,7 +336,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     });
     c.bench_function("sig-trend-zigzag", |b| {
         b.iter(|| {
-            black_box(trend::zigzag(&stats.close, &stats.close, Some(10.0)).collect::<Vec<f64>>())
+            black_box(trend::zigzag(&stats.high, &stats.low, Some(10.0)).collect::<Vec<f64>>())
         })
     });
     c.bench_function("sig-trend-chandelier", |b| {
@@ -586,33 +586,31 @@ fn criterion_benchmark(c: &mut Criterion) {
     });
 
     c.bench_function("correlation-pcc", |b| {
-        b.iter(|| black_box(correlation::pcc(&stats.close, &stats.close, 16).collect::<Vec<_>>()))
+        b.iter(|| black_box(correlation::pcc(&stats.open, &stats.close, 16).collect::<Vec<_>>()))
     });
     c.bench_function("correlation-rsq", |b| {
-        b.iter(|| black_box(correlation::rsq(&stats.close, &stats.close, 16).collect::<Vec<_>>()))
+        b.iter(|| black_box(correlation::rsq(&stats.open, &stats.close, 16).collect::<Vec<_>>()))
     });
     c.bench_function("correlation-beta", |b| {
-        b.iter(|| black_box(correlation::beta(&stats.close, &stats.close, 16).collect::<Vec<_>>()))
+        b.iter(|| black_box(correlation::beta(&stats.open, &stats.close, 16).collect::<Vec<_>>()))
     });
     c.bench_function("correlation-rsc", |b| {
-        b.iter(|| black_box(correlation::rsc(&stats.close, &stats.close).collect::<Vec<_>>()))
+        b.iter(|| black_box(correlation::rsc(&stats.open, &stats.close).collect::<Vec<_>>()))
     });
     c.bench_function("correlation-perf", |b| {
-        b.iter(|| black_box(correlation::perf(&stats.close, &stats.close, 16).collect::<Vec<_>>()))
+        b.iter(|| black_box(correlation::perf(&stats.open, &stats.close, 16).collect::<Vec<_>>()))
     });
     c.bench_function("correlation-srcc", |b| {
-        b.iter(|| black_box(correlation::srcc(&stats.close, &stats.close, 16).collect::<Vec<_>>()))
+        b.iter(|| black_box(correlation::srcc(&stats.open, &stats.close, 16).collect::<Vec<_>>()))
     });
     c.bench_function("correlation-krcc", |b| {
-        b.iter(|| black_box(correlation::krcc(&stats.close, &stats.close, 16).collect::<Vec<_>>()))
+        b.iter(|| black_box(correlation::krcc(&stats.open, &stats.close, 16).collect::<Vec<_>>()))
     });
     c.bench_function("correlation-hoeffd", |b| {
-        b.iter(|| {
-            black_box(correlation::hoeffd(&stats.close, &stats.close, 16).collect::<Vec<_>>())
-        })
+        b.iter(|| black_box(correlation::hoeffd(&stats.open, &stats.close, 16).collect::<Vec<_>>()))
     });
     c.bench_function("correlation-dcor", |b| {
-        b.iter(|| black_box(correlation::dcor(&stats.close, &stats.close, 16).collect::<Vec<_>>()))
+        b.iter(|| black_box(correlation::dcor(&stats.open, &stats.close, 16).collect::<Vec<_>>()))
     });
 
     c.bench_function("stats-dist-variance", |b| {
