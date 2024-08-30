@@ -413,3 +413,101 @@ pub fn hoeffd<'a, T: ToPrimitive + PartialOrd + Clone>(
             }),
     )
 }
+
+/// Distance Correlation
+///
+/// Measures both linear and nonlinear association between two random variables or random vectors.
+/// Not to be confused with correlation distance which is related to Pearson Coefficient[3].
+///
+/// ## Usage
+///
+/// Generates a value between 0 and 1 where 0 implies series are independent and 1 implies they are
+/// surely equal.
+///
+/// ## Sources
+///
+/// [[1]](https://en.wikipedia.org/wiki/Distance_correlation)
+/// [[2]](https://www.freecodecamp.org/news/how-machines-make-predictions-finding-correlations-in-complex-data-dfd9f0d87889/)
+/// [[3]](https://en.wikipedia.org/wiki/Pearson_correlation_coefficient#Pearson's_distance)
+///
+/// # Examples
+///
+/// ```
+/// use traquer::correlation;
+///
+/// correlation::dcor(
+///     &[1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &[1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     6).collect::<Vec<f64>>();
+///
+/// ```
+pub fn dcor<'a, T: ToPrimitive>(
+    series1: &'a [T],
+    series2: &'a [T],
+    window: usize,
+) -> impl Iterator<Item = f64> + 'a {
+    fn centred_matrix<T: ToPrimitive>(x: &[T]) -> Vec<f64> {
+        let n = x.len();
+        // flattened NxN distance matrix, where [x_00..x0j, ... ,x_i0..x_ij]
+        let mut matrix = vec![0.0; n * n];
+        for i in 0..n {
+            for j in 0..n {
+                matrix[(i * n) + j] = (x[i].to_f64().unwrap() - x[j].to_f64().unwrap()).abs();
+            }
+        }
+
+        // "double-centre" the matrix
+        let row_means: Vec<f64> = (0..matrix.len())
+            .step_by(n)
+            .map(|i| matrix[i..i + n].iter().sum::<f64>() / n as f64)
+            .collect();
+        let col_means: Vec<f64> = (0..n)
+            .map(|i| {
+                (i..matrix.len())
+                    .step_by(n)
+                    .fold(0.0, |acc, j| acc + matrix[j])
+                    / n as f64
+            })
+            .collect();
+        let matrix_mean: f64 = matrix.iter().sum::<f64>() / (n * n) as f64;
+        for i in 0..n {
+            for j in 0..n {
+                matrix[(i * n) + j] += -row_means[i] - col_means[j] + matrix_mean;
+            }
+        }
+        matrix
+    }
+
+    iter::repeat(f64::NAN).take(window - 1).chain(
+        series1
+            .windows(window)
+            .zip(series2.windows(window))
+            .map(move |(x_win, y_win)| {
+                let centred_x = centred_matrix(x_win);
+                let centred_y = centred_matrix(y_win);
+                let dcov = (centred_x
+                    .iter()
+                    .zip(&centred_y)
+                    .map(|(a, b)| a * b)
+                    .sum::<f64>()
+                    / window.pow(2) as f64)
+                    .sqrt();
+                let dvar_x = (centred_x
+                    .iter()
+                    .zip(&centred_x)
+                    .map(|(a, b)| a * b)
+                    .sum::<f64>()
+                    / window.pow(2) as f64)
+                    .sqrt();
+                let dvar_y = (centred_y
+                    .iter()
+                    .zip(&centred_y)
+                    .map(|(a, b)| a * b)
+                    .sum::<f64>()
+                    / window.pow(2) as f64)
+                    .sqrt();
+
+                dcov / (dvar_x * dvar_y).sqrt()
+            }),
+    )
+}
