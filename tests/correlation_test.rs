@@ -160,6 +160,45 @@ fn test_rsc() {
 }
 
 #[test]
+fn test_srcc() {
+    let stats = common::test_data();
+    let stats2 = common::test_data_path("./tests/sp500.input");
+    let result = correlation::srcc(&stats.close, &stats2.close, 16).collect::<Vec<_>>();
+    assert_eq!(stats.close.len(), result.len());
+    assert_eq!(
+        vec![
+            0.6235294117647058,
+            0.7294117647058824,
+            0.7852941176470588,
+            0.8588235294117645,
+            0.8470588235294116,
+            0.8235294117647058,
+            0.8499999999999999,
+            0.8529411764705881,
+            0.7999999999999999,
+            0.7823529411764706,
+            0.7176470588235293,
+            0.6294117647058823,
+            0.42941176470588227,
+            0.47647058823529415,
+            0.5264705882352941,
+            0.6558823529411765,
+            0.7647058823529411,
+            0.8294117647058823,
+            0.8647058823529412
+        ],
+        result[16 - 1..]
+    );
+    let result = correlation::srcc(
+        &[70, 78, 90, 87, 84, 86, 91, 74, 83, 85],
+        &[90, 94, 79, 86, 84, 83, 88, 92, 76, 75],
+        10,
+    )
+    .collect::<Vec<_>>();
+    assert_eq!(-0.41818181818181815, result[result.len() - 1]);
+}
+
+#[test]
 fn test_krcc() {
     let stats = common::test_data();
     let stats2 = common::test_data_path("./tests/sp500.input");
