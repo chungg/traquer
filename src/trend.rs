@@ -1093,7 +1093,7 @@ fn hurst_rs<T: ToPrimitive>(data: &[T]) -> f64 {
     let mut var = 0.0;
     for x in data {
         let dev = x.to_f64().unwrap() - avg;
-        var += dev.powi(2);
+        var += dev * dev;
         dev_cumsum += dev;
         max_z = max_z.max(dev_cumsum);
         min_z = min_z.min(dev_cumsum);

@@ -182,7 +182,7 @@ pub fn tema<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f
 /// smooth::wma(&[1.0,2.0,3.0,4.0,5.0], 3).collect::<Vec<f64>>();
 /// ```
 pub fn wma<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f64> + '_ {
-    let denom = (u64::pow(window as u64, 2) + window as u64) as f64 / 2.0;
+    let denom = (window.pow(2) + window) as f64 / 2.0;
     let weights: Vec<f64> = (1..=window).map(|i| i as f64 / denom).collect();
     iter::repeat(f64::NAN)
         .take(window - 1)
@@ -397,7 +397,7 @@ pub fn vma<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f6
 pub fn lrf<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f64> + '_ {
     let x_sum = (window * (window + 1)) as f64 / 2.0;
     let x2_sum: f64 = x_sum * (2 * window + 1) as f64 / 3.0;
-    let divisor = window as f64 * x2_sum - x_sum.powi(2);
+    let divisor = window as f64 * x2_sum - x_sum * x_sum;
     let indices: Vec<f64> = (1..=window).map(|x| x as f64).collect();
 
     iter::repeat(f64::NAN)
@@ -491,10 +491,10 @@ pub fn zlma<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f
 /// smooth::kernel(&[1.0, 2.0, 3.0, 4.0, 5.0], 3.0).collect::<Vec<f64>>();
 /// ```
 pub fn kernel<T: ToPrimitive>(data: &[T], sigma: f64) -> impl Iterator<Item = f64> + '_ {
-    let beta = 1.0 / (2.0 * sigma.powi(2));
+    let beta = 1.0 / (2.0 * sigma * sigma);
     let window = 255;
     let weights = (0..=window)
-        .map(|x| (-beta * (x as f64).powi(2)).exp())
+        .map(|x| (-beta * (x * x) as f64).exp())
         .collect::<Vec<f64>>();
     (0..data.len()).map(move |i| {
         let mut sum: f64 = 0.0;

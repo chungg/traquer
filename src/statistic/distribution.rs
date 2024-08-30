@@ -304,7 +304,7 @@ pub fn kurtosis<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item
             let k2 = w
                 .iter()
                 .fold(0.0, |acc, x| acc + (x.to_f64().unwrap() - mean).powi(2));
-            adj1 * k4 / k2.powi(2) - adj2
+            adj1 * k4 / (k2 * k2) - adj2
         }))
 }
 
