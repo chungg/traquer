@@ -612,6 +612,9 @@ fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("correlation-dcor", |b| {
         b.iter(|| black_box(correlation::dcor(&stats.open, &stats.close, 16).collect::<Vec<_>>()))
     });
+    c.bench_function("correlation-mic", |b| {
+        b.iter(|| black_box(correlation::mic(&stats.open, &stats.close, 16).collect::<Vec<_>>()))
+    });
 
     c.bench_function("stats-dist-variance", |b| {
         b.iter(|| {

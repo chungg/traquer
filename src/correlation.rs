@@ -3,6 +3,7 @@
 //! Provides technical indicators that measures how two or more series relate to one another.
 //! These indicators can capture trend or performance and is often used to track relation
 //! between an asset and a benchmark.
+use std::collections::HashMap;
 use std::iter;
 
 use itertools::izip;
@@ -503,6 +504,97 @@ pub fn dcor<'a, T: ToPrimitive>(
                     (centred_y.iter().map(|a| a * a).sum::<f64>() / window.pow(2) as f64).sqrt();
 
                 dcov / (dvar_x * dvar_y).sqrt()
+            }),
+    )
+}
+
+/// Mutual Information Coefficient
+///
+/// Measures the mutual dependence between the two variables by leveraging the entropy of each
+/// variable and computing the Kullback–Leibler divergence.
+///
+/// ## Usage
+///
+/// Generates a value between 0 and 1 where 0 implies series are independent and 1 implies they are
+/// surely equal.
+///
+/// ## Sources
+///
+/// [[1]](https://en.wikipedia.org/wiki/Mutual_information)
+/// [[2]](https://www.freecodecamp.org/news/how-machines-make-predictions-finding-correlations-in-complex-data-dfd9f0d87889/)
+///
+/// # Examples
+///
+/// ```
+/// use traquer::correlation;
+///
+/// correlation::mic(
+///     &[1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     &[1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0],
+///     6).collect::<Vec<f64>>();
+///
+/// ```
+pub fn mic<'a, T: ToPrimitive>(
+    series1: &'a [T],
+    series2: &'a [T],
+    window: usize,
+) -> impl Iterator<Item = f64> + 'a {
+    fn mutual_info(x: &[usize], y: &[usize]) -> f64 {
+        let mut joint_counts = HashMap::new();
+        let mut x_counts = HashMap::new();
+        let mut y_counts = HashMap::new();
+        let n = x.len() as f64;
+
+        for (&xi, &yi) in x.iter().zip(y) {
+            *joint_counts.entry((xi, yi)).or_insert(0) += 1;
+            *x_counts.entry(xi).or_insert(0) += 1;
+            *y_counts.entry(yi).or_insert(0) += 1;
+        }
+
+        joint_counts.iter().fold(0.0, |acc, (&(xi, yi), &count)| {
+            let p_xy = count as f64 / n;
+            let p_x = x_counts[&xi] as f64 / n;
+            let p_y = y_counts[&yi] as f64 / n;
+            acc + p_xy * (p_xy / (p_x * p_y)).log2()
+        })
+    }
+
+    fn bin<T: ToPrimitive>(x: &[T], bins: usize) -> Vec<usize> {
+        let mut min = f64::MAX;
+        let mut max = f64::MIN;
+        for val in x {
+            let val = val.to_f64().unwrap();
+            min = min.min(val);
+            max = max.max(val);
+        }
+        let bin_width = (max - min) / bins as f64;
+        x.iter()
+            .map(|val| {
+                (((val.to_f64().unwrap() - min) / bin_width).floor() as usize).clamp(0, bins - 1)
+            })
+            .collect::<Vec<usize>>()
+    }
+
+    let max_bins = (window as f64).powf(0.6).ceil() as usize;
+
+    iter::repeat(f64::NAN).take(window - 1).chain(
+        series1
+            .windows(window)
+            .zip(series2.windows(window))
+            .map(move |(x_win, y_win)| {
+                let mut max_mi = f64::MIN;
+                for i in 2..=(max_bins / 2) {
+                    let binned1: Vec<usize> = bin(x_win, i);
+                    let mut j = 2;
+                    while i * j <= max_bins {
+                        let binned2: Vec<usize> = bin(y_win, j);
+                        let mi_estimate = mutual_info(&binned1, &binned2);
+                        let mi_normalized = mi_estimate / (i.min(j) as f64).log2();
+                        max_mi = mi_normalized.max(max_mi);
+                        j += 1;
+                    }
+                }
+                max_mi
             }),
     )
 }
