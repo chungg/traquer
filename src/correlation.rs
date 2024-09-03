@@ -60,12 +60,12 @@ pub fn pcc<'a, T: ToPrimitive>(
                     sum_xy += x * y;
                     sum_x += x;
                     sum_y += y;
-                    sum_x2 += x.powi(2);
-                    sum_y2 += y.powi(2);
+                    sum_x2 += x * x;
+                    sum_y2 += y * y;
                 }
                 (window as f64 * sum_xy - sum_x * sum_y)
-                    / ((window as f64 * sum_x2 - sum_x.powi(2)).sqrt()
-                        * (window as f64 * sum_y2 - sum_y.powi(2)).sqrt())
+                    / ((window as f64 * sum_x2 - sum_x * sum_x).sqrt()
+                        * (window as f64 * sum_y2 - sum_y * sum_y).sqrt())
             }),
     )
 }
@@ -101,7 +101,7 @@ pub fn rsq<'a, T: ToPrimitive>(
     series2: &'a [T],
     window: usize,
 ) -> impl Iterator<Item = f64> + 'a {
-    pcc(series1, series2, window).map(|x| x.powi(2))
+    pcc(series1, series2, window).map(|x| x * x)
 }
 
 /// Beta Coefficient
