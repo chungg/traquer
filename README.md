@@ -11,19 +11,26 @@
 
 # traquer
 
-A simple, dataframe-agnostic, technical analysis library that gives you false hope
-that you can beat the market.
+A simple, dataframe-agnostic, technical analysis library that offers over 140 functions for
+time-series analysis and gives you false hope that you can beat the market.
 
 ## types of indicators
 
-140+ indicators available across multiple categories. Even across categories, indicators often
-behave quite similarly depending on window size. The classfication/api may change
-(if egregiously wrong).
+### correlation
+Signals that compare two or more variables and their relationship to one another.
 
 ### momentum
 Provides technical indicators that measures the rate of change or speed of price
 movement of a security. In the context of this library, these indicators are typically
 range bound and/or centred around zero. These often implicitly show trend.
+
+### smooth
+Provides moving average functions. Often used to track trend, levels of support, breakouts, etc...
+The results are in the same scale as input data and are often used as a signal line for input data.
+
+### statistic
+A set of common statistical functions that can describe features of a dataset or infer
+conclusions such as prediction accuracy or patterns.
 
 ### trend
 Indicators where the direction may signify opportunities. The slope and trajectory of the
@@ -38,17 +45,6 @@ it expects prices to fall within.
 ### volume
 Indicators that factor in how much an asset has been traded in a period of time. Depending on
 the indicator, it may be a momentum indicator or trend indicator.
-
-### smooth
-Provides moving average functions. Often used to track trend, levels of support, breakouts, etc...
-The results are in the same scale as input data and are often used as a signal line for input data.
-
-### correlation
-Signals that compare two or more variables and their relationship to one another.
-
-### statistic
-A set of common statistical functions that can describe features of a dataset or infer
-conclusions such as prediction accuracy or patterns.
 
 ## installation
 1. (optional) https://rustup.rs/
