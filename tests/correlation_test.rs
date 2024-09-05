@@ -392,7 +392,7 @@ fn test_mic() {
     let result = correlation::mic(&ln_ret1, &ln_ret2, 16).collect::<Vec<_>>();
     assert_eq!(ln_ret1.len(), result.len());
     assert!(common::vec_close(
-        &vec![
+        &[
             0.06027734752141348,
             0.16873594086576316,
             0.16873594086576313,

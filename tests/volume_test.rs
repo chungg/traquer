@@ -572,15 +572,15 @@ fn test_vwap() {
         result
     );
     assert_ne!(
-        (&stats.high[6] + &stats.low[6] + &stats.close[6]) / 3.0,
+        (stats.high[6] + stats.low[6] + stats.close[6]) / 3.0,
         result[6]
     );
     assert_eq!(
-        (&stats.high[7] + &stats.low[7] + &stats.close[7]) / 3.0,
+        (stats.high[7] + stats.low[7] + stats.close[7]) / 3.0,
         result[7]
     );
     assert_ne!(
-        (&stats.high[8] + &stats.low[8] + &stats.close[8]) / 3.0,
+        (stats.high[8] + stats.low[8] + stats.close[8]) / 3.0,
         result[8]
     );
 }
