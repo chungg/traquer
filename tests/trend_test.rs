@@ -987,7 +987,7 @@ fn test_hurst() {
     let result = trend::hurst(&rets, 16, None).collect::<Vec<_>>();
     assert_eq!(rets.len(), result.len());
     assert!(common::vec_close(
-        &vec![
+        &[
             0.717300003513944,
             0.7040433063878732,
             0.7870815790649716,
@@ -1005,7 +1005,7 @@ fn test_hurst() {
             0.5946959711202044,
             0.23772640082555682,
             0.20834665213422418,
-            0.10884312104017504,
+            0.10884312104017504
         ],
         &result[16 - 1..]
     ));
