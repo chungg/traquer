@@ -567,10 +567,8 @@ pub fn rank<T: ToPrimitive + PartialOrd + Clone>(
                         .scan(1, |state, (rank, take)| {
                             if take {
                                 *state = rank;
-                                Some(rank as f64)
-                            } else {
-                                Some(*state as f64)
                             }
+                            Some(*state as f64)
                         }),
                 ),
             };
