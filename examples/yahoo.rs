@@ -9,7 +9,7 @@ struct SecStats {
     low: Vec<f64>,
     open: Vec<f64>,
     close: Vec<f64>,
-    volume: Vec<f64>,
+    volume: Vec<u64>,
 }
 
 fn get_prices(ticker: &str) -> SecStats {
