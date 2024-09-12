@@ -41,7 +41,7 @@ fn vforce<'a, T: ToPrimitive, U: ToPrimitive>(
                 state.5 + dm
             };
             *state = (h, l, c, trend, cm, dm);
-            Some(v * (1. - (dm / cm)) * trend * 200.0)
+            Some(v * ((dm / cm) - 1.0) * trend * 200.0)
         },
     )
 }
@@ -88,7 +88,6 @@ fn vforce_alt<'a, T: ToPrimitive, U: ToPrimitive>(
 /// ## Sources
 ///
 /// [[1]](https://www.investopedia.com/terms/k/klingeroscillator.asp)
-/// [[2]](https://www.daytrading.com/klinger-volume-oscillator)
 ///
 /// # Examples
 ///
