@@ -292,7 +292,7 @@ fn criterion_benchmark(c: &mut Criterion) {
         b.iter(|| black_box(momentum::disparity(&stats.close, 16).collect::<Vec<f64>>()))
     });
     c.bench_function("sig-momentum-tsi", |b| {
-        b.iter(|| black_box(momentum::tsi(&stats.close, 6, 10, 3).collect::<Vec<_>>()))
+        b.iter(|| black_box(momentum::tsi(&stats.close, 6, 10).collect::<Vec<_>>()))
     });
     c.bench_function("sig-momentum-special_k", |b| {
         b.iter(|| black_box(momentum::special_k(&stats.close).collect::<Vec<_>>()))
