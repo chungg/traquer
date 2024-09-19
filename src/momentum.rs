@@ -1301,15 +1301,14 @@ pub fn psych<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = 
 ///
 /// momentum::tsi(
 ///     &[1.0,2.0,3.0,4.0,5.0,6.0,4.0,5.0,2.0,3.0,4.0,5.0,6.0,4.0],
-///     3, 6, 3).collect::<Vec<(f64,f64)>>();
+///     3, 6).collect::<Vec<f64>>();
 ///
 /// ```
 pub fn tsi<T: ToPrimitive>(
     data: &[T],
     short: usize,
     long: usize,
-    signal: usize,
-) -> impl Iterator<Item = (f64, f64)> + '_ {
+) -> impl Iterator<Item = f64> + '_ {
     let diffs = data
         .windows(2)
         .map(|pair| pair[1].to_f64().unwrap() - pair[0].to_f64().unwrap())
@@ -1326,15 +1325,7 @@ pub fn tsi<T: ToPrimitive>(
         .zip(abs_pcds)
         .map(|(pcd, apcd)| 100.0 * pcd / apcd)
         .collect::<Vec<f64>>();
-    let signal = iter::repeat(f64::NAN)
-        .take(short - 1)
-        .chain(smooth::ewma(&tsi[short - 1..], signal));
-    iter::repeat((f64::NAN, f64::NAN)).take(long).chain(
-        tsi.iter()
-            .zip(signal)
-            .map(|(&x, y)| (x, y))
-            .collect::<Vec<(f64, f64)>>(),
-    )
+    iter::repeat(f64::NAN).take(long).chain(tsi)
 }
 
 /// Pring's Special K
