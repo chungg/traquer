@@ -430,7 +430,7 @@ pub fn lrf<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f6
 /// ```
 pub fn trima<T: ToPrimitive>(data: &[T], window: usize) -> impl Iterator<Item = f64> + '_ {
     let win1 = window.div_ceil(2);
-    let win2 = if window & 2 == 0 { win1 + 1 } else { win1 };
+    let win2 = if window % 2 == 0 { win1 + 1 } else { win1 };
     sma(&sma(data, win1).collect::<Vec<f64>>(), win2)
         .collect::<Vec<f64>>()
         .into_iter()
