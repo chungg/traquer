@@ -14,6 +14,7 @@ use num_traits::cast::ToPrimitive;
 use crate::statistic::distribution::_std_dev;
 
 /// Moving average types
+#[derive(Clone, Copy)]
 pub enum MaMode {
     SMA,
     EWMA,
