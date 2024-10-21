@@ -5,6 +5,7 @@
 //! determing causal relationships.[[1]](https://en.wikipedia.org/wiki/Regression_analysis)
 use std::iter;
 
+use itertools::izip;
 use num_traits::cast::ToPrimitive;
 
 /// Mean Squared Error
@@ -31,9 +32,7 @@ pub fn mse<'a, T: ToPrimitive>(data: &'a [T], estimate: &'a [T]) -> impl Iterato
         .enumerate()
         .zip(estimate)
         .scan(0.0, |state, ((cnt, observe), est)| {
-            *state += (observe.to_f64().unwrap() - est.to_f64().unwrap())
-                .powi(2)
-                .max(0.0);
+            *state += (observe.to_f64().unwrap() - est.to_f64().unwrap()).powi(2);
             Some(*state / (cnt + 1) as f64)
         })
 }
@@ -65,9 +64,7 @@ pub fn rmse<'a, T: ToPrimitive>(
         .enumerate()
         .zip(estimate)
         .scan(0.0, |state, ((cnt, observe), est)| {
-            *state += (observe.to_f64().unwrap() - est.to_f64().unwrap())
-                .powi(2)
-                .max(0.0);
+            *state += (observe.to_f64().unwrap() - est.to_f64().unwrap()).powi(2);
             Some((*state / (cnt + 1) as f64).sqrt())
         })
 }
@@ -97,9 +94,7 @@ pub fn mae<'a, T: ToPrimitive>(data: &'a [T], estimate: &'a [T]) -> impl Iterato
         .enumerate()
         .zip(estimate)
         .scan(0.0, |state, ((cnt, observe), est)| {
-            *state += (observe.to_f64().unwrap() - est.to_f64().unwrap())
-                .abs()
-                .max(0.0);
+            *state += (observe.to_f64().unwrap() - est.to_f64().unwrap()).abs();
             Some(*state / (cnt + 1) as f64)
         })
 }
@@ -133,8 +128,7 @@ pub fn mape<'a, T: ToPrimitive>(
         .scan(0.0, |state, ((cnt, observe), est)| {
             *state += ((observe.to_f64().unwrap() - est.to_f64().unwrap())
                 / observe.to_f64().unwrap())
-            .abs()
-            .max(0.0);
+            .abs();
             Some(100.0 * *state / (cnt + 1) as f64)
         })
 }
@@ -204,4 +198,72 @@ pub fn mda<'a, T: ToPrimitive>(data: &'a [T], estimate: &'a [T]) -> impl Iterato
             Some(state.0 / (cnt + 1) as f64)
         },
     ))
+}
+
+/// Mean Absolute Scaled Error
+///
+/// A forecasting accuracy metric that compares the mean absolute error (MAE) of your prediction
+/// to the MAE of a naive forecasting method, such as predicting the previous period's value. It
+/// helps determine if your forecasting model outperforms a simple baseline model.
+///
+/// ```math
+/// MASE = \mathrm{mean}\left( \frac{\left| e_j \right|}{\frac{1}{T-1}\sum_{t=2}^T \left| Y_t-Y_{t-1}\right|} \right) = \frac{\frac{1}{J}\sum_{j}\left| e_j \right|}{\frac{1}{T-1}\sum_{t=2}^T \left| Y_t-Y_{t-1}\right|}
+/// ```
+///
+/// ## Sources
+///
+/// [[1]](https://en.wikipedia.org/wiki/Mean_absolute_scaled_error)
+/// [[2]](https://otexts.com/fpp2/accuracy.html#scaled-errors)
+///
+/// # Examples
+///
+/// ```
+/// use traquer::statistic::regression;
+///
+/// regression::mase(&[1.0,2.0,3.0,4.0,5.0], &[1.0,2.0,3.0,4.0,5.0]).collect::<Vec<f64>>();
+/// ```
+pub fn mase<'a, T: ToPrimitive>(
+    data: &'a [T],
+    estimate: &'a [T],
+) -> impl Iterator<Item = f64> + 'a {
+    let mae_est = mae(data, estimate);
+    let mae_naive = data.windows(2).zip(1..).scan(0.0, |state, (w, cnt)| {
+        *state += (w[1].to_f64().unwrap() - w[0].to_f64().unwrap()).abs();
+        Some(*state / cnt as f64)
+    });
+
+    iter::once(f64::NAN).chain(
+        mae_est
+            .skip(1)
+            .zip(mae_naive)
+            .map(|(est, naive)| est / naive),
+    )
+}
+
+/// Envelope-weighted Mean Absolute Error
+///
+/// A scale-independent, symmetric, error metric
+///
+/// ## Sources
+///
+/// [[1]](https://typethepipe.com/post/energy-forecasting-error-metrics/)
+/// [[2]](https://pdfs.semanticscholar.org/cf04/65bce25d78ccda6d8c5d12e141099aa606f4.pdf)
+///
+/// # Examples
+///
+/// ```
+/// use traquer::statistic::regression;
+///
+/// regression::emae(&[1.0,2.0,3.0,4.0,5.0], &[1.0,2.0,3.0,4.0,5.0]).collect::<Vec<f64>>();
+/// ```
+pub fn emae<'a, T: ToPrimitive>(
+    data: &'a [T],
+    estimate: &'a [T],
+) -> impl Iterator<Item = f64> + 'a {
+    izip!(data, estimate, 1..).scan((0.0, 0.0), |state, (actual, est, n)| {
+        let actual = actual.to_f64().unwrap();
+        let est = est.to_f64().unwrap();
+        *state = (state.0 + (actual - est).abs(), state.1 + actual.max(est));
+        Some(state.0 / state.1 * 100. / n as f64)
+    })
 }
