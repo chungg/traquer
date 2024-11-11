@@ -708,6 +708,16 @@ fn criterion_benchmark(c: &mut Criterion) {
             black_box(statistic::regression::mda(&stats.close, &stats.open).collect::<Vec<_>>())
         })
     });
+    c.bench_function("stats-regress-mase", |b| {
+        b.iter(|| {
+            black_box(statistic::regression::mase(&stats.close, &stats.open).collect::<Vec<_>>())
+        })
+    });
+    c.bench_function("stats-regress-emae", |b| {
+        b.iter(|| {
+            black_box(statistic::regression::emae(&stats.close, &stats.open).collect::<Vec<_>>())
+        })
+    });
 }
 
 criterion_group!(benches, criterion_benchmark);
