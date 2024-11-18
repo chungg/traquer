@@ -921,3 +921,57 @@ pub fn t3<T: ToPrimitive>(
         .map(move |(e3, e4, e5, e6)| c1 * e6 + c2 * e5 + c3 * e4 + c4 * e3),
     )
 }
+
+/// Fractal Adaptive Moving Average
+///
+/// Based on argument that market prices are fractal, this algorithm considers fractal shapes as
+/// self-similar because they tend to have the same roughness and sparseness regardless of the
+/// magnification used to view them.
+///
+/// ## Sources
+///
+/// [[1]](https://www.mesasoftware.com/papers/FRAMA.pdf)
+///
+/// # Examples
+///
+/// ```
+/// use traquer::smooth;
+///
+/// match smooth::frama(&[1.0,2.0,3.0,4.0,5.0,2.0,3.0,4.0,2.0,3.0,4.0,2.0,3.0,4.0], 3){
+///     Ok(iter) => {
+///         let ma = iter.collect::<Vec<f64>>();
+///     },
+///     Err(e) => println!("Error: {}", e),
+/// }
+/// ```
+pub fn frama<T: ToPrimitive>(
+    data: &[T],
+    window: usize,
+) -> Result<impl Iterator<Item = f64> + '_, &'static str> {
+    if window % 2 != 0 {
+        return Err("Window must be an even number");
+    }
+    let mid = window / 2;
+    Ok(iter::repeat(f64::NAN)
+        .take(window - 1)
+        .chain(data.windows(window).scan(0., move |state, w| {
+            let (hh1, ll1, hh2, ll2) = w.iter().take(mid).zip(w.iter().rev().take(mid)).fold(
+                (f64::MIN, f64::MAX, f64::MIN, f64::MAX),
+                |(hh1, ll1, hh2, ll2), (x1, x2)| {
+                    (
+                        hh1.max(x1.to_f64().unwrap()),
+                        ll1.min(x1.to_f64().unwrap()),
+                        hh2.max(x2.to_f64().unwrap()),
+                        ll2.min(x2.to_f64().unwrap()),
+                    )
+                },
+            );
+            let n1 = (hh1 - ll1) / mid as f64;
+            let n2 = (hh2 - ll2) / mid as f64;
+            let n3 = (hh1.max(hh2) - ll1.min(ll2)) / window as f64;
+            let d = ((n1 + n2).ln() - n3.ln()) / 2_f64.ln();
+            let alpha = (-4.6 * (d - 1.)).exp().clamp(0.01, 1.);
+            *state = alpha * w.last().unwrap().to_f64().unwrap() + (1. - alpha) * *state;
+            Some(*state)
+        })))
+}
