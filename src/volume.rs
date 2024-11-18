@@ -574,9 +574,9 @@ pub fn obv<'a, T: ToPrimitive, U: ToPrimitive>(
     close: &'a [T],
     volume: &'a [U],
 ) -> impl Iterator<Item = f64> + 'a {
-    iter::once(f64::NAN).chain(close.windows(2).enumerate().scan(0.0, |state, (i, pairs)| {
+    iter::once(f64::NAN).chain((1..).zip(close.windows(2)).scan(0.0, |state, (i, pairs)| {
         *state += (pairs[1].to_f64().unwrap() - pairs[0].to_f64().unwrap()).signum()
-            * volume[i + 1].to_f64().unwrap();
+            * volume[i].to_f64().unwrap();
         Some(*state)
     }))
 }

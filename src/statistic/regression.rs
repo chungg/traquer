@@ -28,12 +28,12 @@ use num_traits::cast::ToPrimitive;
 /// regression::mse(&[1.0,2.0,3.0,4.0,5.0], &[1.0,2.0,3.0,4.0,5.0]).collect::<Vec<f64>>();
 /// ```
 pub fn mse<'a, T: ToPrimitive>(data: &'a [T], estimate: &'a [T]) -> impl Iterator<Item = f64> + 'a {
-    data.iter()
-        .enumerate()
+    (1..)
+        .zip(data)
         .zip(estimate)
         .scan(0.0, |state, ((cnt, observe), est)| {
             *state += (observe.to_f64().unwrap() - est.to_f64().unwrap()).powi(2);
-            Some(*state / (cnt + 1) as f64)
+            Some(*state / cnt as f64)
         })
 }
 
@@ -60,12 +60,12 @@ pub fn rmse<'a, T: ToPrimitive>(
     data: &'a [T],
     estimate: &'a [T],
 ) -> impl Iterator<Item = f64> + 'a {
-    data.iter()
-        .enumerate()
+    (1..)
+        .zip(data)
         .zip(estimate)
         .scan(0.0, |state, ((cnt, observe), est)| {
             *state += (observe.to_f64().unwrap() - est.to_f64().unwrap()).powi(2);
-            Some((*state / (cnt + 1) as f64).sqrt())
+            Some((*state / cnt as f64).sqrt())
         })
 }
 
@@ -90,12 +90,12 @@ pub fn rmse<'a, T: ToPrimitive>(
 /// regression::mae(&[1.0,2.0,3.0,4.0,5.0], &[1.0,2.0,3.0,4.0,5.0]).collect::<Vec<f64>>();
 /// ```
 pub fn mae<'a, T: ToPrimitive>(data: &'a [T], estimate: &'a [T]) -> impl Iterator<Item = f64> + 'a {
-    data.iter()
-        .enumerate()
+    (1..)
+        .zip(data)
         .zip(estimate)
         .scan(0.0, |state, ((cnt, observe), est)| {
             *state += (observe.to_f64().unwrap() - est.to_f64().unwrap()).abs();
-            Some(*state / (cnt + 1) as f64)
+            Some(*state / cnt as f64)
         })
 }
 
@@ -122,14 +122,14 @@ pub fn mape<'a, T: ToPrimitive>(
     data: &'a [T],
     estimate: &'a [T],
 ) -> impl Iterator<Item = f64> + 'a {
-    data.iter()
-        .enumerate()
+    (1..)
+        .zip(data)
         .zip(estimate)
         .scan(0.0, |state, ((cnt, observe), est)| {
             *state += ((observe.to_f64().unwrap() - est.to_f64().unwrap())
                 / observe.to_f64().unwrap())
             .abs();
-            Some(100.0 * *state / (cnt + 1) as f64)
+            Some(100.0 * *state / cnt as f64)
         })
 }
 
@@ -157,14 +157,14 @@ pub fn smape<'a, T: ToPrimitive>(
     data: &'a [T],
     estimate: &'a [T],
 ) -> impl Iterator<Item = f64> + 'a {
-    data.iter()
-        .enumerate()
+    (1..)
+        .zip(data)
         .zip(estimate)
         .scan(0.0, |state, ((cnt, observe), est)| {
             *state += ((observe.to_f64().unwrap() - est.to_f64().unwrap()).abs()
                 / ((observe.to_f64().unwrap().abs() + est.to_f64().unwrap().abs()) / 2.0))
                 .max(0.0);
-            Some(100.0 * *state / (cnt + 1) as f64)
+            Some(100.0 * *state / cnt as f64)
         })
 }
 
@@ -189,13 +189,13 @@ pub fn smape<'a, T: ToPrimitive>(
 /// regression::mda(&[1.0,2.0,3.0,4.0,5.0], &[1.0,2.0,3.0,4.0,5.0]).collect::<Vec<f64>>();
 /// ```
 pub fn mda<'a, T: ToPrimitive>(data: &'a [T], estimate: &'a [T]) -> impl Iterator<Item = f64> + 'a {
-    iter::once(f64::NAN).chain(data[1..].iter().enumerate().zip(&estimate[1..]).scan(
+    iter::once(f64::NAN).chain((1..).zip(&data[1..]).zip(&estimate[1..]).scan(
         (0.0, data[0].to_f64().unwrap()),
         |state, ((cnt, observe), est)| {
             let dir = ((observe.to_f64().unwrap() - state.1).signum()
                 == (est.to_f64().unwrap() - state.1).signum()) as u8 as f64;
             *state = (state.0 + dir, observe.to_f64().unwrap());
-            Some(state.0 / (cnt + 1) as f64)
+            Some(state.0 / cnt as f64)
         },
     ))
 }
