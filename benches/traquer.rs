@@ -584,6 +584,15 @@ fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("ma-t3", |b| {
         b.iter(|| black_box(smooth::t3(&stats.close, 6, None).collect::<Vec<f64>>()))
     });
+    c.bench_function("ma-frama", |b| {
+        b.iter(|| {
+            black_box(
+                smooth::frama(&stats.close, 16)
+                    .unwrap()
+                    .collect::<Vec<f64>>(),
+            )
+        })
+    });
 
     c.bench_function("correlation-pcc", |b| {
         b.iter(|| black_box(correlation::pcc(&stats.open, &stats.close, 16).collect::<Vec<_>>()))
